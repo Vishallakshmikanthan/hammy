@@ -1,0 +1,70 @@
+{
+    "labels": [
+        "hamster"
+    ],
+    "amount_of_images": 1464,
+    "image_color_mode": "color",
+    "image_size": "nochange",
+    "split": {
+        "train": 1015,
+        "val": 215,
+        "test": 234
+    },
+    "split_ratio": {
+        "train": 70,
+        "val": 15,
+        "test": 15
+    },
+    "description": "All the images are in the data folder (70% train / 15% val / 15% test).",
+    "total_creation_time": "0:00:56.941448",
+    "augmentation": {
+        "active": true,
+        "augmentation_count": 288,
+        "augmentations": [
+            "rotate",
+            "hflip",
+            "vflip",
+            "crop",
+            "change_aspect_ratio",
+            "perspective",
+            "edge_enhance",
+            "sharpen",
+            "smooth",
+            "blur",
+            "max_filter",
+            "min_filter",
+            "brightness",
+            "contrast",
+            "saturation",
+            "color_jitter",
+            "random_noise",
+            "cutout",
+            "jpeg_compression",
+            "shuffle_pixels"
+        ],
+        "description": "Augmented images have an _aug suffix."
+    },
+    "normalization": {
+        "mean": [
+            0.485,
+            0.456,
+            0.406
+        ],
+        "std": [
+            0.229,
+            0.224,
+            0.225
+        ],
+        "note": "ImageNet default — pair with transforms.Normalize(mean, std) in PyTorch or tf.image.per_image_standardization equivalents."
+    },
+    "about": {
+        "provide_by": "www.images.cv",
+        "useful_links": [
+            "https://images.cv/how-to-use",
+            "https://images.cv/faq",
+            "https://images.cv/computer-vision-dataset-categories",
+            "https://images.cv/computer-vision-image-datasets-index",
+            "https://images.cv/contact"
+        ]
+    }
+}
