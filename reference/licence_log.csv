@@ -1,0 +1,9 @@
+asset_id,name,source_url,licence,author,notes
+fine_grained_wood,Fine Grained Wood (1K Diffuse/Rough/Normal),https://polyhaven.com/a/fine_grained_wood,CC0,Poly Haven (Dario Barresi),Used on wooden hideout & chew block
+plywood,Plywood (1K Diffuse/Rough/Normal),https://polyhaven.com/a/plywood,CC0,Poly Haven (Rob Tuytel),Used on exercise wheel drum & hideout roof
+bark_brown_02,Bark Brown 02 (1K Diffuse/Rough/Normal),https://polyhaven.com/a/bark_brown_02,CC0,Poly Haven (Rob Tuytel),Used on burrow tunnel & applewood chew twigs
+concrete_floor_worn_001,Worn Surface Micro-Roughness (1K Rough),https://polyhaven.com/a/concrete_floor_worn_001,CC0,Poly Haven (Dimitrios Savva),Used for glaze micro-roughness variation on ceramic bowl
+mat_acrylic_clear,Procedural Smudged PMMA Acrylic,Internal Antigravity Procedural,CC0,Antigravity,IOR 1.491 + Fresnel edge tint + fingerprint roughness
+mat_steel_brushed,Procedural Anisotropic Brushed Steel,Internal Antigravity Procedural,CC0,Antigravity,Anisotropic stainless steel for water bottle spout & wheel axle
+mat_bedding_pbr,Translucent Paper & Aspen Bedding,Internal Antigravity Procedural,CC0,Antigravity,Subsurface scattering backlit shader for shavings & paper strips
+brown_photostudio_02,Brown Photostudio 02 Indoor HDRI (1K HDR),https://polyhaven.com/a/brown_photostudio_02,CC0,Poly Haven (Sergej Majboroda),Indoor room world lighting & reflections

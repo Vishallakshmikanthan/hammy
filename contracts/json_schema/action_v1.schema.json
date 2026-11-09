@@ -1,0 +1,52 @@
+{
+  "$defs": {
+    "BehaviourType": {
+      "enum": [
+        "learned",
+        "scripted",
+        "rule"
+      ],
+      "title": "BehaviourType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "forward_speed_m_s": {
+      "description": "Planar forward speed command (m/s)",
+      "maximum": 0.45,
+      "minimum": -0.15,
+      "title": "Forward Speed M S",
+      "type": "number"
+    },
+    "turn_rate_rad_s": {
+      "description": "Yaw turn rate command (rad/s)",
+      "maximum": 6.0,
+      "minimum": -6.0,
+      "title": "Turn Rate Rad S",
+      "type": "number"
+    },
+    "interact_flag": {
+      "default": false,
+      "description": "Trigger eat/drink/wheel/hoard interaction at current object",
+      "title": "Interact Flag",
+      "type": "boolean"
+    },
+    "behaviour_type": {
+      "$ref": "#/$defs/BehaviourType",
+      "description": "Honesty label: learned | scripted | rule"
+    }
+  },
+  "required": [
+    "forward_speed_m_s",
+    "turn_rate_rad_s",
+    "behaviour_type"
+  ],
+  "title": "ActionV1",
+  "type": "object"
+}

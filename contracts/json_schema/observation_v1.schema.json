@@ -1,0 +1,211 @@
+{
+  "$defs": {
+    "DriveVectorV1": {
+      "additionalProperties": false,
+      "properties": {
+        "hunger": {
+          "description": "0 = full, 1 = starving",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Hunger",
+          "type": "number"
+        },
+        "thirst": {
+          "description": "0 = hydrated, 1 = dehydrated",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Thirst",
+          "type": "number"
+        },
+        "energy": {
+          "description": "0 = exhausted, 1 = fully rested",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Energy",
+          "type": "number"
+        },
+        "comfort": {
+          "description": "0 = distressed, 1 = cozy/comfortable",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Comfort",
+          "type": "number"
+        },
+        "stress": {
+          "description": "0 = calm, 1 = highly stressed",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Stress",
+          "type": "number"
+        },
+        "curiosity": {
+          "description": "0 = sated, 1 = strong exploratory drive",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Curiosity",
+          "type": "number"
+        },
+        "circadian_phase": {
+          "description": "[0, 1) phase of 24h cycle (0.0 = midnight)",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Circadian Phase",
+          "type": "number"
+        }
+      },
+      "required": [
+        "hunger",
+        "thirst",
+        "energy",
+        "comfort",
+        "stress",
+        "curiosity",
+        "circadian_phase"
+      ],
+      "title": "DriveVectorV1",
+      "type": "object"
+    },
+    "ObjectObservationV1": {
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "minLength": 1,
+          "title": "Object Id",
+          "type": "string"
+        },
+        "object_type": {
+          "enum": [
+            "food_bowl",
+            "water_bottle",
+            "hideout",
+            "tunnel",
+            "wheel",
+            "chew_toy"
+          ],
+          "title": "Object Type",
+          "type": "string"
+        },
+        "rel_pos_xy": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Rel Pos Xy",
+          "type": "array"
+        },
+        "distance_m": {
+          "minimum": 0.0,
+          "title": "Distance M",
+          "type": "number"
+        },
+        "resource_level": {
+          "default": 1.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Resource Level",
+          "type": "number"
+        }
+      },
+      "required": [
+        "object_id",
+        "object_type",
+        "rel_pos_xy",
+        "distance_m"
+      ],
+      "title": "ObjectObservationV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "morphology_version": {
+      "default": "simple_agent_v1",
+      "title": "Morphology Version",
+      "type": "string"
+    },
+    "environment_version": {
+      "default": "habitat_v1",
+      "title": "Environment Version",
+      "type": "string"
+    },
+    "sim_time_sec": {
+      "minimum": 0.0,
+      "title": "Sim Time Sec",
+      "type": "number"
+    },
+    "position_xyz": {
+      "items": {
+        "type": "number"
+      },
+      "maxItems": 3,
+      "minItems": 3,
+      "title": "Position Xyz",
+      "type": "array"
+    },
+    "yaw_rad": {
+      "title": "Yaw Rad",
+      "type": "number"
+    },
+    "velocity_xy": {
+      "items": {
+        "type": "number"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Velocity Xy",
+      "type": "array"
+    },
+    "angular_velocity_z": {
+      "title": "Angular Velocity Z",
+      "type": "number"
+    },
+    "inside_hideout": {
+      "default": false,
+      "title": "Inside Hideout",
+      "type": "boolean"
+    },
+    "inside_tunnel": {
+      "default": false,
+      "title": "Inside Tunnel",
+      "type": "boolean"
+    },
+    "on_wheel": {
+      "default": false,
+      "title": "On Wheel",
+      "type": "boolean"
+    },
+    "cheek_pouch_fill": {
+      "default": 0.0,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Cheek Pouch Fill",
+      "type": "number"
+    },
+    "drives": {
+      "$ref": "#/$defs/DriveVectorV1"
+    },
+    "nearby_objects": {
+      "items": {
+        "$ref": "#/$defs/ObjectObservationV1"
+      },
+      "title": "Nearby Objects",
+      "type": "array"
+    }
+  },
+  "required": [
+    "sim_time_sec",
+    "position_xyz",
+    "yaw_rad",
+    "velocity_xy",
+    "angular_velocity_z",
+    "drives"
+  ],
+  "title": "ObservationV1",
+  "type": "object"
+}

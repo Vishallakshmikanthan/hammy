@@ -1,0 +1,98 @@
+{
+  "$defs": {
+    "BehaviourType": {
+      "enum": [
+        "learned",
+        "scripted",
+        "rule"
+      ],
+      "title": "BehaviourType",
+      "type": "string"
+    },
+    "EventOrigin": {
+      "enum": [
+        "observed_physics",
+        "sampled_from_skill_model",
+        "rule"
+      ],
+      "title": "EventOrigin",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "event_id": {
+      "description": "Deterministic unique event ID",
+      "minLength": 4,
+      "title": "Event Id",
+      "type": "string"
+    },
+    "pet_id": {
+      "minLength": 1,
+      "title": "Pet Id",
+      "type": "string"
+    },
+    "world_tick": {
+      "minimum": 0,
+      "title": "World Tick",
+      "type": "integer"
+    },
+    "sim_time_sec": {
+      "minimum": 0.0,
+      "title": "Sim Time Sec",
+      "type": "number"
+    },
+    "event_type": {
+      "minLength": 1,
+      "title": "Event Type",
+      "type": "string"
+    },
+    "skill_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Skill Name"
+    },
+    "origin": {
+      "$ref": "#/$defs/EventOrigin",
+      "description": "observed_physics | sampled_from_skill_model | rule"
+    },
+    "behaviour_type": {
+      "$ref": "#/$defs/BehaviourType",
+      "description": "learned | scripted | rule"
+    },
+    "seed": {
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    }
+  },
+  "required": [
+    "event_id",
+    "pet_id",
+    "world_tick",
+    "sim_time_sec",
+    "event_type",
+    "origin",
+    "behaviour_type",
+    "seed"
+  ],
+  "title": "WorldEventV1",
+  "type": "object"
+}
