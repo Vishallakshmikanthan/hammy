@@ -1,0 +1,26 @@
+{
+  "algorithm": "PPO-Clip (SMDP Options)",
+  "behaviour_type": "learned",
+  "obs_dim": 41,
+  "act_dim": 8,
+  "hidden_dim": 64,
+  "skills": [
+    "approach_food",
+    "eat",
+    "drink",
+    "explore_area",
+    "rest",
+    "hide",
+    "enter_tunnel",
+    "run_on_wheel"
+  ],
+  "total_iterations": 45,
+  "steps_per_iteration": 256,
+  "total_smdp_steps": 11520,
+  "batch_size": 64,
+  "train_epochs": 4,
+  "clip_ratio": 0.2,
+  "lr": 0.0004,
+  "seed": 101,
+  "elapsed_seconds": 118.74
+}

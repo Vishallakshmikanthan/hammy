@@ -1,0 +1,317 @@
+[
+  {
+    "iteration": 1,
+    "mean_reward": -0.0032,
+    "ep_return": -0.819,
+    "policy_loss": -0.01182,
+    "value_loss": 0.00052
+  },
+  {
+    "iteration": 2,
+    "mean_reward": -0.00242,
+    "ep_return": -0.0301,
+    "policy_loss": -0.00593,
+    "value_loss": 0.00043
+  },
+  {
+    "iteration": 3,
+    "mean_reward": -0.00295,
+    "ep_return": -0.019,
+    "policy_loss": -0.00991,
+    "value_loss": 0.00053
+  },
+  {
+    "iteration": 4,
+    "mean_reward": -0.00167,
+    "ep_return": -0.0756,
+    "policy_loss": -0.00637,
+    "value_loss": 0.00028
+  },
+  {
+    "iteration": 5,
+    "mean_reward": -0.00164,
+    "ep_return": -0.0582,
+    "policy_loss": -0.00073,
+    "value_loss": 0.00022
+  },
+  {
+    "iteration": 6,
+    "mean_reward": -0.00188,
+    "ep_return": -0.1079,
+    "policy_loss": -0.00858,
+    "value_loss": 0.00055
+  },
+  {
+    "iteration": 7,
+    "mean_reward": -0.00087,
+    "ep_return": 0.0006,
+    "policy_loss": -0.00748,
+    "value_loss": 0.00032
+  },
+  {
+    "iteration": 8,
+    "mean_reward": -0.001,
+    "ep_return": -0.0491,
+    "policy_loss": -0.01258,
+    "value_loss": 0.00033
+  },
+  {
+    "iteration": 9,
+    "mean_reward": -0.00094,
+    "ep_return": -0.0163,
+    "policy_loss": -0.00518,
+    "value_loss": 0.00022
+  },
+  {
+    "iteration": 10,
+    "mean_reward": -0.00068,
+    "ep_return": -0.073,
+    "policy_loss": -0.00436,
+    "value_loss": 0.00014
+  },
+  {
+    "iteration": 11,
+    "mean_reward": -0.00061,
+    "ep_return": 0.0075,
+    "policy_loss": -0.00751,
+    "value_loss": 0.00017
+  },
+  {
+    "iteration": 12,
+    "mean_reward": -0.00059,
+    "ep_return": -0.041,
+    "policy_loss": -0.00611,
+    "value_loss": 0.00012
+  },
+  {
+    "iteration": 13,
+    "mean_reward": -0.00042,
+    "ep_return": -0.027,
+    "policy_loss": -0.00451,
+    "value_loss": 0.00011
+  },
+  {
+    "iteration": 14,
+    "mean_reward": -0.00044,
+    "ep_return": -0.0384,
+    "policy_loss": -0.01116,
+    "value_loss": 9e-05
+  },
+  {
+    "iteration": 15,
+    "mean_reward": -0.00049,
+    "ep_return": -0.0163,
+    "policy_loss": -0.00583,
+    "value_loss": 0.00011
+  },
+  {
+    "iteration": 16,
+    "mean_reward": -0.00052,
+    "ep_return": -0.0346,
+    "policy_loss": -0.01232,
+    "value_loss": 0.0001
+  },
+  {
+    "iteration": 17,
+    "mean_reward": -0.00049,
+    "ep_return": -0.0321,
+    "policy_loss": -0.00303,
+    "value_loss": 8e-05
+  },
+  {
+    "iteration": 18,
+    "mean_reward": -0.00033,
+    "ep_return": -0.0175,
+    "policy_loss": -0.0113,
+    "value_loss": 6e-05
+  },
+  {
+    "iteration": 19,
+    "mean_reward": -0.0006,
+    "ep_return": -0.0646,
+    "policy_loss": -0.00034,
+    "value_loss": 7e-05
+  },
+  {
+    "iteration": 20,
+    "mean_reward": -0.00034,
+    "ep_return": -0.0217,
+    "policy_loss": 0.0002,
+    "value_loss": 4e-05
+  },
+  {
+    "iteration": 21,
+    "mean_reward": -0.0006,
+    "ep_return": -0.0415,
+    "policy_loss": -0.00881,
+    "value_loss": 7e-05
+  },
+  {
+    "iteration": 22,
+    "mean_reward": -0.00062,
+    "ep_return": -0.072,
+    "policy_loss": 0.0004,
+    "value_loss": 5e-05
+  },
+  {
+    "iteration": 23,
+    "mean_reward": -0.00058,
+    "ep_return": -0.0634,
+    "policy_loss": 0.00032,
+    "value_loss": 7e-05
+  },
+  {
+    "iteration": 24,
+    "mean_reward": -0.00049,
+    "ep_return": -0.0186,
+    "policy_loss": -0.00364,
+    "value_loss": 9e-05
+  },
+  {
+    "iteration": 25,
+    "mean_reward": -0.00026,
+    "ep_return": -0.011,
+    "policy_loss": -0.00355,
+    "value_loss": 6e-05
+  },
+  {
+    "iteration": 26,
+    "mean_reward": -0.0004,
+    "ep_return": -0.0651,
+    "policy_loss": -0.00081,
+    "value_loss": 4e-05
+  },
+  {
+    "iteration": 27,
+    "mean_reward": -0.00056,
+    "ep_return": -0.1442,
+    "policy_loss": -0.0088,
+    "value_loss": 1e-05
+  },
+  {
+    "iteration": 28,
+    "mean_reward": -0.00066,
+    "ep_return": -0.0009,
+    "policy_loss": -0.00212,
+    "value_loss": 8e-05
+  },
+  {
+    "iteration": 29,
+    "mean_reward": -0.00069,
+    "ep_return": -0.0043,
+    "policy_loss": -0.00112,
+    "value_loss": 5e-05
+  },
+  {
+    "iteration": 30,
+    "mean_reward": -0.00064,
+    "ep_return": -0.0094,
+    "policy_loss": -0.0003,
+    "value_loss": 6e-05
+  },
+  {
+    "iteration": 31,
+    "mean_reward": -0.00056,
+    "ep_return": -0.0166,
+    "policy_loss": -0.00124,
+    "value_loss": 6e-05
+  },
+  {
+    "iteration": 32,
+    "mean_reward": -0.00065,
+    "ep_return": -0.0243,
+    "policy_loss": -0.00184,
+    "value_loss": 5e-05
+  },
+  {
+    "iteration": 33,
+    "mean_reward": -0.00056,
+    "ep_return": -0.0132,
+    "policy_loss": -0.0048,
+    "value_loss": 5e-05
+  },
+  {
+    "iteration": 34,
+    "mean_reward": -0.00048,
+    "ep_return": -0.0157,
+    "policy_loss": -0.00057,
+    "value_loss": 3e-05
+  },
+  {
+    "iteration": 35,
+    "mean_reward": -0.00059,
+    "ep_return": -0.0341,
+    "policy_loss": 1e-05,
+    "value_loss": 2e-05
+  },
+  {
+    "iteration": 36,
+    "mean_reward": -0.0005,
+    "ep_return": -0.0393,
+    "policy_loss": 0.0001,
+    "value_loss": 2e-05
+  },
+  {
+    "iteration": 37,
+    "mean_reward": -0.00062,
+    "ep_return": -0.0434,
+    "policy_loss": -0.00177,
+    "value_loss": 4e-05
+  },
+  {
+    "iteration": 38,
+    "mean_reward": -0.00051,
+    "ep_return": -0.0334,
+    "policy_loss": -0.00205,
+    "value_loss": 5e-05
+  },
+  {
+    "iteration": 39,
+    "mean_reward": -0.00042,
+    "ep_return": -0.0265,
+    "policy_loss": 0.0,
+    "value_loss": 3e-05
+  },
+  {
+    "iteration": 40,
+    "mean_reward": -0.00053,
+    "ep_return": -0.0638,
+    "policy_loss": -0.0,
+    "value_loss": 2e-05
+  },
+  {
+    "iteration": 41,
+    "mean_reward": -0.00058,
+    "ep_return": -0.0696,
+    "policy_loss": 0.0,
+    "value_loss": 2e-05
+  },
+  {
+    "iteration": 42,
+    "mean_reward": -0.00059,
+    "ep_return": -0.0856,
+    "policy_loss": 0.0,
+    "value_loss": 2e-05
+  },
+  {
+    "iteration": 43,
+    "mean_reward": -0.00056,
+    "ep_return": -0.0867,
+    "policy_loss": -0.0,
+    "value_loss": 2e-05
+  },
+  {
+    "iteration": 44,
+    "mean_reward": -0.00058,
+    "ep_return": -0.0905,
+    "policy_loss": 0.0,
+    "value_loss": 2e-05
+  },
+  {
+    "iteration": 45,
+    "mean_reward": -0.00059,
+    "ep_return": -0.1046,
+    "policy_loss": -0.0,
+    "value_loss": 2e-05
+  }
+]

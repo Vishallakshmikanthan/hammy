@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 560" width="980" height="560">
+<rect width="100%" height="100%" fill="#11151c"/>
+<text x="40" y="42" fill="#f0f4f8" font-family="Segoe UI, sans-serif" font-size="22" font-weight="bold">HAMMY P1.3 — Baseline Comparison Across 5 Seeds</text>
+<text x="40" y="68" fill="#9fb3c8" font-family="Segoe UI, sans-serif" font-size="14">Overall Time-in-Healthy-Range (%) with 95% Confidence Intervals</text>
+<rect x="80" y="110" width="820" height="380" fill="#18202c" stroke="#2d3a4b" stroke-width="1.5" rx="6"/>
+<line x1="120" y1="396.0" x2="860" y2="396.0" stroke="#253245" stroke-dasharray="4,4"/>
+<text x="90" y="400.0" fill="#627d98" font-family="Segoe UI, sans-serif" font-size="12">20%</text>
+<line x1="120" y1="332.0" x2="860" y2="332.0" stroke="#253245" stroke-dasharray="4,4"/>
+<text x="90" y="336.0" fill="#627d98" font-family="Segoe UI, sans-serif" font-size="12">40%</text>
+<line x1="120" y1="268.0" x2="860" y2="268.0" stroke="#253245" stroke-dasharray="4,4"/>
+<text x="90" y="272.0" fill="#627d98" font-family="Segoe UI, sans-serif" font-size="12">60%</text>
+<line x1="120" y1="204.0" x2="860" y2="204.0" stroke="#253245" stroke-dasharray="4,4"/>
+<text x="90" y="208.0" fill="#627d98" font-family="Segoe UI, sans-serif" font-size="12">80%</text>
+<line x1="120" y1="140.0" x2="860" y2="140.0" stroke="#253245" stroke-dasharray="4,4"/>
+<text x="90" y="144.0" fill="#627d98" font-family="Segoe UI, sans-serif" font-size="12">100%</text>
+<rect x="140" y="140.0" width="160" height="320.0" fill="#ef4444" rx="5"/>
+<text x="220" y="116.0" fill="#f0f4f8" font-family="Segoe UI, sans-serif" font-size="16" font-weight="bold" text-anchor="middle">100.0%</text>
+<text x="220" y="132.0" fill="#9fb3c8" font-family="Segoe UI, sans-serif" font-size="12" text-anchor="middle">±0.0% (95% CI)</text>
+<line x1="220" y1="140.0" x2="220" y2="140.0" stroke="#ffffff" stroke-width="2"/>
+<line x1="208" y1="140.0" x2="232" y2="140.0" stroke="#ffffff" stroke-width="2"/>
+<line x1="208" y1="140.0" x2="232" y2="140.0" stroke="#ffffff" stroke-width="2"/>
+<text x="220" y="514" fill="#d9e2ec" font-family="Segoe UI, sans-serif" font-size="14" font-weight="600" text-anchor="middle">Random (rule)</text>
+<rect x="380" y="140.0" width="160" height="320.0" fill="#38bdf8" rx="5"/>
+<text x="460" y="116.0" fill="#f0f4f8" font-family="Segoe UI, sans-serif" font-size="16" font-weight="bold" text-anchor="middle">100.0%</text>
+<text x="460" y="132.0" fill="#9fb3c8" font-family="Segoe UI, sans-serif" font-size="12" text-anchor="middle">±0.0% (95% CI)</text>
+<line x1="460" y1="140.0" x2="460" y2="140.0" stroke="#ffffff" stroke-width="2"/>
+<line x1="448" y1="140.0" x2="472" y2="140.0" stroke="#ffffff" stroke-width="2"/>
+<line x1="448" y1="140.0" x2="472" y2="140.0" stroke="#ffffff" stroke-width="2"/>
+<text x="460" y="514" fill="#d9e2ec" font-family="Segoe UI, sans-serif" font-size="14" font-weight="600" text-anchor="middle">Learned PPO (learned)</text>
+<rect x="620" y="140.0" width="160" height="320.0" fill="#4ade80" rx="5"/>
+<text x="700" y="116.0" fill="#f0f4f8" font-family="Segoe UI, sans-serif" font-size="16" font-weight="bold" text-anchor="middle">100.0%</text>
+<text x="700" y="132.0" fill="#9fb3c8" font-family="Segoe UI, sans-serif" font-size="12" text-anchor="middle">±0.0% (95% CI)</text>
+<line x1="700" y1="140.0" x2="700" y2="140.0" stroke="#ffffff" stroke-width="2"/>
+<line x1="688" y1="140.0" x2="712" y2="140.0" stroke="#ffffff" stroke-width="2"/>
+<line x1="688" y1="140.0" x2="712" y2="140.0" stroke="#ffffff" stroke-width="2"/>
+<text x="700" y="514" fill="#d9e2ec" font-family="Segoe UI, sans-serif" font-size="14" font-weight="600" text-anchor="middle">Hand-Coded Rule (scripted)</text>
+</svg>
