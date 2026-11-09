@@ -1,0 +1,46 @@
+{
+  "set_points": {
+    "hunger": 0.12,
+    "thirst": 0.10,
+    "energy": 0.85,
+    "comfort": 0.82,
+    "stress": 0.08,
+    "curiosity": 0.20
+  },
+  "healthy_ranges": {
+    "hunger": [0.0, 0.45],
+    "thirst": [0.0, 0.40],
+    "energy": [0.35, 1.0],
+    "comfort": [0.50, 1.0],
+    "stress": [0.0, 0.35],
+    "curiosity": [0.0, 0.65]
+  },
+  "passive_rates_per_hour": {
+    "hunger_rise_awake": 0.065,
+    "hunger_rise_asleep": 0.024,
+    "thirst_rise_awake": 0.078,
+    "thirst_rise_asleep": 0.028,
+    "energy_decay_awake": 0.085,
+    "energy_recovery_asleep": 0.145,
+    "comfort_decay_exposed": 0.042,
+    "comfort_recovery_sheltered": 0.180,
+    "stress_rise_exposed_daylight": 0.055,
+    "stress_decay_sheltered": 0.160,
+    "curiosity_rise_awake": 0.072,
+    "curiosity_decay_asleep": 0.030
+  },
+  "action_effects_per_second": {
+    "eat_hunger_reduction": 0.045,
+    "drink_thirst_reduction": 0.060,
+    "wheel_curiosity_reduction": 0.035,
+    "wheel_stress_reduction": 0.025,
+    "wheel_energy_cost": 0.0025,
+    "explore_curiosity_reduction": 0.028
+  },
+  "circadian": {
+    "daylight_start_phase": 0.29,
+    "daylight_end_phase": 0.79,
+    "seconds_per_day": 86400.0
+  }
+}
+
