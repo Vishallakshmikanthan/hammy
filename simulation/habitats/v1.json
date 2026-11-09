@@ -1,0 +1,83 @@
+{
+  "habitat_id": "habitat_v1",
+  "environment_version": "habitat_v1",
+  "dimensions_m": {
+    "length_x": 1.0,
+    "width_y": 0.5,
+    "wall_height_z": 0.4,
+    "bedding_surface_z": 0.165
+  },
+  "objects": [
+    {
+      "object_id": "prop_bowl_main",
+      "object_type": "food_bowl",
+      "blender_name": "prop_bowl",
+      "pose_xyz_m": [0.28, -0.11, 0.165],
+      "interaction_radius_m": 0.065,
+      "affordances": ["eat", "hoard"],
+      "resource_state": {
+        "food_level": 1.0,
+        "capacity_grams": 25.0
+      }
+    },
+    {
+      "object_id": "prop_bottle_main",
+      "object_type": "water_bottle",
+      "blender_name": "prop_bottle_spout",
+      "pose_xyz_m": [0.433, -0.02, 0.183],
+      "interaction_radius_m": 0.055,
+      "affordances": ["drink"],
+      "resource_state": {
+        "water_level": 1.0,
+        "capacity_ml": 150.0
+      }
+    },
+    {
+      "object_id": "prop_hideout_main",
+      "object_type": "hideout",
+      "blender_name": "prop_hideout",
+      "pose_xyz_m": [0.28, 0.11, 0.165],
+      "interaction_radius_m": 0.095,
+      "affordances": ["rest", "hide", "sleep", "nest"],
+      "resource_state": {
+        "hoard_food_level": 0.25,
+        "bedding_comfort": 0.92
+      }
+    },
+    {
+      "object_id": "prop_tunnel_main",
+      "object_type": "tunnel",
+      "blender_name": "prop_tunnel_curve",
+      "pose_xyz_m": [-0.04, -0.05, 0.165],
+      "interaction_radius_m": 0.085,
+      "affordances": ["enter_tunnel", "hide", "explore"],
+      "resource_state": {
+        "resource_level": 1.0
+      }
+    },
+    {
+      "object_id": "prop_wheel_main",
+      "object_type": "wheel",
+      "blender_name": "prop_wheel_drum",
+      "pose_xyz_m": [-0.30, 0.13, 0.165],
+      "interaction_radius_m": 0.145,
+      "affordances": ["run_wheel", "explore"],
+      "resource_state": {
+        "resource_level": 1.0,
+        "diameter_m": 0.28
+      }
+    },
+    {
+      "object_id": "prop_chew_block_main",
+      "object_type": "chew_toy",
+      "blender_name": "prop_chew_block",
+      "pose_xyz_m": [0.17, -0.05, 0.165],
+      "interaction_radius_m": 0.045,
+      "affordances": ["gnaw", "explore"],
+      "resource_state": {
+        "durability_level": 0.95
+      }
+    }
+  ]
+}
+
