@@ -25,7 +25,8 @@ SUPPORTED_SCHEMA_VERSIONS: Dict[str, List[str]] = {
     "action": ["1.0.0"],
     "event": ["1.0.0"],
     "command": ["1.0.0"],
-    "morphology": ["simple_agent_v1", "syrian_quadruped_v1"],
+    "trajectory_clip": ["1.0.0"],
+    "morphology": ["simple_agent_v1", "syrian_quadruped_v1", "hamster_v1.0.0"],
     "environment": ["habitat_v1"],
 }
 
@@ -244,6 +245,52 @@ class CommandV1(BaseModel):
     @classmethod
     def _check_cmd_ver(cls, v: str) -> str:
         return validate_version("command", v)
+
+
+# ==============================================================================
+# 7. TRAJECTORY CLIP V1 CONTRACT (P5.1)
+# ==============================================================================
+class TrajectoryKeyframeV1(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    t_sec: float = Field(..., ge=0.0, description="Relative timestamp within clip (seconds)")
+    root_pos: List[float] = Field(..., min_length=3, max_length=3)
+    root_quat: List[float] = Field(..., min_length=4, max_length=4)
+    joint_angles: List[float] = Field(..., min_length=12, max_length=14)
+    foot_contacts: List[bool] = Field(..., min_length=4, max_length=4)
+
+
+class TrajectoryClipV1(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: str = Field(default="1.0.0")
+    clip_id: str = Field(..., min_length=4)
+    pet_id: str = Field(..., min_length=1)
+    skill_id: str = Field(..., min_length=1)
+    seed: int = Field(..., ge=0)
+    origin: EventOrigin = Field(..., description="observed_physics | sampled_from_skill_model | rule")
+    behaviour_type: BehaviourType = Field(..., description="learned | scripted | rule")
+    morphology_version: str = Field(default="hamster_v1.0.0")
+    environment_version: str = Field(default="habitat_v1")
+    fps: float = Field(default=20.0, gt=0.0, le=120.0)
+    start_sim_time_sec: float = Field(..., ge=0.0)
+    end_sim_time_sec: float = Field(..., ge=0.0)
+    keyframes: List[TrajectoryKeyframeV1] = Field(default_factory=list)
+
+    @field_validator("schema_version")
+    @classmethod
+    def _check_clip_ver(cls, v: str) -> str:
+        return validate_version("trajectory_clip", v)
+
+    @field_validator("morphology_version")
+    @classmethod
+    def _check_clip_morph(cls, v: str) -> str:
+        return validate_version("morphology", v)
+
+    @field_validator("environment_version")
+    @classmethod
+    def _check_clip_env(cls, v: str) -> str:
+        return validate_version("environment", v)
 
 
 def export_json_schemas(
