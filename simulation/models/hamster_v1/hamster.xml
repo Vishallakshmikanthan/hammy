@@ -1,0 +1,129 @@
+<mujoco model="hamster_v1">
+  <!--
+    HAMMY P4.2 — Syrian Hamster Morphology v1.0.0 (`hamster_v1.0.0`)
+    Proportions from plan-docs/HAMMY — Realistic Design Specification.md:
+      - Total length: ~0.15 m (nose to rump)
+      - Total mass: ~0.125 kg (pelvis + torso + head + 4 limbs)
+      - Spine: 2 joints (spine_pitch, spine_yaw)
+      - Limbs: 4 legs x 3 joints (hip_abd, hip_pitch, knee_pitch) = 14 DOFs total
+      - Collision primitives (group="3") separated from visual meshes (group="2")
+  -->
+  <compiler angle="radian" coordinate="local" inertiafromgeom="true"/>
+  <option timestep="0.002" iterations="50" solver="Newton" gravity="0 0 -9.81"/>
+
+  <default>
+    <joint damping="0.04" armature="0.0005" frictionloss="0.005"/>
+    <geom condim="3" friction="0.95 0.02 0.01"/>
+    <default class="visual">
+      <geom group="2" contype="0" conaffinity="0"/>
+    </default>
+    <default class="collision">
+      <geom group="3" contype="1" conaffinity="1" rgba="0.8 0.3 0.2 0.35"/>
+    </default>
+  </default>
+
+  <worldbody>
+    <light pos="0 0 1.0" dir="0 0 -1" diffuse="0.9 0.9 0.9"/>
+    <geom name="floor" type="plane" size="2 2 0.05" rgba="0.24 0.26 0.30 1"/>
+
+    <!-- Stout pear-shaped pelvis / hindquarter -->
+    <body name="pelvis" pos="0 0 0.055">
+      <freejoint name="root_free"/>
+      <geom class="collision" name="pelvis_col" type="capsule" fromto="-0.025 0 0 0.010 0 0" size="0.032" mass="0.042"/>
+      <geom class="visual" name="pelvis_vis" type="ellipsoid" size="0.036 0.033 0.029" rgba="0.76 0.54 0.31 1"/>
+
+      <!-- 2-DOF Spine: pitch + yaw -->
+      <body name="torso" pos="0.018 0 0.002">
+        <joint name="spine_pitch" type="hinge" axis="0 1 0" range="-0.45 0.45"/>
+        <joint name="spine_yaw" type="hinge" axis="0 0 1" range="-0.45 0.45"/>
+        <geom class="collision" name="torso_col" type="capsule" fromto="0 0 0 0.040 0 0" size="0.028" mass="0.040"/>
+        <geom class="visual" name="torso_vis" type="ellipsoid" pos="0.020 0 0" size="0.038 0.029 0.027" rgba="0.78 0.56 0.33 1"/>
+
+        <!-- Head -->
+        <body name="head" pos="0.052 0 0.006">
+          <geom class="collision" name="head_col" type="sphere" size="0.024" mass="0.019"/>
+          <geom class="visual" name="head_vis" type="ellipsoid" size="0.028 0.024 0.022" rgba="0.80 0.58 0.34 1"/>
+          <geom class="visual" name="nose_vis" type="sphere" pos="0.026 0 -0.003" size="0.004" rgba="0.92 0.62 0.64 1"/>
+        </body>
+
+        <!-- Front Left Leg (3 joints) -->
+        <body name="fl_hip" pos="0.032 0.024 -0.012">
+          <joint name="fl_abd" type="hinge" axis="1 0 0" range="-0.5 0.5"/>
+          <geom class="collision" type="sphere" size="0.005" mass="0.002"/>
+          <body name="fl_thigh" pos="0 0.004 0">
+            <joint name="fl_hip_pitch" type="hinge" axis="0 1 0" range="-0.85 0.85"/>
+            <geom class="collision" type="capsule" fromto="0 0 0 0 0 -0.018" size="0.005" mass="0.002"/>
+            <body name="fl_shin" pos="0 0 -0.018">
+              <joint name="fl_knee" type="hinge" axis="0 1 0" range="-1.1 0.5"/>
+              <geom class="collision" name="fl_foot_col" type="capsule" fromto="0 0 0 0 0 -0.016" size="0.004" mass="0.002"/>
+              <geom class="visual" type="sphere" pos="0 0 -0.016" size="0.005" rgba="0.90 0.72 0.70 1"/>
+            </body>
+          </body>
+        </body>
+
+        <!-- Front Right Leg (3 joints) -->
+        <body name="fr_hip" pos="0.032 -0.024 -0.012">
+          <joint name="fr_abd" type="hinge" axis="1 0 0" range="-0.5 0.5"/>
+          <geom class="collision" type="sphere" size="0.005" mass="0.002"/>
+          <body name="fr_thigh" pos="0 -0.004 0">
+            <joint name="fr_hip_pitch" type="hinge" axis="0 1 0" range="-0.85 0.85"/>
+            <geom class="collision" type="capsule" fromto="0 0 0 0 0 -0.018" size="0.005" mass="0.002"/>
+            <body name="fr_shin" pos="0 0 -0.018">
+              <joint name="fr_knee" type="hinge" axis="0 1 0" range="-1.1 0.5"/>
+              <geom class="collision" name="fr_foot_col" type="capsule" fromto="0 0 0 0 0 -0.016" size="0.004" mass="0.002"/>
+              <geom class="visual" type="sphere" pos="0 0 -0.016" size="0.005" rgba="0.90 0.72 0.70 1"/>
+            </body>
+          </body>
+        </body>
+      </body>
+
+      <!-- Hind Left Leg (3 joints) -->
+      <body name="bl_hip" pos="-0.020 0.026 -0.012">
+        <joint name="bl_abd" type="hinge" axis="1 0 0" range="-0.5 0.5"/>
+        <geom class="collision" type="sphere" size="0.006" mass="0.002"/>
+        <body name="bl_thigh" pos="0 0.004 0">
+          <joint name="bl_hip_pitch" type="hinge" axis="0 1 0" range="-0.85 0.85"/>
+          <geom class="collision" type="capsule" fromto="0 0 0 0 0 -0.020" size="0.006" mass="0.002"/>
+          <body name="bl_shin" pos="0 0 -0.020">
+            <joint name="bl_knee" type="hinge" axis="0 1 0" range="-1.1 0.5"/>
+            <geom class="collision" name="bl_foot_col" type="capsule" fromto="0 0 0 0 0 -0.018" size="0.005" mass="0.002"/>
+            <geom class="visual" type="sphere" pos="0 0 -0.018" size="0.006" rgba="0.90 0.72 0.70 1"/>
+          </body>
+        </body>
+      </body>
+
+      <!-- Hind Right Leg (3 joints) -->
+      <body name="br_hip" pos="-0.020 -0.026 -0.012">
+        <joint name="br_abd" type="hinge" axis="1 0 0" range="-0.5 0.5"/>
+        <geom class="collision" type="sphere" size="0.006" mass="0.002"/>
+        <body name="br_thigh" pos="0 -0.004 0">
+          <joint name="br_hip_pitch" type="hinge" axis="0 1 0" range="-0.85 0.85"/>
+          <geom class="collision" type="capsule" fromto="0 0 0 0 0 -0.020" size="0.006" mass="0.002"/>
+          <body name="br_shin" pos="0 0 -0.020">
+            <joint name="br_knee" type="hinge" axis="0 1 0" range="-1.1 0.5"/>
+            <geom class="collision" name="br_foot_col" type="capsule" fromto="0 0 0 0 0 -0.018" size="0.005" mass="0.002"/>
+            <geom class="visual" type="sphere" pos="0 0 -0.018" size="0.006" rgba="0.90 0.72 0.70 1"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <position name="act_spine_pitch" joint="spine_pitch" kp="3.0" ctrlrange="-0.45 0.45"/>
+    <position name="act_spine_yaw" joint="spine_yaw" kp="3.0" ctrlrange="-0.45 0.45"/>
+    <position name="act_fl_abd" joint="fl_abd" kp="2.5" ctrlrange="-0.5 0.5"/>
+    <position name="act_fl_hip" joint="fl_hip_pitch" kp="2.5" ctrlrange="-0.85 0.85"/>
+    <position name="act_fl_knee" joint="fl_knee" kp="2.5" ctrlrange="-1.1 0.5"/>
+    <position name="act_fr_abd" joint="fr_abd" kp="2.5" ctrlrange="-0.5 0.5"/>
+    <position name="act_fr_hip" joint="fr_hip_pitch" kp="2.5" ctrlrange="-0.85 0.85"/>
+    <position name="act_fr_knee" joint="fr_knee" kp="2.5" ctrlrange="-1.1 0.5"/>
+    <position name="act_bl_abd" joint="bl_abd" kp="2.5" ctrlrange="-0.5 0.5"/>
+    <position name="act_bl_hip" joint="bl_hip_pitch" kp="2.5" ctrlrange="-0.85 0.85"/>
+    <position name="act_bl_knee" joint="bl_knee" kp="2.5" ctrlrange="-1.1 0.5"/>
+    <position name="act_br_abd" joint="br_abd" kp="2.5" ctrlrange="-0.5 0.5"/>
+    <position name="act_br_hip" joint="br_hip_pitch" kp="2.5" ctrlrange="-0.85 0.85"/>
+    <position name="act_br_knee" joint="br_knee" kp="2.5" ctrlrange="-1.1 0.5"/>
+  </actuator>
+</mujoco>
+

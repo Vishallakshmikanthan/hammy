@@ -1,0 +1,93 @@
+<mujoco model="quadruped_standin_v1">
+  <compiler angle="radian" coordinate="local" inertiafromgeom="true"/>
+  <option timestep="0.004" iterations="50" solver="Newton" gravity="0 0 -9.81"/>
+
+  <default>
+    <joint damping="0.15" armature="0.002" frictionloss="0.02"/>
+    <geom condim="3" friction="0.9 0.02 0.01" rgba="0.55 0.45 0.35 1"/>
+    <motor ctrllimited="true" ctrlrange="-1.0 1.0"/>
+  </default>
+
+  <worldbody>
+    <light pos="0 0 1.5" dir="0 0 -1" diffuse="0.9 0.9 0.9"/>
+    <geom name="floor" type="plane" size="5 5 0.05" rgba="0.22 0.24 0.28 1"/>
+
+    <body name="trunk" pos="0 0 0.14">
+      <freejoint name="root_free"/>
+      <geom name="trunk_col" type="box" size="0.09 0.045 0.025" mass="0.32" rgba="0.65 0.52 0.38 1"/>
+      <site name="imu_site" pos="0 0 0" size="0.01"/>
+
+      <!-- Front Left Leg -->
+      <body name="fl_hip" pos="0.065 0.048 -0.01">
+        <joint name="fl_abd" type="hinge" axis="1 0 0" range="-0.45 0.45"/>
+        <geom type="capsule" fromto="0 0 0 0 0.015 0" size="0.01" mass="0.03"/>
+        <body name="fl_thigh" pos="0 0.015 0">
+          <joint name="fl_hip_pitch" type="hinge" axis="0 1 0" range="-0.9 0.9"/>
+          <geom type="capsule" fromto="0 0 0 0 0 -0.055" size="0.009" mass="0.04"/>
+          <body name="fl_shin" pos="0 0 -0.055">
+            <joint name="fl_knee" type="hinge" axis="0 1 0" range="-1.2 0.4"/>
+            <geom name="fl_foot" type="capsule" fromto="0 0 0 0 0 -0.055" size="0.008" mass="0.03"/>
+          </body>
+        </body>
+      </body>
+
+      <!-- Front Right Leg -->
+      <body name="fr_hip" pos="0.065 -0.048 -0.01">
+        <joint name="fr_abd" type="hinge" axis="1 0 0" range="-0.45 0.45"/>
+        <geom type="capsule" fromto="0 0 0 0 -0.015 0" size="0.01" mass="0.03"/>
+        <body name="fr_thigh" pos="0 -0.015 0">
+          <joint name="fr_hip_pitch" type="hinge" axis="0 1 0" range="-0.9 0.9"/>
+          <geom type="capsule" fromto="0 0 0 0 0 -0.055" size="0.009" mass="0.04"/>
+          <body name="fr_shin" pos="0 0 -0.055">
+            <joint name="fr_knee" type="hinge" axis="0 1 0" range="-1.2 0.4"/>
+            <geom name="fr_foot" type="capsule" fromto="0 0 0 0 0 -0.055" size="0.008" mass="0.03"/>
+          </body>
+        </body>
+      </body>
+
+      <!-- Hind Left Leg -->
+      <body name="bl_hip" pos="-0.065 0.048 -0.01">
+        <joint name="bl_abd" type="hinge" axis="1 0 0" range="-0.45 0.45"/>
+        <geom type="capsule" fromto="0 0 0 0 0.015 0" size="0.01" mass="0.03"/>
+        <body name="bl_thigh" pos="0 0.015 0">
+          <joint name="bl_hip_pitch" type="hinge" axis="0 1 0" range="-0.9 0.9"/>
+          <geom type="capsule" fromto="0 0 0 0 0 -0.055" size="0.009" mass="0.04"/>
+          <body name="bl_shin" pos="0 0 -0.055">
+            <joint name="bl_knee" type="hinge" axis="0 1 0" range="-1.2 0.4"/>
+            <geom name="bl_foot" type="capsule" fromto="0 0 0 0 0 -0.055" size="0.008" mass="0.03"/>
+          </body>
+        </body>
+      </body>
+
+      <!-- Hind Right Leg -->
+      <body name="br_hip" pos="-0.065 -0.048 -0.01">
+        <joint name="br_abd" type="hinge" axis="1 0 0" range="-0.45 0.45"/>
+        <geom type="capsule" fromto="0 0 0 0 -0.015 0" size="0.01" mass="0.03"/>
+        <body name="br_thigh" pos="0 -0.015 0">
+          <joint name="br_hip_pitch" type="hinge" axis="0 1 0" range="-0.9 0.9"/>
+          <geom type="capsule" fromto="0 0 0 0 0 -0.055" size="0.009" mass="0.04"/>
+          <body name="br_shin" pos="0 0 -0.055">
+            <joint name="br_knee" type="hinge" axis="0 1 0" range="-1.2 0.4"/>
+            <geom name="br_foot" type="capsule" fromto="0 0 0 0 0 -0.055" size="0.008" mass="0.03"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <position name="act_fl_abd" joint="fl_abd" kp="4.5" ctrlrange="-0.45 0.45"/>
+    <position name="act_fl_hip" joint="fl_hip_pitch" kp="4.5" ctrlrange="-0.9 0.9"/>
+    <position name="act_fl_knee" joint="fl_knee" kp="4.5" ctrlrange="-1.2 0.4"/>
+    <position name="act_fr_abd" joint="fr_abd" kp="4.5" ctrlrange="-0.45 0.45"/>
+    <position name="act_fr_hip" joint="fr_hip_pitch" kp="4.5" ctrlrange="-0.9 0.9"/>
+    <position name="act_fr_knee" joint="fr_knee" kp="4.5" ctrlrange="-1.2 0.4"/>
+    <position name="act_bl_abd" joint="bl_abd" kp="4.5" ctrlrange="-0.45 0.45"/>
+    <position name="act_bl_hip" joint="bl_hip_pitch" kp="4.5" ctrlrange="-0.9 0.9"/>
+    <position name="act_bl_knee" joint="bl_knee" kp="4.5" ctrlrange="-1.2 0.4"/>
+    <position name="act_br_abd" joint="br_abd" kp="4.5" ctrlrange="-0.45 0.45"/>
+    <position name="act_br_hip" joint="br_hip_pitch" kp="4.5" ctrlrange="-0.9 0.9"/>
+    <position name="act_br_knee" joint="br_knee" kp="4.5" ctrlrange="-1.2 0.4"/>
+  </actuator>
+</mujoco>
+
