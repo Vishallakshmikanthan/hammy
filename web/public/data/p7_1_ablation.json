@@ -1,0 +1,307 @@
+{
+  "seeds": [
+    42,
+    101,
+    202,
+    303,
+    404
+  ],
+  "conditions": {
+    "mem_off_cur_off": {
+      "memory_on": false,
+      "curiosity_on": false,
+      "runs": [
+        {
+          "seed": 42,
+          "memory_on": false,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.6788,
+          "behavioural_diversity": 0.24,
+          "routine_formation": 0.5993,
+          "adaptation_hours": 0.25,
+          "unique_skills_used": 7
+        },
+        {
+          "seed": 101,
+          "memory_on": false,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.6611,
+          "behavioural_diversity": 0.2346,
+          "routine_formation": 0.5986,
+          "adaptation_hours": 10.25,
+          "unique_skills_used": 7
+        },
+        {
+          "seed": 202,
+          "memory_on": false,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.65,
+          "behavioural_diversity": 0.2238,
+          "routine_formation": 0.5899,
+          "adaptation_hours": 5.75,
+          "unique_skills_used": 7
+        },
+        {
+          "seed": 303,
+          "memory_on": false,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.6858,
+          "behavioural_diversity": 0.234,
+          "routine_formation": 0.5979,
+          "adaptation_hours": 5.0,
+          "unique_skills_used": 7
+        },
+        {
+          "seed": 404,
+          "memory_on": false,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.6767,
+          "behavioural_diversity": 0.2279,
+          "routine_formation": 0.5938,
+          "adaptation_hours": 2.5,
+          "unique_skills_used": 7
+        }
+      ],
+      "summary": {
+        "homeostasis_time_in_range": {
+          "mean": 0.6705,
+          "ci95": 0.0128
+        },
+        "behavioural_diversity": {
+          "mean": 0.2321,
+          "ci95": 0.0055
+        },
+        "routine_formation": {
+          "mean": 0.5959,
+          "ci95": 0.0035
+        },
+        "adaptation_hours": {
+          "mean": 4.75,
+          "ci95": 3.298
+        }
+      }
+    },
+    "mem_on_cur_off": {
+      "memory_on": true,
+      "curiosity_on": false,
+      "runs": [
+        {
+          "seed": 42,
+          "memory_on": true,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.6788,
+          "behavioural_diversity": 0.236,
+          "routine_formation": 0.6007,
+          "adaptation_hours": 0.0,
+          "unique_skills_used": 6
+        },
+        {
+          "seed": 101,
+          "memory_on": true,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.6632,
+          "behavioural_diversity": 0.2298,
+          "routine_formation": 0.5986,
+          "adaptation_hours": 8.5,
+          "unique_skills_used": 7
+        },
+        {
+          "seed": 202,
+          "memory_on": true,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.6559,
+          "behavioural_diversity": 0.2164,
+          "routine_formation": 0.5854,
+          "adaptation_hours": 5.25,
+          "unique_skills_used": 6
+        },
+        {
+          "seed": 303,
+          "memory_on": true,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.6774,
+          "behavioural_diversity": 0.2332,
+          "routine_formation": 0.5972,
+          "adaptation_hours": 5.0,
+          "unique_skills_used": 6
+        },
+        {
+          "seed": 404,
+          "memory_on": true,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.6687,
+          "behavioural_diversity": 0.2339,
+          "routine_formation": 0.599,
+          "adaptation_hours": 2.5,
+          "unique_skills_used": 6
+        }
+      ],
+      "summary": {
+        "homeostasis_time_in_range": {
+          "mean": 0.6688,
+          "ci95": 0.0085
+        },
+        "behavioural_diversity": {
+          "mean": 0.2299,
+          "ci95": 0.0069
+        },
+        "routine_formation": {
+          "mean": 0.5962,
+          "ci95": 0.0054
+        },
+        "adaptation_hours": {
+          "mean": 4.25,
+          "ci95": 2.7977
+        }
+      }
+    },
+    "mem_off_cur_on": {
+      "memory_on": false,
+      "curiosity_on": true,
+      "runs": [
+        {
+          "seed": 42,
+          "memory_on": false,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.6806,
+          "behavioural_diversity": 0.238,
+          "routine_formation": 0.5979,
+          "adaptation_hours": 5.0,
+          "unique_skills_used": 9
+        },
+        {
+          "seed": 101,
+          "memory_on": false,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.6628,
+          "behavioural_diversity": 0.2324,
+          "routine_formation": 0.5976,
+          "adaptation_hours": 9.0,
+          "unique_skills_used": 8
+        },
+        {
+          "seed": 202,
+          "memory_on": false,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.6583,
+          "behavioural_diversity": 0.2191,
+          "routine_formation": 0.5861,
+          "adaptation_hours": 5.5,
+          "unique_skills_used": 9
+        },
+        {
+          "seed": 303,
+          "memory_on": false,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.6778,
+          "behavioural_diversity": 0.2374,
+          "routine_formation": 0.5976,
+          "adaptation_hours": 5.0,
+          "unique_skills_used": 10
+        },
+        {
+          "seed": 404,
+          "memory_on": false,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.676,
+          "behavioural_diversity": 0.2277,
+          "routine_formation": 0.5906,
+          "adaptation_hours": 5.25,
+          "unique_skills_used": 7
+        }
+      ],
+      "summary": {
+        "homeostasis_time_in_range": {
+          "mean": 0.6711,
+          "ci95": 0.0087
+        },
+        "behavioural_diversity": {
+          "mean": 0.2309,
+          "ci95": 0.0069
+        },
+        "routine_formation": {
+          "mean": 0.594,
+          "ci95": 0.0047
+        },
+        "adaptation_hours": {
+          "mean": 5.95,
+          "ci95": 1.5055
+        }
+      }
+    },
+    "mem_on_cur_on": {
+      "memory_on": true,
+      "curiosity_on": true,
+      "runs": [
+        {
+          "seed": 42,
+          "memory_on": true,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.6795,
+          "behavioural_diversity": 0.2366,
+          "routine_formation": 0.599,
+          "adaptation_hours": 3.0,
+          "unique_skills_used": 8
+        },
+        {
+          "seed": 101,
+          "memory_on": true,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.6632,
+          "behavioural_diversity": 0.2305,
+          "routine_formation": 0.5986,
+          "adaptation_hours": 8.5,
+          "unique_skills_used": 8
+        },
+        {
+          "seed": 202,
+          "memory_on": true,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.6601,
+          "behavioural_diversity": 0.2179,
+          "routine_formation": 0.5858,
+          "adaptation_hours": 5.25,
+          "unique_skills_used": 8
+        },
+        {
+          "seed": 303,
+          "memory_on": true,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.6774,
+          "behavioural_diversity": 0.2361,
+          "routine_formation": 0.5983,
+          "adaptation_hours": 5.0,
+          "unique_skills_used": 9
+        },
+        {
+          "seed": 404,
+          "memory_on": true,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.6736,
+          "behavioural_diversity": 0.2264,
+          "routine_formation": 0.5917,
+          "adaptation_hours": 5.25,
+          "unique_skills_used": 6
+        }
+      ],
+      "summary": {
+        "homeostasis_time_in_range": {
+          "mean": 0.6708,
+          "ci95": 0.0076
+        },
+        "behavioural_diversity": {
+          "mean": 0.2295,
+          "ci95": 0.0068
+        },
+        "routine_formation": {
+          "mean": 0.5947,
+          "ci95": 0.0051
+        },
+        "adaptation_hours": {
+          "mean": 5.4,
+          "ci95": 1.7296
+        }
+      }
+    }
+  }
+}

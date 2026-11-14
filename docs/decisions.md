@@ -60,3 +60,28 @@
 
 
 
+
+
+## 2026-11-14: Phase 3 — Realistic Hamster Rendering (P3.1, P3.2, P3.3)
+- **Fur Technique Selection (`docs/research/fur-benchmark.md`):** Selected **Shells + Silhouette Hair-Card Fins** (`shells-fins`) as the default browser fur technique after benchmarking `shells`, `shells-fins`, and `webgpu-strands` in headless Chrome with D3D11/WebGPU on the RTX 5070 Laptop GPU (all ~60 FPS VSync-bound; `shells-fins` adds only +1 draw call over `shells` while eliminating grazing-angle silhouette gaps).
+- **Blender-to-glTF Asset Pipeline (`blender/scripts/60_rig_and_export_glb.py`):** Exported `web/public/assets/hamster.glb` (40-bone `HamsterRig` armature, 10 morph targets including `cheek_pouch_left/right`, `blink`, `squint`, `mouth_open`, `chew`, `nose_wrinkle`, `ear_fold`, `whisker_forward`, `breath_in`, and 3 LOD meshes `ham_body_LOD0/1/2`) and `web/public/assets/cage.glb` (`CAGE`, `PROPS`, `BEDDING` collections) via Blender 5.2.3 LTS background mode.
+- **Asset Validation & Procedural Rig (`web/src/three/rig/`):** Strict glTF validator (`validateHamsterScene`) reports missing bones, blend shapes, or LODs explicitly; `PoseApplicationLayer` drives root pose and quadruped gait from physics state; `ProceduralRigLayer` provides 7 toggleable/tunable layers (breathing, sniff-synced whisker twitch, ear orientation, blink & gaze, tail, damped spring-bone jiggle, cheek pouch fill 0–1).
+- **Realistic Habitat & Quality Presets (`web/src/three/habitat/`):** Integrated PBR cage materials, transparent acrylic enclosure panels, HDRI IBL (`brown_photostudio_02_1k.hdr`), `PCFSoftShadowMap`, SSAO + Bokeh DoF post-processing, server-time-driven day/night cycle (`computeDayNightLighting`), 4-paw deformable bedding (`BeddingDeformer`), instanced dust motes, water droplet, and food scatter across `low`/`medium`/`high`/`ultra` presets.
+
+
+## 2026-11-14: Phase 4 — Learned Locomotion (P4.1 & P4.2)
+- **Windows Smart App Control (`WinError 4551`) Adaptation:** Because `torch.dll` and `mujoco` `.pyd` remain blocked by Windows Smart App Control in user-writable Python 3.13/venv paths, implemented vectorized locomotion dynamics (`VectorizedLeggedEnv`), analytic PPO (`MLPActorCritic`, `ppo_update`), and AMP discriminator (`AMPDiscriminator`) in pure NumPy on Python 3.14, alongside `onnx 1.22.0` + `onnxruntime 1.28.0` for real ONNX export and runtime equivalence verification (`max_diff < 1e-7`), while keeping MuJoCo MJCF models (`quadruped.xml`, `hamster.xml`) ready for WSL2/Linux native runs.
+- **Versioned Locomotion Contracts (`training/locomotion/contracts.py`):** Enforced `obs_schema_version`, `act_schema_version`, `morphology_version`, and `environment_version` in both `.npz` checkpoints and ONNX `metadata_props` (`validate_checkpoint_compatibility` rejects mismatches).
+- **Hamster Morphology (`simulation/models/hamster_v1/hamster.xml`):** 14-DOF Syrian hamster MJCF (2 spine joints `spine_pitch`/`spine_yaw` + 4×3 leg joints, `0.125 kg` total mass, `0.15 m` length, separated collision `group="3"` and visual `group="2"` geoms).
+
+
+## 2026-11-14: Phase 5 — Trajectory Clips & Live Replay (P5.1)
+- **Compact Clip Contract (`contracts/schemas.py`):** Added `TrajectoryKeyframeV1` and `TrajectoryClipV1` (`schema_version="1.0.0"`, `fps=20.0`, `root_pos`, `root_quat`, `joint_angles`, `foot_contacts`, `skill_id`, `seed`, `origin`, `behaviour_type`, `morphology_version`, `environment_version`).
+- **Simulation Worker & Object Storage (`services/simulation_worker/`):** `generate_episode_clip` produces deterministic fixed-rate clips from `(seed, skill_id, start_sim_time_sec)`; `LocalObjectStorage` stores gzip-compressed `.clip.json.gz` files and per-pet `manifest.json` indices under `infrastructure/object_storage/clips/`.
+- **API & Browser Replay (`services/api/routes/clips.py`, `web/src/three/replay/clipPlayer.ts`):** Added `/api/v1/pets/{pet_id}/clips` (with automatic deterministic continuation generation on reconnect) and `ClipPlayer` with linear + SLERP keyframe interpolation and seamless clip chaining.
+
+
+## 2026-11-14: Phases 6–8 — Behaviours, RND Curiosity & Cinematic Cycles Pipeline
+- **P6.1 Behaviours (`ai/policies/behaviours.py`, `docs/research/behaviours.md`):** Added `cheek_stuffing`, `hind_leg_standing`, `grooming`, `digging`, and `nesting` to `SKILLS_LIST` with explicit `scripted-with-learned-selection` labels.
+- **P7.1 RND Curiosity & 30-Day Ablation (`ai/cognition/rnd_curiosity.py`, `docs/research/p7_1_autonomy_report.md`, `web/src/components/TrainingLabView.tsx`):** Implemented RND with exponential decay and repeat-bin noisy-TV damping; ran 20-run 2×2 ablation across 5 seeds and built the Training Lab page reading exclusively from stored experiment JSON.
+- **P8.1 Cinematic Cycles Pipeline (`blender/scripts/80_render_cinematic_clip.py`, `services/notification_worker/cinematic_delivery.py`):** Added Cycles OptiX clip renderer with 3 auto-framed camera presets (`low_macro`, `three_quarter`, `wide`), render budget controls, and verified-event-only Telegram caption builder.
