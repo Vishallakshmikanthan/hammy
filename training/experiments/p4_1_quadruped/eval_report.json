@@ -1,0 +1,110 @@
+{
+  "morphology": "quadruped",
+  "checkpoint_metadata": {
+    "obs_schema_version": "locomotion_obs_v1.0.0",
+    "act_schema_version": "locomotion_act_v1.0.0",
+    "morphology_version": "quadruped_standin_v1.0.0",
+    "environment_version": "quadruped_env_v1.0.0",
+    "obs_dim": "45",
+    "action_dim": "12",
+    "num_joints": "12",
+    "seed": "42",
+    "code_version": "502984a",
+    "behaviour_type": "learned",
+    "final_curriculum_stage": "walk"
+  },
+  "onnx_max_diff": 8.940696716308594e-08,
+  "seeds": [
+    42,
+    101,
+    202,
+    303,
+    404
+  ],
+  "summary": {
+    "success_rate": {
+      "mean": 1.0,
+      "ci95": 0.0
+    },
+    "falls_per_episode": {
+      "mean": 0.0,
+      "ci95": 0.0
+    },
+    "speed_tracking_error_m_s": {
+      "mean": 0.2443,
+      "ci95": 0.0092
+    }
+  },
+  "per_seed": [
+    {
+      "seed": 42,
+      "success_rate": 1.0,
+      "falls_per_episode": 0.0,
+      "speed_tracking_error_m_s": 0.2486,
+      "mean_reward_terms": {
+        "velocity_tracking": 1.3525,
+        "orientation": -0.0002,
+        "torque_energy": -0.0098,
+        "action_rate": -0.0,
+        "foot_slip": -0.009,
+        "falls": 0.0
+      }
+    },
+    {
+      "seed": 101,
+      "success_rate": 1.0,
+      "falls_per_episode": 0.0,
+      "speed_tracking_error_m_s": 0.2348,
+      "mean_reward_terms": {
+        "velocity_tracking": 1.3798,
+        "orientation": -0.0002,
+        "torque_energy": -0.0105,
+        "action_rate": -0.0,
+        "foot_slip": -0.0094,
+        "falls": 0.0
+      }
+    },
+    {
+      "seed": 202,
+      "success_rate": 1.0,
+      "falls_per_episode": 0.0,
+      "speed_tracking_error_m_s": 0.2593,
+      "mean_reward_terms": {
+        "velocity_tracking": 1.4591,
+        "orientation": -0.0002,
+        "torque_energy": -0.009,
+        "action_rate": -0.0,
+        "foot_slip": -0.0087,
+        "falls": 0.0
+      }
+    },
+    {
+      "seed": 303,
+      "success_rate": 1.0,
+      "falls_per_episode": 0.0,
+      "speed_tracking_error_m_s": 0.234,
+      "mean_reward_terms": {
+        "velocity_tracking": 1.5448,
+        "orientation": -0.0002,
+        "torque_energy": -0.0099,
+        "action_rate": -0.0,
+        "foot_slip": -0.009,
+        "falls": 0.0
+      }
+    },
+    {
+      "seed": 404,
+      "success_rate": 1.0,
+      "falls_per_episode": 0.0,
+      "speed_tracking_error_m_s": 0.2448,
+      "mean_reward_terms": {
+        "velocity_tracking": 1.4454,
+        "orientation": -0.0002,
+        "torque_energy": -0.0103,
+        "action_rate": -0.0,
+        "foot_slip": -0.0093,
+        "falls": 0.0
+      }
+    }
+  ]
+}

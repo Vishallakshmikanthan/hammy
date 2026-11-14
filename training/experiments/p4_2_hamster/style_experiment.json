@@ -1,0 +1,168 @@
+{
+  "mjcf_validation": {
+    "morphology_model": "hamster_v1",
+    "dof_count": 14,
+    "actuator_count": 14,
+    "total_mass_kg": 0.125,
+    "spine_joints": [
+      "spine_pitch",
+      "spine_yaw"
+    ]
+  },
+  "reference_metrics": {
+    "stride_frequency_hz": 5.25,
+    "duty_factor": 0.652,
+    "speed_mean_m_s": 0.26,
+    "speed_min_m_s": 0.23,
+    "speed_max_m_s": 0.29
+  },
+  "onnx_max_diff": 7.450580596923828e-08,
+  "baseline": {
+    "standing_stability": [
+      1.0,
+      0.0
+    ],
+    "speed_error_m_s": [
+      0.3248,
+      0.0177
+    ],
+    "stride_frequency_hz": [
+      1.75,
+      0.155
+    ],
+    "duty_factor": [
+      1.0,
+      0.0
+    ],
+    "speed_mean_m_s": [
+      0.0635,
+      0.0044
+    ]
+  },
+  "amp_style": {
+    "standing_stability": [
+      1.0,
+      0.0
+    ],
+    "speed_error_m_s": [
+      0.3068,
+      0.0179
+    ],
+    "stride_frequency_hz": [
+      1.75,
+      0.0
+    ],
+    "duty_factor": [
+      0.996,
+      0.0078
+    ],
+    "speed_mean_m_s": [
+      0.0455,
+      0.0073
+    ]
+  },
+  "baseline_runs": [
+    {
+      "seed": 42,
+      "standing_stability": 1.0,
+      "speed_error_m_s": 0.2996,
+      "stride_frequency_hz": 1.75,
+      "duty_factor": 1.0,
+      "speed_mean_m_s": 0.0656,
+      "speed_min_m_s": 0.0,
+      "speed_max_m_s": 0.0779
+    },
+    {
+      "seed": 101,
+      "standing_stability": 1.0,
+      "speed_error_m_s": 0.344,
+      "stride_frequency_hz": 1.75,
+      "duty_factor": 1.0,
+      "speed_mean_m_s": 0.0687,
+      "speed_min_m_s": 0.0,
+      "speed_max_m_s": 0.1105
+    },
+    {
+      "seed": 202,
+      "standing_stability": 1.0,
+      "speed_error_m_s": 0.308,
+      "stride_frequency_hz": 1.75,
+      "duty_factor": 1.0,
+      "speed_mean_m_s": 0.0557,
+      "speed_min_m_s": 0.0,
+      "speed_max_m_s": 0.0841
+    },
+    {
+      "seed": 303,
+      "standing_stability": 1.0,
+      "speed_error_m_s": 0.3424,
+      "stride_frequency_hz": 1.5,
+      "duty_factor": 1.0,
+      "speed_mean_m_s": 0.0657,
+      "speed_min_m_s": 0.0,
+      "speed_max_m_s": 0.0818
+    },
+    {
+      "seed": 404,
+      "standing_stability": 1.0,
+      "speed_error_m_s": 0.3301,
+      "stride_frequency_hz": 2.0,
+      "duty_factor": 1.0,
+      "speed_mean_m_s": 0.0617,
+      "speed_min_m_s": 0.0,
+      "speed_max_m_s": 0.1354
+    }
+  ],
+  "amp_runs": [
+    {
+      "seed": 42,
+      "standing_stability": 1.0,
+      "speed_error_m_s": 0.2797,
+      "stride_frequency_hz": 1.75,
+      "duty_factor": 0.98,
+      "speed_mean_m_s": 0.0463,
+      "speed_min_m_s": 0.0,
+      "speed_max_m_s": 0.0743
+    },
+    {
+      "seed": 101,
+      "standing_stability": 1.0,
+      "speed_error_m_s": 0.3186,
+      "stride_frequency_hz": 1.75,
+      "duty_factor": 1.0,
+      "speed_mean_m_s": 0.0475,
+      "speed_min_m_s": 0.0,
+      "speed_max_m_s": 0.059
+    },
+    {
+      "seed": 202,
+      "standing_stability": 1.0,
+      "speed_error_m_s": 0.2974,
+      "stride_frequency_hz": 1.75,
+      "duty_factor": 1.0,
+      "speed_mean_m_s": 0.0445,
+      "speed_min_m_s": 0.0,
+      "speed_max_m_s": 0.0599
+    },
+    {
+      "seed": 303,
+      "standing_stability": 1.0,
+      "speed_error_m_s": 0.3334,
+      "stride_frequency_hz": 1.75,
+      "duty_factor": 1.0,
+      "speed_mean_m_s": 0.0563,
+      "speed_min_m_s": 0.0,
+      "speed_max_m_s": 0.1249
+    },
+    {
+      "seed": 404,
+      "standing_stability": 1.0,
+      "speed_error_m_s": 0.3047,
+      "stride_frequency_hz": 1.75,
+      "duty_factor": 1.0,
+      "speed_mean_m_s": 0.033,
+      "speed_min_m_s": 0.0,
+      "speed_max_m_s": 0.0514
+    }
+  ]
+}

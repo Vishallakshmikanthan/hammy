@@ -1,0 +1,856 @@
+{
+  "config": {
+    "morphology": "quadruped",
+    "num_envs": 256,
+    "num_updates": 45,
+    "horizon": 48,
+    "seed": 42,
+    "domain_randomization": true
+  },
+  "metadata": {
+    "obs_schema_version": "locomotion_obs_v1.0.0",
+    "act_schema_version": "locomotion_act_v1.0.0",
+    "morphology_version": "quadruped_standin_v1.0.0",
+    "environment_version": "quadruped_env_v1.0.0",
+    "obs_dim": "45",
+    "action_dim": "12",
+    "num_joints": "12",
+    "seed": "42",
+    "code_version": "502984a",
+    "behaviour_type": "learned",
+    "final_curriculum_stage": "walk"
+  },
+  "training_seconds": 9.66,
+  "total_env_steps": 552960,
+  "onnx_max_diff": 8.940696716308594e-08,
+  "final_metrics": {
+    "update": 45,
+    "curriculum_stage": "walk",
+    "mean_reward": 1.417588710784912,
+    "success_rate": 0.5296385113968229,
+    "speed_error_m_s": 0.31778027955442667,
+    "fall_rate": 0.0,
+    "reward_terms": {
+      "velocity_tracking": 1.511941708624363,
+      "orientation": -0.00031802811766586575,
+      "torque_energy": -0.05873115547001362,
+      "action_rate": -0.014539556519594043,
+      "foot_slip": -0.020764201840696234,
+      "falls": 0.0
+    },
+    "actor_loss": -0.009506218081081376,
+    "critic_loss": 8.982426837086678
+  },
+  "history": [
+    {
+      "update": 1,
+      "curriculum_stage": "perturbation_recovery",
+      "mean_reward": 2.0591580867767334,
+      "success_rate": 0.9062018348543182,
+      "speed_error_m_s": 0.049246610986301675,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 2.1486276189486184,
+        "orientation": -0.0005314113332133275,
+        "torque_energy": -0.056371477393743895,
+        "action_rate": -0.015358279585295046,
+        "foot_slip": -0.017208305163270172,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007988038566520162,
+      "critic_loss": 303.7327793439229
+    },
+    {
+      "update": 2,
+      "curriculum_stage": "walk",
+      "mean_reward": 2.0583431720733643,
+      "success_rate": 0.9049659244657731,
+      "speed_error_m_s": 0.04992899425754634,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 2.148176302512487,
+        "orientation": -0.0005138405893679495,
+        "torque_energy": -0.05643087004621824,
+        "action_rate": -0.01507482334272936,
+        "foot_slip": -0.017813319522247184,
+        "falls": 0.0
+      },
+      "actor_loss": -0.00665511098947215,
+      "critic_loss": 214.00721581776938
+    },
+    {
+      "update": 3,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.598551630973816,
+      "success_rate": 0.593834523275092,
+      "speed_error_m_s": 0.26057728938758373,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6875418151418369,
+        "orientation": -0.0005224203826704373,
+        "torque_energy": -0.05621306737884879,
+        "action_rate": -0.015131241884470606,
+        "foot_slip": -0.017123454323154874,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007631338527264961,
+      "critic_loss": 116.2802251180013
+    },
+    {
+      "update": 4,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5839554071426392,
+      "success_rate": 0.5939035164012292,
+      "speed_error_m_s": 0.26051920155684155,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.678061415751775,
+        "orientation": -0.00027285886729562964,
+        "torque_energy": -0.05808914336375892,
+        "action_rate": -0.015303505642805248,
+        "foot_slip": -0.02044053825860222,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007472823050277841,
+      "critic_loss": 111.79625590642293
+    },
+    {
+      "update": 5,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5815229415893555,
+      "success_rate": 0.5934600809826774,
+      "speed_error_m_s": 0.2608926637719075,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.676037425796191,
+        "orientation": -0.00023477928092082342,
+        "torque_energy": -0.058411774691194296,
+        "action_rate": -0.015351482938664654,
+        "foot_slip": -0.0205165419417123,
+        "falls": 0.0
+      },
+      "actor_loss": -0.008029159567307929,
+      "critic_loss": 104.46816802024841
+    },
+    {
+      "update": 6,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.578062891960144,
+      "success_rate": 0.5931331744082009,
+      "speed_error_m_s": 0.26116816389063996,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.672377477089564,
+        "orientation": -0.0002237480863792977,
+        "torque_energy": -0.05821839851948122,
+        "action_rate": -0.015270450695728263,
+        "foot_slip": -0.020601995560961466,
+        "falls": 0.0
+      },
+      "actor_loss": -0.008548898639138772,
+      "critic_loss": 94.68304705619812
+    },
+    {
+      "update": 7,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.596932291984558,
+      "success_rate": 0.592575273809384,
+      "speed_error_m_s": 0.26163868481914204,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6863513539234798,
+        "orientation": -0.0005640132937211698,
+        "torque_energy": -0.05632114235777408,
+        "action_rate": -0.015090897844250625,
+        "foot_slip": -0.017443041055230424,
+        "falls": 0.0
+      },
+      "actor_loss": -0.008703188996225563,
+      "critic_loss": 124.58598200480144
+    },
+    {
+      "update": 8,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.58895742893219,
+      "success_rate": 0.5973229263158851,
+      "speed_error_m_s": 0.2576486983646949,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.683977949122588,
+        "orientation": -0.0003188992517001073,
+        "torque_energy": -0.058421748535086714,
+        "action_rate": -0.015373004348172495,
+        "foot_slip": -0.02090676377216975,
+        "falls": 0.0
+      },
+      "actor_loss": -0.006981341360212854,
+      "critic_loss": 79.88479105631511
+    },
+    {
+      "update": 9,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5593198537826538,
+      "success_rate": 0.5857357263647262,
+      "speed_error_m_s": 0.2674432850132386,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6542870675524075,
+        "orientation": -0.00025219474446203094,
+        "torque_energy": -0.058311165465662874,
+        "action_rate": -0.015261251188348979,
+        "foot_slip": -0.021142712833049398,
+        "falls": 0.0
+      },
+      "actor_loss": -0.006905619488979538,
+      "critic_loss": 69.4358120361964
+    },
+    {
+      "update": 10,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5767393112182617,
+      "success_rate": 0.5904372802736445,
+      "speed_error_m_s": 0.26344593179722625,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6716903150081635,
+        "orientation": -0.0002556282185347906,
+        "torque_energy": -0.05846503966798385,
+        "action_rate": -0.015320546925067902,
+        "foot_slip": -0.020909728986832004,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007528766229068052,
+      "critic_loss": 64.7842085758845
+    },
+    {
+      "update": 11,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.6020151376724243,
+      "success_rate": 0.593626884323282,
+      "speed_error_m_s": 0.2607521489262581,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.690545842051506,
+        "orientation": -0.0005514366518279227,
+        "torque_energy": -0.05631537444423884,
+        "action_rate": -0.014834740344667807,
+        "foot_slip": -0.01682913368373799,
+        "falls": 0.0
+      },
+      "actor_loss": -0.006238615585867192,
+      "critic_loss": 214.73323647181192
+    },
+    {
+      "update": 12,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5482937097549438,
+      "success_rate": 0.5797452528096682,
+      "speed_error_m_s": 0.27258324561019737,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6430539364616077,
+        "orientation": -0.0002742856844027604,
+        "torque_energy": -0.05830433483545979,
+        "action_rate": -0.015276732679922134,
+        "foot_slip": -0.0209048941032961,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007067123062136,
+      "critic_loss": 59.443156679471336
+    },
+    {
+      "update": 13,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5452457666397095,
+      "success_rate": 0.5785983948812954,
+      "speed_error_m_s": 0.2735733302930991,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6399272407094638,
+        "orientation": -0.0002330018138915572,
+        "torque_energy": -0.05825570497351388,
+        "action_rate": -0.015107436998126408,
+        "foot_slip": -0.021085373397606116,
+        "falls": 0.0
+      },
+      "actor_loss": -0.008569118242993995,
+      "critic_loss": 52.41154398520788
+    },
+    {
+      "update": 14,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5341132879257202,
+      "success_rate": 0.5750602547029507,
+      "speed_error_m_s": 0.2766402264436086,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6292055025696754,
+        "orientation": -0.00023471277048277747,
+        "torque_energy": -0.058411557925865054,
+        "action_rate": -0.015121013993242135,
+        "foot_slip": -0.02132483245804906,
+        "falls": 0.0
+      },
+      "actor_loss": -0.008302034526240424,
+      "critic_loss": 45.40526898701986
+    },
+    {
+      "update": 15,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5840975046157837,
+      "success_rate": 0.5869377416921057,
+      "speed_error_m_s": 0.2664182633161545,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6733481561144192,
+        "orientation": -0.0005549907145905308,
+        "torque_energy": -0.056295335409231484,
+        "action_rate": -0.015024471911601722,
+        "foot_slip": -0.017375795134285,
+        "falls": 0.0
+      },
+      "actor_loss": -0.006743354042031764,
+      "critic_loss": 304.3491401672363
+    },
+    {
+      "update": 16,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5333013534545898,
+      "success_rate": 0.5737426808877176,
+      "speed_error_m_s": 0.2777871371557315,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.627018394569556,
+        "orientation": -0.0002910052823305402,
+        "torque_energy": -0.058200213592499495,
+        "action_rate": -0.015095131995622069,
+        "foot_slip": -0.020130680369523663,
+        "falls": 0.0
+      },
+      "actor_loss": -0.0072890140366240535,
+      "critic_loss": 51.00967256228129
+    },
+    {
+      "update": 17,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5228315591812134,
+      "success_rate": 0.5707987597672103,
+      "speed_error_m_s": 0.28035928308963776,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6185285225510597,
+        "orientation": -0.00026974123405428446,
+        "torque_energy": -0.05851754251246651,
+        "action_rate": -0.015169559492884824,
+        "foot_slip": -0.021740225997443,
+        "falls": 0.0
+      },
+      "actor_loss": -0.008616710181614815,
+      "critic_loss": 39.13558626174927
+    },
+    {
+      "update": 18,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.536041259765625,
+      "success_rate": 0.575224327866107,
+      "speed_error_m_s": 0.2764975894242525,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6317798346281052,
+        "orientation": -0.00024968631502512534,
+        "torque_energy": -0.05855198763310909,
+        "action_rate": -0.015158513192242632,
+        "foot_slip": -0.02177843820148458,
+        "falls": 0.0
+      },
+      "actor_loss": -0.00858411562779012,
+      "critic_loss": 35.29355744520823
+    },
+    {
+      "update": 19,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5636643171310425,
+      "success_rate": 0.580864019142913,
+      "speed_error_m_s": 0.27161929787447053,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6538790464401245,
+        "orientation": -0.0005248456294187539,
+        "torque_energy": -0.05650507751852274,
+        "action_rate": -0.014922926561363662,
+        "foot_slip": -0.018261953172138117,
+        "falls": 0.0
+      },
+      "actor_loss": -0.009699826219117027,
+      "critic_loss": 407.09356594085693
+    },
+    {
+      "update": 20,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5348764657974243,
+      "success_rate": 0.5729031480013199,
+      "speed_error_m_s": 0.2785193013648192,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6297542576988537,
+        "orientation": -0.00031780473697532824,
+        "torque_energy": -0.05822004517540336,
+        "action_rate": -0.01497051416663453,
+        "foot_slip": -0.021369427093304694,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007577399895939769,
+      "critic_loss": 39.73476451635361
+    },
+    {
+      "update": 21,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5041316747665405,
+      "success_rate": 0.5622954383081362,
+      "speed_error_m_s": 0.2878639381378889,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6003383621573448,
+        "orientation": -0.00030019040392896085,
+        "torque_energy": -0.0587755658198148,
+        "action_rate": -0.015100552079578241,
+        "foot_slip": -0.022030375121782225,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007897185882638722,
+      "critic_loss": 29.152449945608776
+    },
+    {
+      "update": 22,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.4943164587020874,
+      "success_rate": 0.5588308276432928,
+      "speed_error_m_s": 0.2909542427708705,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.5898696358005207,
+        "orientation": -0.00022979852989616725,
+        "torque_energy": -0.05854785745032132,
+        "action_rate": -0.015024677772695819,
+        "foot_slip": -0.021750896121375263,
+        "falls": 0.0
+      },
+      "actor_loss": -0.008913022495860415,
+      "critic_loss": 24.1938417951266
+    },
+    {
+      "update": 23,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.516416072845459,
+      "success_rate": 0.5648734963847863,
+      "speed_error_m_s": 0.28557673655450344,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6073995207746823,
+        "orientation": -0.00036593857506280375,
+        "torque_energy": -0.05661160436769327,
+        "action_rate": -0.014654428756330162,
+        "foot_slip": -0.01935138596551648,
+        "falls": 0.0
+      },
+      "actor_loss": -0.00859857650155952,
+      "critic_loss": 544.9030475616455
+    },
+    {
+      "update": 24,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5555100440979004,
+      "success_rate": 0.5780271057299017,
+      "speed_error_m_s": 0.2740672578414281,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6479852174719174,
+        "orientation": -0.0003442019872939757,
+        "torque_energy": -0.058083286664138235,
+        "action_rate": -0.014931109404036155,
+        "foot_slip": -0.019116485588407766,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007502456163508637,
+      "critic_loss": 30.817145725091297
+    },
+    {
+      "update": 25,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.4859976768493652,
+      "success_rate": 0.5554570395184178,
+      "speed_error_m_s": 0.2939820047467947,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.5806640485922496,
+        "orientation": -0.00025252823403813335,
+        "torque_energy": -0.05850285136451324,
+        "action_rate": -0.014869661051003883,
+        "foot_slip": -0.021041380940005183,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007938146197686223,
+      "critic_loss": 20.64043726523717
+    },
+    {
+      "update": 26,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.4672104120254517,
+      "success_rate": 0.549685483799546,
+      "speed_error_m_s": 0.2992045059800148,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.5631141016880672,
+        "orientation": -0.0002167321805851922,
+        "torque_energy": -0.05857989300663272,
+        "action_rate": -0.014868592532972494,
+        "foot_slip": -0.02223851694725454,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007463172164421415,
+      "critic_loss": 16.402126212914784
+    },
+    {
+      "update": 27,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.4522638320922852,
+      "success_rate": 0.5447950854376373,
+      "speed_error_m_s": 0.303672772521774,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.5477732494473457,
+        "orientation": -0.00022493660981126595,
+        "torque_energy": -0.058568236883729696,
+        "action_rate": -0.014896743542825183,
+        "foot_slip": -0.021819490279691916,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007771654067074352,
+      "critic_loss": 712.3185475667318
+    },
+    {
+      "update": 28,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5789707899093628,
+      "success_rate": 0.5841719070731899,
+      "speed_error_m_s": 0.26877998902151984,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6677233502268791,
+        "orientation": -0.0005397765680754674,
+        "torque_energy": -0.0562248337858667,
+        "action_rate": -0.014770165318623185,
+        "foot_slip": -0.017217819190894563,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007954202111543818,
+      "critic_loss": 25.20160834987958
+    },
+    {
+      "update": 29,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.4479799270629883,
+      "success_rate": 0.5412678117872233,
+      "speed_error_m_s": 0.3069205457965533,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.543250486254692,
+        "orientation": -0.00030904437244316796,
+        "torque_energy": -0.05867081151033441,
+        "action_rate": -0.015047054427365461,
+        "foot_slip": -0.021243578793170553,
+        "falls": 0.0
+      },
+      "actor_loss": -0.008828887968460467,
+      "critic_loss": 13.530128553509712
+    },
+    {
+      "update": 30,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.432796835899353,
+      "success_rate": 0.5363642217409139,
+      "speed_error_m_s": 0.3114709152529637,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.5273934950431187,
+        "orientation": -0.00023274780445111295,
+        "torque_energy": -0.05872788280248642,
+        "action_rate": -0.014956130917804936,
+        "foot_slip": -0.020679956884123385,
+        "falls": 0.0
+      },
+      "actor_loss": -0.008194236539947336,
+      "critic_loss": 11.348451182246208
+    },
+    {
+      "update": 31,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.4249944686889648,
+      "success_rate": 0.5340375236390447,
+      "speed_error_m_s": 0.3136445867518584,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.5197511141498883,
+        "orientation": -0.00022511011745033707,
+        "torque_energy": -0.058897558910151325,
+        "action_rate": -0.014897070611671856,
+        "foot_slip": -0.020736938769308228,
+        "falls": 0.0
+      },
+      "actor_loss": -0.008588223350651491,
+      "critic_loss": 10.35548347234726
+    },
+    {
+      "update": 32,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5692321062088013,
+      "success_rate": 0.5816538919434648,
+      "speed_error_m_s": 0.2709398477648695,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.657518856227398,
+        "orientation": -0.00053161672076385,
+        "torque_energy": -0.05650521027079473,
+        "action_rate": -0.01486298874563848,
+        "foot_slip": -0.01638691031500154,
+        "falls": 0.0
+      },
+      "actor_loss": -0.009026516963502611,
+      "critic_loss": 678.4256121317545
+    },
+    {
+      "update": 33,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.417698860168457,
+      "success_rate": 0.5302690812679803,
+      "speed_error_m_s": 0.31718535038332146,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.51192906498909,
+        "orientation": -0.0003037436711868698,
+        "torque_energy": -0.0591397809330374,
+        "action_rate": -0.015024881751742214,
+        "foot_slip": -0.019761863436239462,
+        "falls": 0.0
+      },
+      "actor_loss": -0.010237023877384574,
+      "critic_loss": 11.48817497988542
+    },
+    {
+      "update": 34,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.4092658758163452,
+      "success_rate": 0.5291092958735661,
+      "speed_error_m_s": 0.3182801300038894,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.5045595740278561,
+        "orientation": -0.0002183230153605109,
+        "torque_energy": -0.059214381190637745,
+        "action_rate": -0.01494636149921765,
+        "foot_slip": -0.020914791074271005,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007400211771656008,
+      "critic_loss": 9.861354152361551
+    },
+    {
+      "update": 35,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.391282558441162,
+      "success_rate": 0.5231009030082137,
+      "speed_error_m_s": 0.3239904511719942,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.486388919254144,
+        "orientation": -0.00022360996930122687,
+        "torque_energy": -0.059036581544205546,
+        "action_rate": -0.014855605394889912,
+        "foot_slip": -0.020990534607941907,
+        "falls": 0.0
+      },
+      "actor_loss": -0.010329826817463212,
+      "critic_loss": 9.242279554406801
+    },
+    {
+      "update": 36,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5641475915908813,
+      "success_rate": 0.5808465889332356,
+      "speed_error_m_s": 0.2716343017915885,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6537187720338504,
+        "orientation": -0.0005575734979477905,
+        "torque_energy": -0.0566737976235648,
+        "action_rate": -0.01475594931980595,
+        "foot_slip": -0.017583907130756415,
+        "falls": 0.0
+      },
+      "actor_loss": -0.00833826474403083,
+      "critic_loss": 986.9067052205404
+    },
+    {
+      "update": 37,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.391661524772644,
+      "success_rate": 0.5226692311568996,
+      "speed_error_m_s": 0.32440323010087013,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.4875107755263646,
+        "orientation": -0.00027891282570635667,
+        "torque_energy": -0.059227878538270794,
+        "action_rate": -0.014778752364994338,
+        "foot_slip": -0.0215636397479102,
+        "falls": 0.0
+      },
+      "actor_loss": -0.009006604442982562,
+      "critic_loss": 9.285768320163092
+    },
+    {
+      "update": 38,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.3694119453430176,
+      "success_rate": 0.516314228611,
+      "speed_error_m_s": 0.33051986433565617,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.466486153503259,
+        "orientation": -0.0002513835324862157,
+        "torque_energy": -0.059325681921715535,
+        "action_rate": -0.014825778392453989,
+        "foot_slip": -0.022671299094023805,
+        "falls": 0.0
+      },
+      "actor_loss": -0.009527516706690569,
+      "critic_loss": 8.985206002990404
+    },
+    {
+      "update": 39,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.3604602813720703,
+      "success_rate": 0.513183493712437,
+      "speed_error_m_s": 0.3335609051088492,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.4571204483509064,
+        "orientation": -0.00023167211414450625,
+        "torque_energy": -0.05928606338178118,
+        "action_rate": -0.0147612180832463,
+        "foot_slip": -0.022381285515924294,
+        "falls": 0.0
+      },
+      "actor_loss": -0.008958292276587534,
+      "critic_loss": 8.844692960381508
+    },
+    {
+      "update": 40,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.5394729375839233,
+      "success_rate": 0.5734247479442552,
+      "speed_error_m_s": 0.2780642832318942,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.6300609782338142,
+        "orientation": -0.0005418288604535822,
+        "torque_energy": -0.05696580062309901,
+        "action_rate": -0.014659935181650022,
+        "foot_slip": -0.0184205934832183,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007741507651305632,
+      "critic_loss": 1127.4550151824951
+    },
+    {
+      "update": 41,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.404765009880066,
+      "success_rate": 0.5264035220516949,
+      "speed_error_m_s": 0.32084360408286255,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.4997856269280117,
+        "orientation": -0.0002642638495065815,
+        "torque_energy": -0.05877093404221038,
+        "action_rate": -0.014662503206636757,
+        "foot_slip": -0.02132305029469232,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007835493054581364,
+      "critic_loss": 8.898934498429298
+    },
+    {
+      "update": 42,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.360329508781433,
+      "success_rate": 0.5123723738584326,
+      "speed_error_m_s": 0.3343518127997716,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.4563259482383728,
+        "orientation": -0.0002539666978312501,
+        "torque_energy": -0.05920026272845765,
+        "action_rate": -0.014705343928653747,
+        "foot_slip": -0.02183699611729632,
+        "falls": 0.0
+      },
+      "actor_loss": -0.009018238596978357,
+      "critic_loss": 8.464888935287794
+    },
+    {
+      "update": 43,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.3649965524673462,
+      "success_rate": 0.5140880452853521,
+      "speed_error_m_s": 0.3326803669333458,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.4618801524241765,
+        "orientation": -0.00023693938358822683,
+        "torque_energy": -0.05933232636501392,
+        "action_rate": -0.014564649725798517,
+        "foot_slip": -0.022749629997027416,
+        "falls": 0.0
+      },
+      "actor_loss": -0.007789775740507481,
+      "critic_loss": 8.181894451379776
+    },
+    {
+      "update": 44,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.483108639717102,
+      "success_rate": 0.5544908190471699,
+      "speed_error_m_s": 0.2948525147512555,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.5754551440477371,
+        "orientation": -0.000497123038561161,
+        "torque_energy": -0.05723138075942794,
+        "action_rate": -0.01446368902300795,
+        "foot_slip": -0.020154287636008423,
+        "falls": 0.0
+      },
+      "actor_loss": -0.009092594225388008,
+      "critic_loss": 1198.528881708781
+    },
+    {
+      "update": 45,
+      "curriculum_stage": "walk",
+      "mean_reward": 1.417588710784912,
+      "success_rate": 0.5296385113968229,
+      "speed_error_m_s": 0.31778027955442667,
+      "fall_rate": 0.0,
+      "reward_terms": {
+        "velocity_tracking": 1.511941708624363,
+        "orientation": -0.00031802811766586575,
+        "torque_energy": -0.05873115547001362,
+        "action_rate": -0.014539556519594043,
+        "foot_slip": -0.020764201840696234,
+        "falls": 0.0
+      },
+      "actor_loss": -0.009506218081081376,
+      "critic_loss": 8.982426837086678
+    }
+  ]
+}
