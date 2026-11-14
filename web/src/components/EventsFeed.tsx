@@ -1,5 +1,16 @@
 import React from "react";
+import { ScrollText, Database } from "lucide-react";
 import { BehaviourType, EventOrigin, WorldEvent } from "../types";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface EventsFeedProps {
   events: WorldEvent[];
@@ -9,86 +20,123 @@ export const EventsFeed: React.FC<EventsFeedProps> = ({ events }) => {
   const getOriginBadge = (origin: EventOrigin) => {
     switch (origin) {
       case "observed_physics":
-        return <span className="badge badge-origin-physics" data-testid="origin-badge">observed_physics</span>;
+        return (
+          <Badge variant="default" data-testid="origin-badge">
+            observed_physics
+          </Badge>
+        );
       case "sampled_from_skill_model":
-        return <span className="badge badge-origin-skill" data-testid="origin-badge">sampled_from_skill_model</span>;
+        return (
+          <Badge variant="cream" data-testid="origin-badge">
+            sampled_from_skill_model
+          </Badge>
+        );
       case "rule":
       default:
-        return <span className="badge badge-origin-rule" data-testid="origin-badge">rule</span>;
+        return (
+          <Badge variant="warning" data-testid="origin-badge">
+            rule
+          </Badge>
+        );
     }
   };
 
   const getBehaviourBadge = (behaviour: BehaviourType) => {
     switch (behaviour) {
       case "learned":
-        return <span className="badge badge-beh-learned" data-testid="behaviour-badge">learned</span>;
+        return (
+          <Badge variant="success" data-testid="behaviour-badge">
+            learned
+          </Badge>
+        );
       case "scripted":
-        return <span className="badge badge-beh-scripted" data-testid="behaviour-badge">scripted</span>;
+        return (
+          <Badge variant="cream" data-testid="behaviour-badge">
+            scripted
+          </Badge>
+        );
       case "rule":
       default:
-        return <span className="badge badge-beh-rule" data-testid="behaviour-badge">rule</span>;
+        return (
+          <Badge variant="warning" data-testid="behaviour-badge">
+            rule
+          </Badge>
+        );
     }
   };
 
   return (
-    <section className="card events-card" data-testid="events-feed">
-      <div className="card-header">
+    <Card className="relative overflow-hidden" data-testid="events-feed">
+      <CardHeader className="pb-4">
         <div>
-          <h2>Authoritative Events Feed</h2>
-          <p className="muted">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#FF6B5B] mb-1">
+            <ScrollText className="h-3.5 w-3.5" />
+            Immutable World Ledger
+          </div>
+          <CardTitle className="font-display text-2xl font-normal tracking-wide text-[#F4EDE0]">
+            Authoritative Events Feed
+          </CardTitle>
+          <CardDescription>
             Last {events.length} events recorded in PostgreSQL. Every row links to an immutable record.
-          </p>
+          </CardDescription>
         </div>
-        <span className="badge badge-count" data-testid="events-count">
-          {events.length} Events
-        </span>
-      </div>
 
-      {events.length === 0 ? (
-        <div className="empty-state">
-          <p>No events recorded yet for this pet.</p>
-        </div>
-      ) : (
-        <div className="table-responsive">
-          <table className="events-table">
-            <thead>
-              <tr>
-                <th>Record ID</th>
-                <th>Sim Time (s)</th>
-                <th>Tick</th>
-                <th>Type</th>
-                <th>Skill</th>
-                <th>Origin</th>
-                <th>Behaviour</th>
-                <th>Payload</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.map((ev) => (
-                <tr key={ev.event_id} className="event-row" data-testid="event-item">
-                  <td className="code-font event-id-cell" title={ev.event_id}>
-                    <span className="id-pill">{ev.event_id.slice(0, 16)}...</span>
-                  </td>
-                  <td>{ev.sim_time_sec.toFixed(1)}</td>
-                  <td>#{ev.world_tick}</td>
-                  <td>
-                    <span className="event-type-label">{ev.event_type}</span>
-                  </td>
-                  <td>{ev.skill_name || "—"}</td>
-                  <td>{getOriginBadge(ev.origin)}</td>
-                  <td>{getBehaviourBadge(ev.behaviour_type)}</td>
-                  <td className="payload-cell">
-                    <span className="code-font payload-summary">
+        <Badge variant="coralSolid" className="px-3.5 py-1 text-xs" data-testid="events-count">
+          <Database className="h-3 w-3" />
+          {events.length} Events
+        </Badge>
+      </CardHeader>
+
+      <CardContent>
+        {events.length === 0 ? (
+          <div className="rounded-2xl border border-[#F4EDE0]/12 bg-[#0B1325]/50 p-8 text-center text-xs text-[#F4EDE0]/65">
+            No events recorded yet for this pet.
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-[#F4EDE0]/15 bg-[#0B1325]/45 overflow-hidden backdrop-blur-md">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Record ID</TableHead>
+                  <TableHead>Sim Time (s)</TableHead>
+                  <TableHead>Tick</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Skill</TableHead>
+                  <TableHead>Origin</TableHead>
+                  <TableHead>Behaviour</TableHead>
+                  <TableHead>Payload</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {events.map((ev) => (
+                  <TableRow key={ev.event_id} data-testid="event-item">
+                    <TableCell className="font-mono text-[#F4EDE0]/60" title={ev.event_id}>
+                      {ev.event_id.slice(0, 16)}...
+                    </TableCell>
+                    <TableCell className="font-mono text-[#F4EDE0]">
+                      {ev.sim_time_sec.toFixed(1)}
+                    </TableCell>
+                    <TableCell className="font-mono text-[#FF6B5B]">
+                      #{ev.world_tick}
+                    </TableCell>
+                    <TableCell className="font-semibold text-[#F4EDE0]">
+                      {ev.event_type}
+                    </TableCell>
+                    <TableCell className="text-[#F4EDE0]/80">
+                      {ev.skill_name || "—"}
+                    </TableCell>
+                    <TableCell>{getOriginBadge(ev.origin)}</TableCell>
+                    <TableCell>{getBehaviourBadge(ev.behaviour_type)}</TableCell>
+                    <TableCell className="max-w-[260px] truncate font-mono text-[11px] text-[#F4EDE0]/70">
                       {JSON.stringify(ev.payload || {})}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
-
