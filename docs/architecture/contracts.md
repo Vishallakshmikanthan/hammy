@@ -7,7 +7,7 @@ All payloads crossing between the physics simulation (`simulation/`), AI cogniti
 - **`EventOrigin` (`observed_physics` | `sampled_from_skill_model` | `rule`):** Mandatory on every `WorldEventV1` so the Brain Observatory and Telegram daily digest always state whether an event was physically simulated or sampled during background catch-up.
 
 ## 2. Version Registry (`SUPPORTED_SCHEMA_VERSIONS`)
-- `observation`: `["1.0.0"]` (`contracts/json_schema/observation_v1.schema.json`)
+- `observation`: `["1.0.0", "2.0.0"]` (`contracts/json_schema/observation_v1.schema.json`, `observation_v2.schema.json`)
 - `action`: `["1.0.0"]` (`contracts/json_schema/action_v1.schema.json`)
 - `event`: `["1.0.0"]` (`contracts/json_schema/event_v1.schema.json`)
 - `command`: `["1.0.0"]` (`contracts/json_schema/command_v1.schema.json`)
@@ -15,4 +15,10 @@ All payloads crossing between the physics simulation (`simulation/`), AI cogniti
 - `environment`: `["habitat_v1"]`
 
 Any payload with an unknown or mismatched version raises `SchemaCompatibilityError` (or Pydantic `ValidationError`).
+
+## 3. Observation V2 Contract (`ObservationV2`) — P1.4 Memory Features
+Added in P1.4 to support cognitive memory features that feed into high-level decision policies:
+- `memory.object_memories`: List of `ObjectMemoryItemV2` capturing per-object running value estimates, confidence [0, 1], time since last visit (sec), normalized recency [0, 1], and last known 2D position.
+- `memory.spatial`: `SpatialMemoryV2` capturing an 8x4 coarse familiarity grid, current grid cell index, current cell familiarity [0, 1], mean habitat familiarity, and 4x2 coarse sector pooling (8 floats).
+- Fully backward-compatible with `ObservationV1` for base kinematic, drive, and object proximity features.
 

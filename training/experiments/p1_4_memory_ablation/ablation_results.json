@@ -1,0 +1,348 @@
+{
+  "metadata": {
+    "experiment": "p1_4_memory_ablation",
+    "date": "2026-11-13",
+    "seeds": [
+      101,
+      102,
+      103,
+      104,
+      105
+    ],
+    "total_smdp_steps": 250,
+    "rearrange_step": 80,
+    "elapsed_seconds": 10.57
+  },
+  "summary": {
+    "memory_off": {
+      "overall_homeostasis_pct": {
+        "mean": 100.0,
+        "std": 0.0,
+        "ci95": 0.0
+      },
+      "post_homeostasis_pct": {
+        "mean": 100.0,
+        "std": 0.0,
+        "ci95": 0.0
+      },
+      "feed_adaptation_sec": {
+        "mean": 7021.6,
+        "std": 2215.79,
+        "ci95": 1942.23
+      },
+      "peak_hunger_post": 0.1458,
+      "cumulative_reward": {
+        "mean": -0.1213,
+        "std": 0.0356
+      }
+    },
+    "memory_on": {
+      "overall_homeostasis_pct": {
+        "mean": 100.0,
+        "std": 0.0,
+        "ci95": 0.0
+      },
+      "post_homeostasis_pct": {
+        "mean": 100.0,
+        "std": 0.0,
+        "ci95": 0.0
+      },
+      "feed_adaptation_sec": {
+        "mean": 4132.0,
+        "std": 974.95,
+        "ci95": 854.58
+      },
+      "peak_hunger_post": 0.0526,
+      "cumulative_reward": {
+        "mean": -0.1307,
+        "std": 0.0158
+      }
+    }
+  },
+  "raw_results": {
+    "memory_off": [
+      {
+        "seed": 101,
+        "enable_memory": false,
+        "total_reward": -0.1461,
+        "mean_healthy_pct": 100.0,
+        "post_mean_healthy_pct": 100.0,
+        "drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "post_drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "adaptation_feed_step": 65,
+        "adaptation_feed_sec": 8002.0,
+        "peak_hunger_post": 0.182,
+        "total_substeps": 6102,
+        "sim_time_sec": 12204.0
+      },
+      {
+        "seed": 102,
+        "enable_memory": false,
+        "total_reward": -0.0735,
+        "mean_healthy_pct": 100.0,
+        "post_mean_healthy_pct": 100.0,
+        "drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "post_drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "adaptation_feed_step": 170,
+        "adaptation_feed_sec": 3688.0,
+        "peak_hunger_post": 0.093,
+        "total_substeps": 3035,
+        "sim_time_sec": 6070.0
+      },
+      {
+        "seed": 103,
+        "enable_memory": false,
+        "total_reward": -0.1201,
+        "mean_healthy_pct": 100.0,
+        "post_mean_healthy_pct": 100.0,
+        "drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "post_drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "adaptation_feed_step": 170,
+        "adaptation_feed_sec": 9208.0,
+        "peak_hunger_post": 0.1395,
+        "total_substeps": 10116,
+        "sim_time_sec": 20232.0
+      },
+      {
+        "seed": 104,
+        "enable_memory": false,
+        "total_reward": -0.1027,
+        "mean_healthy_pct": 100.0,
+        "post_mean_healthy_pct": 100.0,
+        "drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "post_drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "adaptation_feed_step": 170,
+        "adaptation_feed_sec": 5928.0,
+        "peak_hunger_post": 0.1327,
+        "total_substeps": 4435,
+        "sim_time_sec": 8870.0
+      },
+      {
+        "seed": 105,
+        "enable_memory": false,
+        "total_reward": -0.1641,
+        "mean_healthy_pct": 100.0,
+        "post_mean_healthy_pct": 100.0,
+        "drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "post_drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "adaptation_feed_step": 93,
+        "adaptation_feed_sec": 8282.0,
+        "peak_hunger_post": 0.182,
+        "total_substeps": 5822,
+        "sim_time_sec": 11644.0
+      }
+    ],
+    "memory_on": [
+      {
+        "seed": 101,
+        "enable_memory": true,
+        "total_reward": -0.1472,
+        "mean_healthy_pct": 100.0,
+        "post_mean_healthy_pct": 100.0,
+        "drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "post_drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "adaptation_feed_step": 170,
+        "adaptation_feed_sec": 3420.0,
+        "peak_hunger_post": 0.022,
+        "total_substeps": 2481,
+        "sim_time_sec": 4962.0
+      },
+      {
+        "seed": 102,
+        "enable_memory": true,
+        "total_reward": -0.1336,
+        "mean_healthy_pct": 100.0,
+        "post_mean_healthy_pct": 100.0,
+        "drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "post_drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "adaptation_feed_step": 170,
+        "adaptation_feed_sec": 5200.0,
+        "peak_hunger_post": 0.0614,
+        "total_substeps": 3379,
+        "sim_time_sec": 6758.0
+      },
+      {
+        "seed": 103,
+        "enable_memory": true,
+        "total_reward": -0.1253,
+        "mean_healthy_pct": 100.0,
+        "post_mean_healthy_pct": 100.0,
+        "drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "post_drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "adaptation_feed_step": 170,
+        "adaptation_feed_sec": 3420.0,
+        "peak_hunger_post": 0.0394,
+        "total_substeps": 2481,
+        "sim_time_sec": 4962.0
+      },
+      {
+        "seed": 104,
+        "enable_memory": true,
+        "total_reward": -0.1066,
+        "mean_healthy_pct": 100.0,
+        "post_mean_healthy_pct": 100.0,
+        "drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "post_drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "adaptation_feed_step": 170,
+        "adaptation_feed_sec": 3420.0,
+        "peak_hunger_post": 0.0467,
+        "total_substeps": 2481,
+        "sim_time_sec": 4962.0
+      },
+      {
+        "seed": 105,
+        "enable_memory": true,
+        "total_reward": -0.1408,
+        "mean_healthy_pct": 100.0,
+        "post_mean_healthy_pct": 100.0,
+        "drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "post_drive_healthy_pcts": {
+          "hunger": 100.0,
+          "thirst": 100.0,
+          "energy": 100.0,
+          "comfort": 100.0,
+          "stress": 100.0,
+          "curiosity": 100.0
+        },
+        "adaptation_feed_step": 170,
+        "adaptation_feed_sec": 5200.0,
+        "peak_hunger_post": 0.0936,
+        "total_substeps": 3371,
+        "sim_time_sec": 6742.0
+      }
+    ]
+  }
+}

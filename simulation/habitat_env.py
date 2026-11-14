@@ -23,6 +23,7 @@ from contracts.schemas import (
     EventOrigin,
     ObjectObservationV1,
     ObservationV1,
+    ObservationV2,
     WorldEventV1,
 )
 from ai.cognition.drives import HomeostaticDrives
@@ -43,10 +44,14 @@ class HabitatEnv:
         max_episode_steps: int = 2000,
         dt_sec: float = 1.0,
         pet_id: str = "hammy_001",
+        use_v2_observation: bool = False,
+        rearrange_interval_steps: Optional[int] = None,
     ):
         self.max_episode_steps = int(max_episode_steps)
         self.dt_sec = float(dt_sec)
         self.pet_id = pet_id
+        self.use_v2_observation = bool(use_v2_observation)
+        self.rearrange_interval_steps = rearrange_interval_steps
 
         with open(HABITAT_JSON_PATH, "r", encoding="utf-8") as f:
             self.habitat_meta = json.load(f)
@@ -151,7 +156,8 @@ class HabitatEnv:
                 )
             )
 
-        return ObservationV1(
+        obs_cls = ObservationV2 if self.use_v2_observation else ObservationV1
+        kwargs: Dict[str, Any] = dict(
             sim_time_sec=round(self.sim_time_sec, 3),
             position_xyz=[round(float(self.pos[0]), 5), round(float(self.pos[1]), 5), round(float(self.pos[2]), 5)],
             yaw_rad=round(float(self.yaw), 5),
@@ -164,10 +170,62 @@ class HabitatEnv:
             drives=self.drives.to_contract(),
             nearby_objects=nearby,
         )
+        if self.use_v2_observation:
+            kwargs["schema_version"] = "2.0.0"
+        return obs_cls(**kwargs)
+
+    def rearrange_habitat(
+        self,
+        move_objects: Tuple[str, ...] = ("prop_bowl_main", "prop_hideout_main"),
+        min_dist_m: float = 0.14,
+        rng: Optional[np.random.Generator] = None,
+    ) -> Dict[str, List[float]]:
+        """
+        Periodically moves selected habitat objects (P1.4 habitat randomisation).
+        Ensures moved objects stay within cage floor bounds [-0.36, 0.36] x [-0.15, 0.15]
+        and maintain min_dist_m clearance from other objects.
+        Emits a WorldEventV1 event recording the rearrangement.
+        """
+        active_rng = rng or self.rng
+        moved_positions: Dict[str, List[float]] = {}
+        fixed_positions = [
+            obj["pose_xyz_m"][:2]
+            for oid, obj in self.objects_state.items()
+            if oid not in move_objects
+        ]
+
+        for oid in move_objects:
+            if oid not in self.objects_state:
+                continue
+            for _ in range(200):
+                new_x = float(active_rng.uniform(-0.35, 0.35))
+                new_y = float(active_rng.uniform(-0.14, 0.14))
+                cand = np.array([new_x, new_y], dtype=np.float64)
+
+                all_other = fixed_positions + [np.array(p, dtype=np.float64) for p in moved_positions.values()]
+                if all(np.linalg.norm(cand - other) >= min_dist_m for other in all_other):
+                    self.objects_state[oid]["pose_xyz_m"][0] = new_x
+                    self.objects_state[oid]["pose_xyz_m"][1] = new_y
+                    moved_positions[oid] = [round(new_x, 4), round(new_y, 4)]
+                    break
+
+        event = WorldEventV1(
+            event_id=f"evt_rearrange_{self.step_count}_{int(self.sim_time_sec * 10)}",
+            pet_id=self.pet_id,
+            world_tick=self.step_count,
+            sim_time_sec=round(self.sim_time_sec, 3),
+            event_type="habitat_rearranged",
+            origin=EventOrigin.RULE,
+            behaviour_type=BehaviourType.RULE,
+            seed=self.seed_value,
+            payload={"rearranged_objects": moved_positions},
+        )
+        self.events_log.append(event)
+        return moved_positions
 
     def step(
         self, action: ActionV1 | Dict[str, Any]
-    ) -> Tuple[ObservationV1, float, bool, bool, Dict[str, Any]]:
+    ) -> Tuple[ObservationV1 | ObservationV2, float, bool, bool, Dict[str, Any]]:
         if isinstance(action, dict):
             act = ActionV1(**action)
         else:
@@ -250,6 +308,10 @@ class HabitatEnv:
             is_exploring=is_exploring,
         )
 
+        rearranged = None
+        if self.rearrange_interval_steps and (self.step_count % self.rearrange_interval_steps == 0):
+            rearranged = self.rearrange_habitat()
+
         obs = self._build_observation()
         terminated = False
         truncated = bool(self.step_count >= self.max_episode_steps)
@@ -261,6 +323,7 @@ class HabitatEnv:
             "healthy_flags": self.drives.in_healthy_range_flags(),
             "behaviour_type": act.behaviour_type.value,
             "origin": EventOrigin.OBSERVED_PHYSICS.value,
+            "rearranged_objects": rearranged,
             "interactions": {
                 "eating": is_eating,
                 "drinking": is_drinking,

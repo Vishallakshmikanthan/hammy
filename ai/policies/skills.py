@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
-from contracts.schemas import ActionV1, BehaviourType, ObservationV1
+from contracts.schemas import ActionV1, BehaviourType, ObservationV1, ObservationV2
 
 
 def navigate_and_interact(
@@ -196,8 +196,19 @@ def _term_explore(obs: ObservationV1, step: int, t_sec: float) -> bool:
     return (t_sec >= 20.0 and obs.drives.curiosity <= 0.08) or t_sec >= 300.0
 
 
-def _ctrl_explore(obs: ObservationV1) -> ActionV1:
-    # Roam toward central clearing or chew block
+def _ctrl_explore(obs: ObservationV1 | ObservationV2) -> ActionV1:
+    # If memory is available, steer toward the least familiar coarse sector
+    if isinstance(obs, ObservationV2) and obs.memory is not None and obs.memory.spatial.coarse_sectors:
+        sectors = obs.memory.spatial.coarse_sectors
+        min_sec_idx = int(np.argmin(sectors))
+        # 4 columns (x in [-0.46, 0.46]) x 2 rows (y in [-0.21, 0.21])
+        col = min_sec_idx // 2
+        row = min_sec_idx % 2
+        target_x = -0.46 + (col + 0.5) * (0.92 / 4.0)
+        target_y = -0.21 + (row + 0.5) * (0.42 / 2.0)
+        act, _ = navigate_and_interact(obs, target_pos_xy=(target_x, target_y), stop_dist_m=0.050)
+        return act
+    # Default roaming toward central clearing or chew block
     act, _ = navigate_and_interact(obs, "prop_chew_block_main", stop_dist_m=0.060)
     return act
 
@@ -309,9 +320,22 @@ class ScriptedHomeostaticBaselinePolicy:
 
     behaviour_type: BehaviourType = BehaviourType.SCRIPTED
 
-    def select_skill(self, obs: ObservationV1) -> str:
+    def select_skill(self, obs: ObservationV1 | ObservationV2) -> str:
         d = obs.drives
         is_day = 0.29 <= d.circadian_phase <= 0.79
+
+        # Memory-guided foraging & exploration check
+        if isinstance(obs, ObservationV2) and obs.memory is not None:
+            mem_map = {m.object_id: m for m in obs.memory.object_memories}
+            bowl_mem = mem_map.get("prop_bowl_main")
+            # If bowl has high recency (not visited recently) and hunger is rising,
+            # proactively seek food before entering severe starvation
+            if bowl_mem and bowl_mem.recency_normalized > 0.65 and d.hunger > 0.22:
+                return "eat" if _obj_dist(obs, "prop_bowl_main") <= 0.080 else "approach_food"
+
+            # If habitat rearrangement occurred or unfamiliarity is high, explore low-familiarity sectors
+            if obs.memory.spatial.mean_familiarity < 0.20 and d.energy > 0.50 and not is_day:
+                return "explore_area"
 
         # Urgent physiological needs override sleep
         if d.thirst > 0.30:

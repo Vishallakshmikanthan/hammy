@@ -15,9 +15,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from contracts.schemas import ActionV1, ObservationV1
+from contracts.schemas import ActionV1, ObservationV1, ObservationV2
 from simulation.habitat_env import HabitatEnv
 from ai.policies.skills import SKILLS_LIST, SKILL_NAMES, Skill
+from ai.memory.agent_memory import AgentMemory
 
 
 PROPS_ORDER = [
@@ -30,9 +31,13 @@ PROPS_ORDER = [
 ]
 
 
-def extract_observation_features(obs: ObservationV1) -> np.ndarray:
+def extract_observation_features(
+    obs: ObservationV1 | ObservationV2,
+    memory: Optional[AgentMemory] = None,
+) -> np.ndarray:
     """
-    Extracts a 41-dimensional normalized numerical feature vector from `ObservationV1`
+    Extracts a normalized numerical feature vector from `ObservationV1` (41 dims)
+    or `ObservationV2` with cognitive memory features (69 dims)
     for neural network / high-level policy inference.
     """
     feats = []
@@ -63,6 +68,23 @@ def extract_observation_features(obs: ObservationV1) -> np.ndarray:
         obs.cheek_pouch_fill,
     ])
 
+    # 4. Cognitive memory features (28 floats, if memory is provided or present in obs)
+    if memory is not None:
+        mem_vec = memory.get_feature_vector(obs.position_xyz[:2])
+        feats.extend(mem_vec.tolist())
+    elif isinstance(obs, ObservationV2) and obs.memory is not None:
+        m = obs.memory
+        mem_obj_map = {item.object_id: item for item in m.object_memories}
+        for pid in PROPS_ORDER:
+            if pid in mem_obj_map:
+                it = mem_obj_map[pid]
+                feats.extend([it.estimated_value, it.confidence, it.recency_normalized])
+            else:
+                feats.extend([0.0, 0.0, 1.0])
+        feats.append(m.spatial.current_cell_familiarity)
+        feats.append(m.spatial.mean_familiarity)
+        feats.extend(m.spatial.coarse_sectors)
+
     return np.array(feats, dtype=np.float32)
 
 
@@ -70,7 +92,9 @@ class HighLevelSMDPEnv:
     """
     Semi-Markov Decision Process Environment for HAMMY High-Level Policies.
     Action Space: Discrete(len(SKILLS_LIST)) = 8 skills.
-    Observation Space: Box(low=-inf, high=+inf, shape=(41,), dtype=np.float32).
+    Observation Space:
+      - enable_memory=False: Box(shape=(41,), dtype=np.float32) from ObservationV1
+      - enable_memory=True: Box(shape=(69,), dtype=np.float32) from ObservationV2 + AgentMemory
     """
 
     def __init__(
@@ -78,20 +102,30 @@ class HighLevelSMDPEnv:
         max_smdp_steps: int = 500,
         sub_dt_sec: float = 2.0,
         record_trajectory: bool = False,
+        enable_memory: bool = False,
+        rearrange_interval_smdp_steps: Optional[int] = None,
     ):
         self.max_smdp_steps = int(max_smdp_steps)
         self.sub_dt_sec = float(sub_dt_sec)
         self.record_trajectory = bool(record_trajectory)
+        self.enable_memory = bool(enable_memory)
+        self.rearrange_interval_smdp_steps = rearrange_interval_smdp_steps
 
         self.skills: List[Skill] = list(SKILLS_LIST)
         self.num_actions = len(self.skills)
-        self.obs_dim = 41
+        self.obs_dim = 69 if self.enable_memory else 41
+
+        self.memory: Optional[AgentMemory] = AgentMemory() if self.enable_memory else None
 
         # Max sub-steps per episode in low-level environment
         max_low_level_steps = max_smdp_steps * 1000
-        self.env = HabitatEnv(max_episode_steps=max_low_level_steps, dt_sec=self.sub_dt_sec)
+        self.env = HabitatEnv(
+            max_episode_steps=max_low_level_steps,
+            dt_sec=self.sub_dt_sec,
+            use_v2_observation=self.enable_memory,
+        )
 
-        self.current_obs: Optional[ObservationV1] = None
+        self.current_obs: Optional[ObservationV1 | ObservationV2] = None
         self.smdp_step_count = 0
         self.total_sim_time = 0.0
         self.trajectory: List[Dict[str, Any]] = []
@@ -101,16 +135,24 @@ class HighLevelSMDPEnv:
         self.total_sim_time = 0.0
         self.trajectory = []
 
+        if self.memory is not None:
+            self.memory.reset()
+
         obs, info = self.env.reset(seed=seed)
+        if self.memory is not None:
+            self.memory.update(obs, dt_sec=0.0)
+            if isinstance(obs, ObservationV2):
+                obs.memory = self.memory.to_contract(obs)
+
         self.current_obs = obs
 
         if self.record_trajectory:
             self._record_keyframe(obs, skill_name="init", interact_flags={})
 
-        features = extract_observation_features(obs)
+        features = extract_observation_features(obs, memory=self.memory)
         return features, info
 
-    def _record_keyframe(self, obs: ObservationV1, skill_name: str, interact_flags: Dict[str, bool]):
+    def _record_keyframe(self, obs: ObservationV1 | ObservationV2, skill_name: str, interact_flags: Dict[str, bool]):
         self.trajectory.append({
             "sim_time_sec": round(obs.sim_time_sec, 2),
             "pos_xyz": [round(v, 4) for v in obs.position_xyz],
@@ -154,6 +196,17 @@ class HighLevelSMDPEnv:
             cumulative_reward += (r - 0.02)
             sub_steps = 1
             time_in_skill = self.sub_dt_sec
+
+            if self.memory is not None:
+                self.memory.update(
+                    next_obs,
+                    dt_sec=self.sub_dt_sec,
+                    reward=r,
+                    interactions=last_info.get("interactions", {}),
+                )
+                if isinstance(next_obs, ObservationV2):
+                    next_obs.memory = self.memory.to_contract(next_obs)
+
             self.current_obs = next_obs
             sub_terminated = sub_term
             sub_truncated = sub_trunc
@@ -168,6 +221,17 @@ class HighLevelSMDPEnv:
                 cumulative_reward += r
                 sub_steps += 1
                 time_in_skill += self.sub_dt_sec
+
+                if self.memory is not None:
+                    self.memory.update(
+                        next_obs,
+                        dt_sec=self.sub_dt_sec,
+                        reward=r,
+                        interactions=last_info.get("interactions", {}),
+                    )
+                    if isinstance(next_obs, ObservationV2):
+                        next_obs.memory = self.memory.to_contract(next_obs)
+
                 self.current_obs = next_obs
 
                 if self.record_trajectory:
@@ -178,8 +242,12 @@ class HighLevelSMDPEnv:
                     sub_truncated = sub_trunc
                     break
 
+        rearranged = None
+        if self.rearrange_interval_smdp_steps and (self.smdp_step_count % self.rearrange_interval_smdp_steps == 0):
+            rearranged = self.env.rearrange_habitat()
+
         self.total_sim_time += time_in_skill
-        features = extract_observation_features(self.current_obs)
+        features = extract_observation_features(self.current_obs, memory=self.memory)
 
         terminated = sub_terminated
         truncated = sub_truncated or bool(self.smdp_step_count >= self.max_smdp_steps)
@@ -194,6 +262,9 @@ class HighLevelSMDPEnv:
             "healthy_flags": self.env.drives.in_healthy_range_flags(),
             "drives": self.current_obs.drives.model_dump(),
             "trajectory_len": len(self.trajectory),
+            "rearranged_objects": rearranged,
         }
+        if self.memory is not None:
+            smdp_info["memory"] = self.memory.to_contract(self.current_obs).model_dump()
 
         return features, float(cumulative_reward), terminated, truncated, smdp_info

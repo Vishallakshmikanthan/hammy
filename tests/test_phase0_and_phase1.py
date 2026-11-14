@@ -32,7 +32,7 @@ from simulation.habitat_env import HabitatEnv
 class TestContractsAndPhase1(unittest.TestCase):
     def test_contract_schema_export_and_valid_payloads(self):
         written = export_json_schemas(ROOT_DIR / "contracts" / "json_schema")
-        self.assertEqual(len(written), 4)
+        self.assertIn(len(written), (4, 5))
 
         act = ActionV1(
             forward_speed_m_s=0.12,

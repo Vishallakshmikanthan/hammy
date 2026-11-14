@@ -21,7 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # 1. VERSION REGISTRY & COMPATIBILITY ENFORCEMENT (Rule 5)
 # ==============================================================================
 SUPPORTED_SCHEMA_VERSIONS: Dict[str, List[str]] = {
-    "observation": ["1.0.0"],
+    "observation": ["1.0.0", "2.0.0"],
     "action": ["1.0.0"],
     "event": ["1.0.0"],
     "command": ["1.0.0"],
@@ -120,6 +120,73 @@ class ObservationV1(BaseModel):
 
 
 # ==============================================================================
+# 3b. OBSERVATION V2 CONTRACT (P1.4: Memory Features)
+# ==============================================================================
+class ObjectMemoryItemV2(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    object_id: str = Field(..., min_length=1)
+    estimated_value: float = Field(..., description="Running mean value estimate (utility/reward)")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence in estimate [0, 1]")
+    time_since_last_visit_sec: float = Field(..., ge=0.0, description="Seconds elapsed since last visit")
+    recency_normalized: float = Field(..., ge=0.0, le=1.0, description="Normalized recency in [0, 1]")
+    last_known_pos_xy: Optional[List[float]] = Field(default=None, min_length=2, max_length=2)
+
+
+class SpatialMemoryV2(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    grid_shape: List[int] = Field(default_factory=lambda: [8, 4], min_length=2, max_length=2)
+    current_cell_idx: List[int] = Field(..., min_length=2, max_length=2)
+    current_cell_familiarity: float = Field(..., ge=0.0, le=1.0)
+    mean_familiarity: float = Field(..., ge=0.0, le=1.0)
+    coarse_sectors: List[float] = Field(default_factory=list, description="4x2 coarse sector familiarity (8 floats)")
+
+
+class MemoryStateV2(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    object_memories: List[ObjectMemoryItemV2] = Field(default_factory=list)
+    spatial: SpatialMemoryV2
+
+
+class ObservationV2(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: str = Field(default="2.0.0")
+    morphology_version: str = Field(default="simple_agent_v1")
+    environment_version: str = Field(default="habitat_v1")
+    sim_time_sec: float = Field(..., ge=0.0)
+    position_xyz: List[float] = Field(..., min_length=3, max_length=3)
+    yaw_rad: float
+    velocity_xy: List[float] = Field(..., min_length=2, max_length=2)
+    angular_velocity_z: float
+    inside_hideout: bool = False
+    inside_tunnel: bool = False
+    on_wheel: bool = False
+    cheek_pouch_fill: float = Field(default=0.0, ge=0.0, le=1.0)
+    drives: DriveVectorV1
+    nearby_objects: List[ObjectObservationV1] = Field(default_factory=list)
+    memory: Optional[MemoryStateV2] = None
+
+    @field_validator("schema_version")
+    @classmethod
+    def _check_obs_ver(cls, v: str) -> str:
+        return validate_version("observation", v)
+
+    @field_validator("morphology_version")
+    @classmethod
+    def _check_morph_ver(cls, v: str) -> str:
+        return validate_version("morphology", v)
+
+    @field_validator("environment_version")
+    @classmethod
+    def _check_env_ver(cls, v: str) -> str:
+        return validate_version("environment", v)
+
+
+
+# ==============================================================================
 # 4. ACTION V1 CONTRACT
 # ==============================================================================
 class ActionV1(BaseModel):
@@ -179,7 +246,10 @@ class CommandV1(BaseModel):
         return validate_version("command", v)
 
 
-def export_json_schemas(output_dir: str | Path = "contracts/json_schema") -> List[Path]:
+def export_json_schemas(
+    output_dir: str | Path = "contracts/json_schema",
+    include_v2: bool = True,
+) -> List[Path]:
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
     models = {
@@ -188,6 +258,9 @@ def export_json_schemas(output_dir: str | Path = "contracts/json_schema") -> Lis
         "event_v1.schema.json": WorldEventV1,
         "command_v1.schema.json": CommandV1,
     }
+    if include_v2:
+        models["observation_v2.schema.json"] = ObservationV2
+
     written = []
     for filename, model_cls in models.items():
         path = out / filename

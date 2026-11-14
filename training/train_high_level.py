@@ -191,12 +191,17 @@ def train_ppo(
     entropy_coef: float = 0.015,
     value_coef: float = 0.50,
     seed: int = 101,
+    enable_memory: bool = False,
     exp_dir: str | Path = "training/experiments/p1_3_high_level",
 ) -> Tuple[PPOActorCritic, Dict[str, Any]]:
     exp_path = Path(exp_dir)
     exp_path.mkdir(parents=True, exist_ok=True)
 
-    env = HighLevelSMDPEnv(max_smdp_steps=steps_per_iteration + 10, sub_dt_sec=2.0)
+    env = HighLevelSMDPEnv(
+        max_smdp_steps=steps_per_iteration + 10,
+        sub_dt_sec=2.0,
+        enable_memory=enable_memory,
+    )
     model = PPOActorCritic(obs_dim=env.obs_dim, act_dim=env.num_actions, hidden_dim=64, seed=seed)
     optimizer = AdamOptimizer(model.parameters(), lr=lr)
 
