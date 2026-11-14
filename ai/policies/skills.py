@@ -303,6 +303,46 @@ SKILLS_LIST: List[Skill] = [
     Skill("hide", "prop_tunnel_main", 450.0, _init_hide, _term_hide, _ctrl_hide),
     Skill("enter_tunnel", "prop_tunnel_main", 240.0, _init_tunnel, _term_tunnel, _ctrl_tunnel),
     Skill("run_on_wheel", "prop_wheel_main", 360.0, _init_wheel, _term_wheel, _ctrl_wheel),
+    Skill(
+        "cheek_stuffing",
+        "prop_bowl_main",
+        180.0,
+        lambda obs: obs.drives.hunger > 0.15,
+        lambda obs, el: el > 60.0 or obs.drives.hunger < 0.10,
+        lambda obs: _ctrl_eat(obs),
+    ),
+    Skill(
+        "hind_leg_standing",
+        None,
+        60.0,
+        lambda obs: obs.drives.curiosity > 0.20,
+        lambda obs, el: el > 20.0,
+        lambda obs: ActionV1(forward_speed_m_s=0.0, turn_rate_rad_s=0.35, interact_flag=True, behaviour_type=BehaviourType.SCRIPTED),
+    ),
+    Skill(
+        "grooming",
+        None,
+        120.0,
+        lambda obs: obs.drives.stress > 0.15 or obs.drives.comfort < 0.85,
+        lambda obs, el: el > 45.0,
+        lambda obs: ActionV1(forward_speed_m_s=0.0, turn_rate_rad_s=0.0, interact_flag=True, behaviour_type=BehaviourType.SCRIPTED),
+    ),
+    Skill(
+        "digging",
+        None,
+        150.0,
+        lambda obs: obs.drives.curiosity > 0.25 and obs.drives.energy > 0.40,
+        lambda obs, el: el > 50.0,
+        lambda obs: ActionV1(forward_speed_m_s=0.04, turn_rate_rad_s=0.25, interact_flag=True, behaviour_type=BehaviourType.SCRIPTED),
+    ),
+    Skill(
+        "nesting",
+        "prop_hideout_main",
+        300.0,
+        lambda obs: obs.drives.comfort < 0.70 or obs.drives.energy < 0.55,
+        lambda obs, el: el > 90.0 or obs.drives.comfort > 0.85,
+        lambda obs: _ctrl_rest(obs),
+    ),
 ]
 
 SKILLS_BY_NAME: Dict[str, Skill] = {s.name: s for s in SKILLS_LIST}
