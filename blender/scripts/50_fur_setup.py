@@ -325,29 +325,16 @@ def build_hamster_materials() -> dict:
     out_p.location = (600, 0)
     bsdf_p = nodes.new("ShaderNodeBsdfPrincipled")
     bsdf_p.location = (300, 0)
-    bsdf_p.inputs["Roughness"].default_value = 0.62
-    bsdf_p.inputs["Subsurface Weight"].default_value = 0.25
+    bsdf_p.inputs["Roughness"].default_value = 0.86
+    bsdf_p.inputs["Sheen Weight"].default_value = 0.90
+    bsdf_p.inputs["Sheen Roughness"].default_value = 0.62
+    bsdf_p.inputs["Subsurface Weight"].default_value = 0.15
     bsdf_p.inputs["Subsurface Scale"].default_value = 0.003
     bsdf_p.inputs["Subsurface Radius"].default_value = (1.0, 0.40, 0.25)
-    tc_p = nodes.new("ShaderNodeTexCoord")
-    tc_p.location = (-450, 0)
-    sep_p = nodes.new("ShaderNodeSeparateXYZ")
-    sep_p.location = (-260, 0)
-    links.new(tc_p.outputs["Object"], sep_p.inputs["Vector"])
-    ramp_p = nodes.new("ShaderNodeValToRGB")
-    ramp_p.location = (-40, 0)
-    # y in [-0.075 .. +0.075], map via ColorRamp after normalizing or directly near +0.05..+0.075
-    math_map = nodes.new("ShaderNodeMapRange")
-    math_map.location = (-160, 0)
-    math_map.inputs["From Min"].default_value = 0.048
-    math_map.inputs["From Max"].default_value = 0.072
-    links.new(sep_p.outputs["Y"], math_map.inputs["Value"])
-    ramp_p.color_ramp.elements[0].position = 0.0
-    ramp_p.color_ramp.elements[0].color = (0.34, 0.20, 0.11, 1.0)  # Warm cinnamon-umber under-pelt
-    ramp_p.color_ramp.elements[1].position = 1.0
-    ramp_p.color_ramp.elements[1].color = (0.74, 0.46, 0.42, 1.0)  # Pinkish muzzle tip skin
-    links.new(math_map.outputs["Result"], ramp_p.inputs["Fac"])
-    links.new(ramp_p.outputs["Color"], bsdf_p.inputs["Base Color"])
+    vcol_p = nodes.new("ShaderNodeVertexColor")
+    vcol_p.location = (-40, 0)
+    vcol_p.layer_name = "Col"
+    links.new(vcol_p.outputs["Color"], bsdf_p.inputs["Base Color"])
     links.new(bsdf_p.outputs["BSDF"], out_p.inputs["Surface"])
     mats["pelt"] = mat_pelt
 
@@ -454,33 +441,33 @@ def build_placeholder_hamster(ham_col: bpy.types.Collection, mats: dict) -> bpy.
         #     we compensate for sqrt(1 - ny^2) near the nose and rump so the head stays wide and rounded!
         sphere_taper = math.sqrt(max(0.08, 1.0 - ny * ny))
 
-        # Desired true physical half-width (in meters) at longitudinal coordinate s in [0..1]:
-        #   - Rump (s=0.10..0.45): ~32-36 mm half-width
-        #   - Neck/Shoulders (s=0.55): ~30 mm half-width
-        #   - Cheek Pouches (s=0.72): ~34 mm half-width (chubby cheeks!)
-        #   - Blunt Muzzle / Whisker Pads (s=0.90): ~18 mm half-width (36 mm wide boxy snout!)
-        #   - Nose Tip (s=0.98): ~9 mm half-width
+        # Pear-shaped Syrian hamster profile (widest & plumpest at the rump/haunches,
+        # gentle neck tuck, chubby cheeks, and short rounded muzzle):
+        #   - Rump cap (s=0.02..0.15): rounds off smoothly like a peach, NOT a skinny cone
+        #   - Haunches/Body (s=0.25..0.42): ~37 mm half-width, ~29 mm half-height (plumpest!)
+        #   - Neck/Shoulders (s=0.56): ~29 mm half-width
+        #   - Cheek Pouches (s=0.71): ~32 mm half-width
+        #   - Short Snout (s=0.88): ~19 mm half-width
+        s_clamped = min(max(s, 0.015), 0.985)
+        pear_env = (s_clamped ** 0.24) * ((1.0 - s_clamped) ** 0.52) * 1.98
         true_w = (
-            0.032 * math.sin(math.pi * min(max(s, 0.03), 0.96)) ** 0.42
-            + 0.0085 * math.exp(-((s - 0.71) / 0.13) ** 2)   # Chubby cheek pouches
-            + 0.0075 * math.exp(-((s - 0.89) / 0.09) ** 2)   # Puffy mystacial whisker pads
+            0.037 * pear_env
+            + 0.0055 * math.exp(-((s - 0.71) / 0.11) ** 2)   # Chubby cheek pouches
+            + 0.0045 * math.exp(-((s - 0.88) / 0.08) ** 2)   # Puffy whisker pads
+            - 0.0030 * math.exp(-((s - 0.56) / 0.08) ** 2)   # Subtle neck/shoulder tuck
         )
         half_w = true_w / sphere_taper
 
-        # Desired true physical half-height (in meters) at longitudinal coordinate s in [0..1]:
-        #   - Haunches/Back (s=0.38): ~28 mm half-height
-        #   - Forehead/Crown (s=0.74): ~25 mm half-height (distinct rounded forehead dome)
-        #   - Nasal Bridge / Stop (s=0.84): slight dip then deep 15 mm blunt snout box
         true_h = (
-            0.027 * math.sin(math.pi * min(max(s, 0.04), 0.96)) ** 0.45
-            + 0.0065 * math.exp(-((s - 0.72) / 0.12) ** 2)   # High rounded forehead crown
-            - 0.0022 * math.exp(-((s - 0.83) / 0.045) ** 2)  # Subtle nasal stop dip in front of eyes
-            + 0.0055 * math.exp(-((s - 0.91) / 0.08) ** 2)   # Blunt deep muzzle
+            0.029 * pear_env
+            + 0.0050 * math.exp(-((s - 0.72) / 0.12) ** 2)   # Rounded forehead crown
+            - 0.0020 * math.exp(-((s - 0.83) / 0.045) ** 2)  # Subtle nasal stop dip
+            + 0.0038 * math.exp(-((s - 0.90) / 0.08) ** 2)   # Blunt rounded muzzle
         )
         half_h = true_h / sphere_taper
 
-        # Centerline height z_center(s): low crouched posture, alert raised head
-        z_center = 0.028 + 0.0065 * math.exp(-((s - 0.73) / 0.22) ** 2) - 0.0045 * max(0.0, (s - 0.85) / 0.15)
+        # Centerline height z_center(s): low plump belly resting on bedding, slightly raised head
+        z_center = 0.025 + 0.0060 * math.exp(-((s - 0.73) / 0.22) ** 2) - 0.0035 * max(0.0, (s - 0.85) / 0.15)
 
         x = nx * half_w
         # Expand chubby lower cheek pouches and puffy whisker pads laterally
@@ -529,9 +516,35 @@ def build_placeholder_hamster(ham_col: bpy.types.Collection, mats: dict) -> bpy.
     vg_face = obj_body.vertex_groups.new(name="vg_face_fur")
     vg_skin_bare = obj_body.vertex_groups.new(name="vg_bare_skin")
 
-    eye_l_local = Vector((0.0225, 0.0505, 0.0448))
-    eye_r_local = Vector((-0.0225, 0.0505, 0.0448))
-    nose_local = Vector((0.0, 0.0755, 0.0295))
+    eye_l_local = Vector((0.0252, 0.0518, 0.0452))
+    eye_r_local = Vector((-0.0252, 0.0518, 0.0452))
+    nose_local = Vector((0.0, 0.0758, 0.0295))
+
+    # Bake Syrian Golden-Agouti & Cream-Belly vertex colors (`Col`) directly into `ham_body`
+    color_attr = mesh_body.color_attributes.new(name="Col", type="BYTE_COLOR", domain="CORNER")
+    for poly in mesh_body.polygons:
+        for loop_idx in poly.loop_indices:
+            v_idx = mesh_body.loops[loop_idx].vertex_index
+            p = mesh_body.vertices[v_idx].co
+            s = (p.y + 0.075) / 0.150
+            # Ventral belly & lower cheek cream mask
+            belly_w = max(0.0, min(1.0, (0.024 - p.z) / 0.016))
+            cheek_w = max(0.0, min(1.0, (s - 0.62) / 0.18)) * max(0.0, min(1.0, (0.030 - p.z) / 0.014))
+            band_w = math.exp(-((p.y - 0.002) / 0.022) ** 2) * max(0.0, min(1.0, (0.042 - p.z) / 0.020)) * 0.72
+            cream_w = max(belly_w, cheek_w * 0.75, band_w)
+
+            # Dorsal dark agouti stripe
+            spine_w = math.exp(-((p.x) / 0.014) ** 2) * max(0.0, min(1.0, (p.z - 0.036) / 0.020)) * (1.0 - max(0.0, (s - 0.85) / 0.15))
+            # Subtle deterministic per-vertex agouti ticking
+            tick = 0.5 + 0.5 * math.sin(p.x * 380.0 + p.y * 290.0 + p.z * 310.0)
+            r_gold = 0.56 + 0.18 * tick - 0.24 * spine_w
+            g_gold = 0.34 + 0.12 * tick - 0.17 * spine_w
+            b_gold = 0.17 + 0.06 * tick - 0.09 * spine_w
+
+            r = r_gold * (1.0 - cream_w) + 0.93 * cream_w
+            g = g_gold * (1.0 - cream_w) + 0.88 * cream_w
+            b = b_gold * (1.0 - cream_w) + 0.79 * cream_w
+            color_attr.data[loop_idx].color = (max(0.0, min(1.0, r)), max(0.0, min(1.0, g)), max(0.0, min(1.0, b)), 1.0)
 
     for idx, v in enumerate(mesh_body.vertices):
         p = v.co
@@ -562,14 +575,14 @@ def build_placeholder_hamster(ham_col: bpy.types.Collection, mats: dict) -> bpy.
     # --------------------------------------------------------------------------
     for side_label, sign in (("L", 1.0), ("R", -1.0)):
         bm_eye = bmesh.new()
-        bmesh.ops.create_uvsphere(bm_eye, u_segments=24, v_segments=16, radius=0.0052)
+        bmesh.ops.create_uvsphere(bm_eye, u_segments=24, v_segments=16, radius=0.0058)
         m_eye = bpy.data.meshes.new(f"ham_eye_{side_label}")
         bm_eye.to_mesh(m_eye)
         bm_eye.free()
         for poly in m_eye.polygons:
             poly.use_smooth = True
         o_eye = bpy.data.objects.new(f"ham_eye_{side_label}", m_eye)
-        local_pos = Vector((sign * 0.0225, 0.0505, 0.0448))
+        local_pos = Vector((sign * 0.0252, 0.0518, 0.0452))
         o_eye.matrix_world = world_xform @ Matrix.Translation(local_pos)
         o_eye.data.materials.append(mats["eye"])
         link_to_collection(o_eye, ham_col)
@@ -623,11 +636,11 @@ def build_placeholder_hamster(ham_col: bpy.types.Collection, mats: dict) -> bpy.
     # E. Four Dainty Pink Paws (`ham_paw_fl`, `ham_paw_fr`, `ham_paw_bl`, `ham_paw_br`) & Stub Tail (`ham_tail`)
     # --------------------------------------------------------------------------
     paw_specs = [
-        ("ham_paw_fl", Vector((0.014, 0.036, 0.0045)), (0.0048, 0.0065, 0.0032)),
-        ("ham_paw_fr", Vector((-0.014, 0.036, 0.0045)), (0.0048, 0.0065, 0.0032)),
-        ("ham_paw_bl", Vector((0.021, -0.034, 0.0048)), (0.0055, 0.0090, 0.0036)),
-        ("ham_paw_br", Vector((-0.021, -0.034, 0.0048)), (0.0055, 0.0090, 0.0036)),
-        ("ham_tail", Vector((0.0, -0.075, 0.018)), (0.0032, 0.0055, 0.0032)),
+        ("ham_paw_fl", Vector((0.015, 0.036, 0.0055)), (0.0050, 0.0072, 0.0036)),
+        ("ham_paw_fr", Vector((-0.015, 0.036, 0.0055)), (0.0050, 0.0072, 0.0036)),
+        ("ham_paw_bl", Vector((0.024, -0.034, 0.0058)), (0.0060, 0.0098, 0.0040)),
+        ("ham_paw_br", Vector((-0.024, -0.034, 0.0058)), (0.0060, 0.0098, 0.0040)),
+        ("ham_tail", Vector((0.0, -0.072, 0.016)), (0.0036, 0.0060, 0.0034)),
     ]
     for p_name, p_loc, p_scale in paw_specs:
         bm_p = bmesh.new()
