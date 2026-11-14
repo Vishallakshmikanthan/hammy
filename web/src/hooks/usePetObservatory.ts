@@ -13,11 +13,16 @@ import {
 } from "../api";
 import { ConnectionStatus, Pet, PetState, WorldEvent } from "../types";
 
-export function usePetObservatory(petId: string, token?: string) {
+export function usePetObservatory(
+  petId: string,
+  token?: string,
+  options?: { skip?: boolean }
+) {
+  const skip = options?.skip ?? false;
   const [pet, setPet] = useState<Pet | null>(null);
   const [state, setState] = useState<PetState | null>(null);
   const [events, setEvents] = useState<WorldEvent[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(!skip);
   const [error, setError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
 
@@ -26,6 +31,7 @@ export function usePetObservatory(petId: string, token?: string) {
 
   // Initial REST data hydration
   const refresh = useCallback(async () => {
+    if (skip) return;
     try {
       const [petData, stateData, eventsData] = await Promise.all([
         fetchPet(petId, token),
@@ -41,14 +47,16 @@ export function usePetObservatory(petId: string, token?: string) {
     } finally {
       setLoading(false);
     }
-  }, [petId, token]);
+  }, [petId, token, skip]);
 
   useEffect(() => {
+    if (skip) return;
     refresh();
-  }, [refresh]);
+  }, [refresh, skip]);
 
   // WebSocket Connection & Reconnection Management
   useEffect(() => {
+    if (skip) return;
     let unmounted = false;
 
     function connectWebSocket() {
@@ -74,7 +82,6 @@ export function usePetObservatory(petId: string, token?: string) {
           try {
             const data = JSON.parse(event.data);
             if (data.type === "snapshot") {
-              // Server state snapshot received upon initial connect or reconnect
               setState((prev) => {
                 if (!prev) return prev;
                 return {
@@ -97,7 +104,6 @@ export function usePetObservatory(petId: string, token?: string) {
         ws.onclose = () => {
           if (unmounted) return;
           setConnectionStatus("reconnecting");
-          // Reconnect after 3 seconds
           reconnectTimeoutRef.current = window.setTimeout(connectWebSocket, 3000);
         };
 
@@ -124,7 +130,7 @@ export function usePetObservatory(petId: string, token?: string) {
         wsRef.current.close();
       }
     };
-  }, [petId, token]);
+  }, [petId, token, skip]);
 
   const handlePause = async () => {
     await pauseSimulation(petId, token);
@@ -148,4 +154,3 @@ export function usePetObservatory(petId: string, token?: string) {
     refresh,
   };
 }
-
