@@ -1,0 +1,200 @@
+{
+  "metadata": {
+    "experiment": "p1_5_skill_outcome_validation",
+    "date": "2026-11-13",
+    "environment_version": "habitat_v1",
+    "skill_version": "v1",
+    "simulated_days": 30.0,
+    "speedup_ratio": 48.46
+  },
+  "held_out_validation": {
+    "approach_food": {
+      "n_test": 30,
+      "duration_mae_sec": 1.25,
+      "duration_rel_error_pct": 26.4,
+      "success_accuracy_pct": 93.3,
+      "drive_maes": {
+        "hunger": 0.01786,
+        "thirst": 8e-05,
+        "energy": 8e-05,
+        "comfort": 8e-05,
+        "stress": 9e-05,
+        "curiosity": 0.04934
+      }
+    },
+    "eat": {
+      "n_test": 30,
+      "duration_mae_sec": 1.17,
+      "duration_rel_error_pct": 10.9,
+      "success_accuracy_pct": 100.0,
+      "drive_maes": {
+        "hunger": 0.10099,
+        "thirst": 9e-05,
+        "energy": 0.0001,
+        "comfort": 8e-05,
+        "stress": 0.00019,
+        "curiosity": 0.03724
+      }
+    },
+    "drink": {
+      "n_test": 30,
+      "duration_mae_sec": 3.54,
+      "duration_rel_error_pct": 32.2,
+      "success_accuracy_pct": 93.3,
+      "drive_maes": {
+        "hunger": 0.0001,
+        "thirst": 0.12825,
+        "energy": 0.00014,
+        "comfort": 8e-05,
+        "stress": 0.00025,
+        "curiosity": 0.05028
+      }
+    },
+    "explore_area": {
+      "n_test": 30,
+      "duration_mae_sec": 67.95,
+      "duration_rel_error_pct": 25.0,
+      "success_accuracy_pct": 100.0,
+      "drive_maes": {
+        "hunger": 0.00744,
+        "thirst": 0.00197,
+        "energy": 0.00301,
+        "comfort": 0.00096,
+        "stress": 0.00628,
+        "curiosity": 0.02995
+      }
+    },
+    "rest": {
+      "n_test": 30,
+      "duration_mae_sec": 849.23,
+      "duration_rel_error_pct": 186.8,
+      "success_accuracy_pct": 100.0,
+      "drive_maes": {
+        "hunger": 0.00568,
+        "thirst": 0.00739,
+        "energy": 0.03178,
+        "comfort": 0.04087,
+        "stress": 0.04017,
+        "curiosity": 0.05366
+      }
+    },
+    "hide": {
+      "n_test": 30,
+      "duration_mae_sec": 26.83,
+      "duration_rel_error_pct": 6.2,
+      "success_accuracy_pct": 100.0,
+      "drive_maes": {
+        "hunger": 0.00062,
+        "thirst": 0.00091,
+        "energy": 0.00229,
+        "comfort": 0.00199,
+        "stress": 0.00535,
+        "curiosity": 0.02906
+      }
+    },
+    "enter_tunnel": {
+      "n_test": 30,
+      "duration_mae_sec": 0.0,
+      "duration_rel_error_pct": 0.0,
+      "success_accuracy_pct": 100.0,
+      "drive_maes": {
+        "hunger": 6e-05,
+        "thirst": 8e-05,
+        "energy": 0.0001,
+        "comfort": 9e-05,
+        "stress": 0.00011,
+        "curiosity": 0.02929
+      }
+    },
+    "run_on_wheel": {
+      "n_test": 30,
+      "duration_mae_sec": 9.85,
+      "duration_rel_error_pct": 73.1,
+      "success_accuracy_pct": 100.0,
+      "drive_maes": {
+        "hunger": 0.00013,
+        "thirst": 0.00019,
+        "energy": 0.02447,
+        "comfort": 0.00011,
+        "stress": 0.15647,
+        "curiosity": 0.24077
+      }
+    }
+  },
+  "performance_benchmark": {
+    "full_physics": {
+      "origin": "observed_physics",
+      "elapsed_seconds": 14.096,
+      "macro_steps": 47573,
+      "steps_per_sec": 3374.9
+    },
+    "sampled_catchup": {
+      "origin": "sampled_from_skill_model",
+      "elapsed_seconds": 0.2909,
+      "macro_steps": 8047,
+      "steps_per_sec": 27663.5
+    }
+  },
+  "drive_trajectory_comparison": {
+    "hunger": {
+      "phys_mean": 0.086,
+      "phys_std": 0.0526,
+      "samp_mean": 0.1673,
+      "samp_std": 0.0193,
+      "mean_delta": 0.0812,
+      "wasserstein_dist": 0.0812,
+      "ks_statistic": 0.7225,
+      "ks_pvalue": 0.0
+    },
+    "thirst": {
+      "phys_mean": 0.0742,
+      "phys_std": 0.0459,
+      "samp_mean": 0.0873,
+      "samp_std": 0.0517,
+      "mean_delta": 0.0131,
+      "wasserstein_dist": 0.0132,
+      "ks_statistic": 0.135,
+      "ks_pvalue": 0.0
+    },
+    "energy": {
+      "phys_mean": 0.7831,
+      "phys_std": 0.2122,
+      "samp_mean": 0.7176,
+      "samp_std": 0.2113,
+      "mean_delta": 0.0655,
+      "wasserstein_dist": 0.0655,
+      "ks_statistic": 0.1617,
+      "ks_pvalue": 0.0
+    },
+    "comfort": {
+      "phys_mean": 0.9288,
+      "phys_std": 0.083,
+      "samp_mean": 0.9032,
+      "samp_std": 0.0961,
+      "mean_delta": 0.0256,
+      "wasserstein_dist": 0.0256,
+      "ks_statistic": 0.197,
+      "ks_pvalue": 0.0
+    },
+    "stress": {
+      "phys_mean": 0.0002,
+      "phys_std": 0.0042,
+      "samp_mean": 0.0599,
+      "samp_std": 0.061,
+      "mean_delta": 0.0597,
+      "wasserstein_dist": 0.0597,
+      "ks_statistic": 0.7865,
+      "ks_pvalue": 0.0
+    },
+    "curiosity": {
+      "phys_mean": 0.0177,
+      "phys_std": 0.0232,
+      "samp_mean": 0.0003,
+      "samp_std": 0.0033,
+      "mean_delta": 0.0174,
+      "wasserstein_dist": 0.0174,
+      "ks_statistic": 0.5881,
+      "ks_pvalue": 0.0
+    }
+  }
+}

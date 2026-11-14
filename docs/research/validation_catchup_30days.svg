@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520" style="background:#0f1117; font-family:system-ui, -apple-system, sans-serif;">
+  <defs>
+    <linearGradient id="physGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="sampGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#7e22ce" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+
+  <text x="450" y="40" text-anchor="middle" fill="#f8fafc" font-size="20" font-weight="700">
+    HAMMY — P1.5 Skill-Outcome Model: 30-Day Catch-Up Validation
+  </text>
+  <text x="450" y="65" text-anchor="middle" fill="#94a3b8" font-size="13">
+    Full Physics (`observed_physics`) vs. Empirical Models (`sampled_from_skill_model`) • Speedup: 48.5x
+  </text>
+
+  <!-- Drive Mean Comparison Bars -->
+  <g transform="translate(60, 110)">
+    <rect width="780" height="340" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="390" y="32" text-anchor="middle" fill="#e2e8f0" font-size="15" font-weight="600">
+      30-Day Mean Drive Levels Comparison (Full Physics vs. Sampled Catch-Up)
+    </text>
+
+    <!-- Legend -->
+    <rect x="260" y="50" width="16" height="12" rx="2" fill="url(#physGrad)"/>
+    <text x="285" y="61" fill="#94a3b8" font-size="12">Full Physics (`observed_physics`)</text>
+    <rect x="490" y="50" width="16" height="12" rx="2" fill="url(#sampGrad)"/>
+    <text x="515" y="61" fill="#94a3b8" font-size="12">Sampled Catch-Up (`sampled_from_skill_model`)</text>
+
+    <!-- HUNGER -->
+    <rect x="60" y="265" width="40" height="15" rx="3" fill="url(#physGrad)"/>
+    <text x="80.0" y="259" text-anchor="middle" fill="#7dd3fc" font-size="11">0.09</text>
+
+    <rect x="106" y="250" width="40" height="30" rx="3" fill="url(#sampGrad)"/>
+    <text x="126.0" y="244" text-anchor="middle" fill="#d8b4fe" font-size="11">0.17</text>
+
+    <text x="103" y="305" text-anchor="middle" fill="#cbd5e1" font-size="12" font-weight="600">Hunger</text>
+    <text x="103" y="322" text-anchor="middle" fill="#64748b" font-size="10">W=0.081</text>
+
+    <!-- THIRST -->
+    <rect x="180" y="267" width="40" height="13" rx="3" fill="url(#physGrad)"/>
+    <text x="200.0" y="261" text-anchor="middle" fill="#7dd3fc" font-size="11">0.07</text>
+
+    <rect x="226" y="265" width="40" height="15" rx="3" fill="url(#sampGrad)"/>
+    <text x="246.0" y="259" text-anchor="middle" fill="#d8b4fe" font-size="11">0.09</text>
+
+    <text x="223" y="305" text-anchor="middle" fill="#cbd5e1" font-size="12" font-weight="600">Thirst</text>
+    <text x="223" y="322" text-anchor="middle" fill="#64748b" font-size="10">W=0.013</text>
+
+    <!-- ENERGY -->
+    <rect x="300" y="140" width="40" height="140" rx="3" fill="url(#physGrad)"/>
+    <text x="320.0" y="134" text-anchor="middle" fill="#7dd3fc" font-size="11">0.78</text>
+
+    <rect x="346" y="151" width="40" height="129" rx="3" fill="url(#sampGrad)"/>
+    <text x="366.0" y="145" text-anchor="middle" fill="#d8b4fe" font-size="11">0.72</text>
+
+    <text x="343" y="305" text-anchor="middle" fill="#cbd5e1" font-size="12" font-weight="600">Energy</text>
+    <text x="343" y="322" text-anchor="middle" fill="#64748b" font-size="10">W=0.066</text>
+
+    <!-- COMFORT -->
+    <rect x="420" y="113" width="40" height="167" rx="3" fill="url(#physGrad)"/>
+    <text x="440.0" y="107" text-anchor="middle" fill="#7dd3fc" font-size="11">0.93</text>
+
+    <rect x="466" y="118" width="40" height="162" rx="3" fill="url(#sampGrad)"/>
+    <text x="486.0" y="112" text-anchor="middle" fill="#d8b4fe" font-size="11">0.90</text>
+
+    <text x="463" y="305" text-anchor="middle" fill="#cbd5e1" font-size="12" font-weight="600">Comfort</text>
+    <text x="463" y="322" text-anchor="middle" fill="#64748b" font-size="10">W=0.026</text>
+
+    <!-- STRESS -->
+    <rect x="540" y="280" width="40" height="0" rx="3" fill="url(#physGrad)"/>
+    <text x="560.0" y="274" text-anchor="middle" fill="#7dd3fc" font-size="11">0.00</text>
+
+    <rect x="586" y="270" width="40" height="10" rx="3" fill="url(#sampGrad)"/>
+    <text x="606.0" y="264" text-anchor="middle" fill="#d8b4fe" font-size="11">0.06</text>
+
+    <text x="583" y="305" text-anchor="middle" fill="#cbd5e1" font-size="12" font-weight="600">Stress</text>
+    <text x="583" y="322" text-anchor="middle" fill="#64748b" font-size="10">W=0.060</text>
+
+    <!-- CURIOSITY -->
+    <rect x="660" y="277" width="40" height="3" rx="3" fill="url(#physGrad)"/>
+    <text x="680.0" y="271" text-anchor="middle" fill="#7dd3fc" font-size="11">0.02</text>
+
+    <rect x="706" y="280" width="40" height="0" rx="3" fill="url(#sampGrad)"/>
+    <text x="726.0" y="274" text-anchor="middle" fill="#d8b4fe" font-size="11">0.00</text>
+
+    <text x="703" y="305" text-anchor="middle" fill="#cbd5e1" font-size="12" font-weight="600">Curiosity</text>
+    <text x="703" y="322" text-anchor="middle" fill="#64748b" font-size="10">W=0.017</text>
+
+  </g>
+  <text x="450" y="485" text-anchor="middle" fill="#64748b" font-size="12">
+    Acceptance Criteria: Wasserstein Distance &lt; 0.15 on all drives. Generated by training/validate_skill_models.py.
+  </text>
+</svg>

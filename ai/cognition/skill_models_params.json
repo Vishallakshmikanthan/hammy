@@ -1,0 +1,386 @@
+{
+  "approach_food": {
+    "success_rate": 0.9467,
+    "duration": {
+      "mean": 4.96,
+      "std": 1.6,
+      "slope_dist": 8.006,
+      "dist_mean": 0.319,
+      "min": 2.0,
+      "max": 8.0
+    },
+    "energy_cost": {
+      "mean": 0.00012,
+      "std": 0.0001
+    },
+    "collision_rate": 0.0,
+    "drive_deltas": {
+      "hunger": {
+        "mean": -0.00746,
+        "std": 0.02468
+      },
+      "thirst": {
+        "mean": 0.0001,
+        "std": 0.0001
+      },
+      "energy": {
+        "mean": -0.00012,
+        "std": 0.0001
+      },
+      "comfort": {
+        "mean": 0.0,
+        "std": 0.0001
+      },
+      "stress": {
+        "mean": 1e-05,
+        "std": 0.0001
+      },
+      "curiosity": {
+        "mean": -0.08847,
+        "std": 0.04214
+      }
+    },
+    "displacement": {
+      "dx_mean": 0.2427,
+      "dx_std": 0.1975,
+      "dy_mean": -0.0985,
+      "dy_std": 0.0864
+    }
+  },
+  "eat": {
+    "success_rate": 1.0,
+    "duration": {
+      "mean": 10.44,
+      "std": 1.18,
+      "slope_dist": 6.471,
+      "dist_mean": 0.046,
+      "min": 10.0,
+      "max": 16.0
+    },
+    "energy_cost": {
+      "mean": 0.00027,
+      "std": 0.0001
+    },
+    "collision_rate": 0.0,
+    "drive_deltas": {
+      "hunger": {
+        "mean": -0.32928,
+        "std": 0.16325
+      },
+      "thirst": {
+        "mean": 0.00021,
+        "std": 0.0001
+      },
+      "energy": {
+        "mean": -0.00027,
+        "std": 0.0001
+      },
+      "comfort": {
+        "mean": -0.00011,
+        "std": 0.0001
+      },
+      "stress": {
+        "mean": 6e-05,
+        "std": 0.00016
+      },
+      "curiosity": {
+        "mean": -0.03227,
+        "std": 0.02773
+      }
+    },
+    "displacement": {
+      "dx_mean": 0.2609,
+      "dx_std": 0.2057,
+      "dy_mean": -0.098,
+      "dy_std": 0.0946
+    }
+  },
+  "drink": {
+    "success_rate": 0.9667,
+    "duration": {
+      "mean": 11.43,
+      "std": 3.03,
+      "slope_dist": 6.024,
+      "dist_mean": 0.446,
+      "min": 8.0,
+      "max": 18.0
+    },
+    "energy_cost": {
+      "mean": 0.0003,
+      "std": 0.0001
+    },
+    "collision_rate": 0.0,
+    "drive_deltas": {
+      "hunger": {
+        "mean": 0.0002,
+        "std": 0.0001
+      },
+      "thirst": {
+        "mean": -0.31747,
+        "std": 0.1797
+      },
+      "energy": {
+        "mean": -0.0003,
+        "std": 0.0001
+      },
+      "comfort": {
+        "mean": -9e-05,
+        "std": 0.0001
+      },
+      "stress": {
+        "mean": 1e-05,
+        "std": 0.00019
+      },
+      "curiosity": {
+        "mean": -0.11217,
+        "std": 0.04399
+      }
+    },
+    "displacement": {
+      "dx_mean": 0.4092,
+      "dx_std": 0.1982,
+      "dy_mean": -0.0209,
+      "dy_std": 0.0804
+    }
+  },
+  "explore_area": {
+    "success_rate": 1.0,
+    "duration": {
+      "mean": 270.13,
+      "std": 86.72,
+      "slope_dist": -59.754,
+      "dist_mean": 0.245,
+      "min": 20.0,
+      "max": 300.0
+    },
+    "energy_cost": {
+      "mean": 0.00722,
+      "std": 0.00247
+    },
+    "collision_rate": 0.0,
+    "drive_deltas": {
+      "hunger": {
+        "mean": 0.00427,
+        "std": 0.00747
+      },
+      "thirst": {
+        "mean": 0.00585,
+        "std": 0.00189
+      },
+      "energy": {
+        "mean": -0.00722,
+        "std": 0.00247
+      },
+      "comfort": {
+        "mean": -0.00311,
+        "std": 0.00102
+      },
+      "stress": {
+        "mean": 0.00182,
+        "std": 0.00468
+      },
+      "curiosity": {
+        "mean": -0.06402,
+        "std": 0.03065
+      }
+    },
+    "displacement": {
+      "dx_mean": 0.1656,
+      "dx_std": 0.1882,
+      "dy_mean": -0.0345,
+      "dy_std": 0.0747
+    }
+  },
+  "rest": {
+    "success_rate": 1.0,
+    "duration": {
+      "mean": 557.16,
+      "std": 817.05,
+      "slope_dist": 116.016,
+      "dist_mean": 0.319,
+      "min": 2.0,
+      "max": 1800.0
+    },
+    "energy_cost": {
+      "mean": 7e-05,
+      "std": 0.0001
+    },
+    "collision_rate": 0.0,
+    "drive_deltas": {
+      "hunger": {
+        "mean": 0.00377,
+        "std": 0.00544
+      },
+      "thirst": {
+        "mean": 0.0044,
+        "std": 0.00637
+      },
+      "energy": {
+        "mean": 0.02488,
+        "std": 0.03726
+      },
+      "comfort": {
+        "mean": 0.0274,
+        "std": 0.04042
+      },
+      "stress": {
+        "mean": -0.02327,
+        "std": 0.03481
+      },
+      "curiosity": {
+        "mean": -0.08584,
+        "std": 0.04396
+      }
+    },
+    "displacement": {
+      "dx_mean": 0.2345,
+      "dx_std": 0.2074,
+      "dy_mean": 0.0927,
+      "dy_std": 0.087
+    }
+  },
+  "hide": {
+    "success_rate": 1.0,
+    "duration": {
+      "mean": 447.13,
+      "std": 35.11,
+      "slope_dist": -28.027,
+      "dist_mean": 0.206,
+      "min": 20.0,
+      "max": 450.0
+    },
+    "energy_cost": {
+      "mean": 0.01177,
+      "std": 0.00163
+    },
+    "collision_rate": 0.0,
+    "drive_deltas": {
+      "hunger": {
+        "mean": 0.00805,
+        "std": 0.00063
+      },
+      "thirst": {
+        "mean": 0.00971,
+        "std": 0.00077
+      },
+      "energy": {
+        "mean": -0.01177,
+        "std": 0.00163
+      },
+      "comfort": {
+        "mean": 0.02228,
+        "std": 0.00176
+      },
+      "stress": {
+        "mean": -0.01786,
+        "std": 0.00417
+      },
+      "curiosity": {
+        "mean": -0.05116,
+        "std": 0.02669
+      }
+    },
+    "displacement": {
+      "dx_mean": -0.0577,
+      "dx_std": 0.1797,
+      "dy_mean": -0.042,
+      "dy_std": 0.0679
+    }
+  },
+  "enter_tunnel": {
+    "success_rate": 1.0,
+    "duration": {
+      "mean": 16.0,
+      "std": 0.2,
+      "slope_dist": 0.0,
+      "dist_mean": 0.213,
+      "min": 16.0,
+      "max": 16.0
+    },
+    "energy_cost": {
+      "mean": 0.00045,
+      "std": 0.0001
+    },
+    "collision_rate": 0.0,
+    "drive_deltas": {
+      "hunger": {
+        "mean": 0.0003,
+        "std": 0.0001
+      },
+      "thirst": {
+        "mean": 0.0003,
+        "std": 0.0001
+      },
+      "energy": {
+        "mean": -0.00045,
+        "std": 0.0001
+      },
+      "comfort": {
+        "mean": 0.00072,
+        "std": 0.0001
+      },
+      "stress": {
+        "mean": -0.00059,
+        "std": 0.00012
+      },
+      "curiosity": {
+        "mean": -0.06216,
+        "std": 0.02635
+      }
+    },
+    "displacement": {
+      "dx_mean": -0.021,
+      "dx_std": 0.191,
+      "dy_mean": -0.036,
+      "dy_std": 0.0782
+    }
+  },
+  "run_on_wheel": {
+    "success_rate": 1.0,
+    "duration": {
+      "mean": 13.88,
+      "std": 7.9,
+      "slope_dist": 4.72,
+      "dist_mean": 0.355,
+      "min": 2.0,
+      "max": 24.0
+    },
+    "energy_cost": {
+      "mean": 0.02364,
+      "std": 0.01934
+    },
+    "collision_rate": 0.0,
+    "drive_deltas": {
+      "hunger": {
+        "mean": 0.00027,
+        "std": 0.00016
+      },
+      "thirst": {
+        "mean": 0.00028,
+        "std": 0.00017
+      },
+      "energy": {
+        "mean": -0.02364,
+        "std": 0.01934
+      },
+      "comfort": {
+        "mean": -0.00011,
+        "std": 0.00011
+      },
+      "stress": {
+        "mean": -0.1495,
+        "std": 0.15369
+      },
+      "curiosity": {
+        "mean": -0.25588,
+        "std": 0.21471
+      }
+    },
+    "displacement": {
+      "dx_mean": -0.2707,
+      "dx_std": 0.1852,
+      "dy_mean": 0.1083,
+      "dy_std": 0.0826
+    }
+  }
+}
