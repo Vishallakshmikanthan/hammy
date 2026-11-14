@@ -50,3 +50,15 @@ desktop.ini
 *.swp
 *.swo
 
+# Local SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Node / Frontend
+node_modules/
+dist/
+web/node_modules/
+web/dist/
+
+

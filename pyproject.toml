@@ -21,3 +21,13 @@ sim = [
     "pytest>=8.0.0",
 ]
 
+[tool.pytest.ini_options]
+addopts = "-p no:hypothesispytest"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::pytest.PytestDeprecationWarning",
+    "ignore:.*conflicts with persistent instance.*:sqlalchemy.exc.SAWarning",
+]
+
+
