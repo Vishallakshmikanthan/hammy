@@ -68,6 +68,8 @@ data/raw_video/*.mp4
 data/raw_video/*.mov
 data/raw_video/*.avi
 data/raw_video/*.mkv
+data/clips/*.mp4
+data/keypoints/dlc_raw/
 reference/video/*.mp4
 
 

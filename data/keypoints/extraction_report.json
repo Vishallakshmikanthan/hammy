@@ -1,0 +1,212 @@
+{
+  "video1_syrian_groom": {
+    "clip": {
+      "src": "data/raw_video/hamster-video1.mp4",
+      "dst": "data/clips/clip_video1_syrian_groom.mp4",
+      "fps": 25.0,
+      "frames": 305,
+      "width": 960,
+      "height": 540,
+      "duration_s": 12.2
+    },
+    "superanimal": "superanimal_quadruped",
+    "extraction": {
+      "h5_path": "data/keypoints/dlc_raw/video1_syrian_groom/clip_video1_syrian_groom_superanimal_quadruped_hrnet_w32_fasterrcnn_resnet50_fpn_v2.h5",
+      "csv_path": "data/keypoints/video1_syrian_groom_raw.csv",
+      "frames": 305,
+      "available_bodyparts_count": 39,
+      "keypoints": {
+        "nose": {
+          "matched": "nose",
+          "mean_conf": 0.704,
+          "valid_pct": 98.0
+        },
+        "left_ear": {
+          "matched": "left_earbase",
+          "mean_conf": 0.644,
+          "valid_pct": 100.0
+        },
+        "right_ear": {
+          "matched": "right_earbase",
+          "mean_conf": 0.701,
+          "valid_pct": 99.7
+        },
+        "neck": {
+          "matched": "neck_base",
+          "mean_conf": 0.505,
+          "valid_pct": 85.6
+        },
+        "mid_spine": {
+          "matched": "back_middle",
+          "mean_conf": 0.056,
+          "valid_pct": 0.0
+        },
+        "tail_base": {
+          "matched": "tail_base",
+          "mean_conf": 0.689,
+          "valid_pct": 100.0
+        },
+        "fl_paw": {
+          "matched": "front_left_paw",
+          "mean_conf": 0.68,
+          "valid_pct": 99.0
+        },
+        "fr_paw": {
+          "matched": "front_right_paw",
+          "mean_conf": 0.568,
+          "valid_pct": 90.5
+        },
+        "bl_paw": {
+          "matched": "back_left_paw",
+          "mean_conf": 0.24,
+          "valid_pct": 10.5
+        },
+        "br_paw": {
+          "matched": "back_right_paw",
+          "mean_conf": 0.218,
+          "valid_pct": 10.8
+        }
+      }
+    }
+  },
+  "video6_wheel_run": {
+    "clip": {
+      "src": "data/raw_video/hamster-video6.mp4",
+      "dst": "data/clips/clip_video6_wheel_run.mp4",
+      "fps": 23.976,
+      "frames": 287,
+      "width": 960,
+      "height": 540,
+      "duration_s": 11.97
+    },
+    "superanimal": "superanimal_quadruped",
+    "extraction": {
+      "h5_path": "data/keypoints/dlc_raw/video6_wheel_run/clip_video6_wheel_run_superanimal_quadruped_hrnet_w32_fasterrcnn_resnet50_fpn_v2.h5",
+      "csv_path": "data/keypoints/video6_wheel_run_raw.csv",
+      "frames": 287,
+      "available_bodyparts_count": 39,
+      "keypoints": {
+        "nose": {
+          "matched": "nose",
+          "mean_conf": 0.828,
+          "valid_pct": 100.0
+        },
+        "left_ear": {
+          "matched": "left_earbase",
+          "mean_conf": 0.76,
+          "valid_pct": 100.0
+        },
+        "right_ear": {
+          "matched": "right_earbase",
+          "mean_conf": 0.514,
+          "valid_pct": 87.8
+        },
+        "neck": {
+          "matched": "neck_base",
+          "mean_conf": 0.69,
+          "valid_pct": 100.0
+        },
+        "mid_spine": {
+          "matched": "back_middle",
+          "mean_conf": 0.292,
+          "valid_pct": 29.3
+        },
+        "tail_base": {
+          "matched": "tail_base",
+          "mean_conf": 0.638,
+          "valid_pct": 96.5
+        },
+        "fl_paw": {
+          "matched": "front_left_paw",
+          "mean_conf": 0.468,
+          "valid_pct": 78.4
+        },
+        "fr_paw": {
+          "matched": "front_right_paw",
+          "mean_conf": 0.357,
+          "valid_pct": 44.3
+        },
+        "bl_paw": {
+          "matched": "back_left_paw",
+          "mean_conf": 0.586,
+          "valid_pct": 80.1
+        },
+        "br_paw": {
+          "matched": "back_right_paw",
+          "mean_conf": 0.313,
+          "valid_pct": 36.9
+        }
+      }
+    }
+  },
+  "video7_platform_walk": {
+    "clip": {
+      "src": "data/raw_video/hamster-video7.mp4",
+      "dst": "data/clips/clip_video7_platform_walk.mp4",
+      "fps": 30.0,
+      "frames": 600,
+      "width": 960,
+      "height": 540,
+      "duration_s": 20.0
+    },
+    "superanimal": "superanimal_quadruped",
+    "extraction": {
+      "h5_path": "data/keypoints/dlc_raw/video7_platform_walk_superanimal_quadruped/clip_video7_platform_walk_superanimal_quadruped_hrnet_w32_fasterrcnn_resnet50_fpn_v2.h5",
+      "csv_path": "data/keypoints/video7_platform_walk_raw.csv",
+      "frames": 600,
+      "available_bodyparts_count": 39,
+      "keypoints": {
+        "nose": {
+          "matched": "nose",
+          "mean_conf": 0.699,
+          "valid_pct": 85.5
+        },
+        "left_ear": {
+          "matched": "left_earbase",
+          "mean_conf": 0.495,
+          "valid_pct": 76.2
+        },
+        "right_ear": {
+          "matched": "right_earbase",
+          "mean_conf": 0.572,
+          "valid_pct": 86.2
+        },
+        "neck": {
+          "matched": "neck_base",
+          "mean_conf": 0.401,
+          "valid_pct": 61.8
+        },
+        "mid_spine": {
+          "matched": "back_middle",
+          "mean_conf": 0.121,
+          "valid_pct": 10.5
+        },
+        "tail_base": {
+          "matched": "tail_base",
+          "mean_conf": 0.303,
+          "valid_pct": 47.2
+        },
+        "fl_paw": {
+          "matched": "front_left_paw",
+          "mean_conf": 0.47,
+          "valid_pct": 67.0
+        },
+        "fr_paw": {
+          "matched": "front_right_paw",
+          "mean_conf": 0.474,
+          "valid_pct": 67.0
+        },
+        "bl_paw": {
+          "matched": "back_left_paw",
+          "mean_conf": 0.406,
+          "valid_pct": 57.8
+        },
+        "br_paw": {
+          "matched": "back_right_paw",
+          "mean_conf": 0.471,
+          "valid_pct": 68.3
+        }
+      }
+    }
+  }
+}

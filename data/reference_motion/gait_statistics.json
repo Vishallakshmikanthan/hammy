@@ -1,0 +1,181 @@
+{
+  "real_video_cleaning": {
+    "video1_syrian_groom": {
+      "frames": 305,
+      "raw_jitter_px_per_f2": 15.917,
+      "clean_jitter_px_per_f2": 5.018,
+      "median_body_length_px": 238.7,
+      "valid_pct_at_0_35": {
+        "nose": 98.0,
+        "left_ear": 100.0,
+        "right_ear": 99.7,
+        "neck": 85.6,
+        "mid_spine": 0.0,
+        "tail_base": 100.0,
+        "fl_paw": 99.0,
+        "fr_paw": 90.5,
+        "bl_paw": 10.5,
+        "br_paw": 10.8
+      }
+    },
+    "video6_wheel_run": {
+      "frames": 287,
+      "raw_jitter_px_per_f2": 24.418,
+      "clean_jitter_px_per_f2": 13.221,
+      "median_body_length_px": 352.3,
+      "valid_pct_at_0_35": {
+        "nose": 100.0,
+        "left_ear": 100.0,
+        "right_ear": 87.8,
+        "neck": 100.0,
+        "mid_spine": 29.3,
+        "tail_base": 96.5,
+        "fl_paw": 78.4,
+        "fr_paw": 44.3,
+        "bl_paw": 80.1,
+        "br_paw": 36.9
+      }
+    },
+    "video7_platform_walk": {
+      "frames": 600,
+      "raw_jitter_px_per_f2": 32.749,
+      "clean_jitter_px_per_f2": 13.171,
+      "median_body_length_px": 246.2,
+      "valid_pct_at_0_35": {
+        "nose": 85.5,
+        "left_ear": 76.2,
+        "right_ear": 86.2,
+        "neck": 61.8,
+        "mid_spine": 10.5,
+        "tail_base": 47.2,
+        "fl_paw": 67.0,
+        "fr_paw": 67.0,
+        "bl_paw": 57.8,
+        "br_paw": 68.3
+      }
+    }
+  },
+  "real_video_measured": {
+    "wheel_running_video6": {
+      "source_clip": "clip_video6_wheel_run.mp4",
+      "source_type": "REAL_VIDEO",
+      "dominant_paw_tracked": "bl_paw",
+      "paw_mean_conf": 0.586,
+      "stride_freq_hz": 2.09,
+      "stride_period_s": 0.479,
+      "paw_excursion_body_frac": 0.432,
+      "scaled_syrian_stride_length_m": 0.0627,
+      "scaled_syrian_speed_m_s": 0.131,
+      "caveat": "Measured from dwarf hamster running on a curved wheel; scaled to 0.145 m Syrian body length."
+    },
+    "stop_start_video7": {
+      "source_clip": "clip_video7_platform_walk.mp4",
+      "source_type": "REAL_VIDEO",
+      "moving_fraction": 0.855,
+      "num_transitions": 39,
+      "mean_move_bout_s": 0.86,
+      "mean_stop_bout_s": 0.14,
+      "caveat": "Handheld oblique camera; centroid motion includes residual camera pan."
+    }
+  },
+  "retargeting_metrics": {
+    "real_video1_groom_REAL": {
+      "clip_id": "real_video1_groom_REAL",
+      "source_type": "REAL_VIDEO",
+      "mean_limit_clip_err_rad": 0.0004,
+      "frames_at_50hz": 610,
+      "duration_s": 12.2,
+      "estimated_unobserved_dofs": [
+        "spine_yaw",
+        "neck_yaw",
+        "fl/fr/bl/br_hip_abd"
+      ]
+    },
+    "real_video6_wheel_run_REAL": {
+      "clip_id": "real_video6_wheel_run_REAL",
+      "source_type": "REAL_VIDEO",
+      "mean_limit_clip_err_rad": 0.0112,
+      "frames_at_50hz": 599,
+      "duration_s": 11.97,
+      "estimated_unobserved_dofs": [
+        "spine_yaw",
+        "neck_yaw",
+        "fl/fr/bl/br_hip_abd"
+      ]
+    }
+  },
+  "synthetic_reference_targets": {
+    "label": "SYNTHETIC (ANIMATION-DRIVEN / PROCEDURAL FALLBACK)",
+    "walk_slow_target": {
+      "speed_m_s": 0.12,
+      "stride_freq_hz": 2.6,
+      "stride_length_m": 0.046
+    },
+    "trot_medium_target": {
+      "speed_m_s": 0.22,
+      "stride_freq_hz": 4.0,
+      "stride_length_m": 0.055
+    },
+    "stop_start_target": {
+      "move_bout_s": 1.4,
+      "stop_bout_s": 1.0
+    },
+    "clips": [
+      {
+        "clip_id": "walk_slow_SYNTHETIC",
+        "path": "data/reference_motion/walk_slow_SYNTHETIC.npz",
+        "source_type": "SYNTHETIC",
+        "behaviour_label": "walk_slow",
+        "fps": 50.0,
+        "frames": 150,
+        "duration_s": 3.0,
+        "mean_speed_m_s": 0.12,
+        "mean_yaw_rate_rad_s": 0.0
+      },
+      {
+        "clip_id": "trot_medium_SYNTHETIC",
+        "path": "data/reference_motion/trot_medium_SYNTHETIC.npz",
+        "source_type": "SYNTHETIC",
+        "behaviour_label": "trot_medium",
+        "fps": 50.0,
+        "frames": 150,
+        "duration_s": 3.0,
+        "mean_speed_m_s": 0.22,
+        "mean_yaw_rate_rad_s": 0.0
+      },
+      {
+        "clip_id": "turn_left_SYNTHETIC",
+        "path": "data/reference_motion/turn_left_SYNTHETIC.npz",
+        "source_type": "SYNTHETIC",
+        "behaviour_label": "turn_left",
+        "fps": 50.0,
+        "frames": 150,
+        "duration_s": 3.0,
+        "mean_speed_m_s": 0.14,
+        "mean_yaw_rate_rad_s": 0.8
+      },
+      {
+        "clip_id": "turn_right_SYNTHETIC",
+        "path": "data/reference_motion/turn_right_SYNTHETIC.npz",
+        "source_type": "SYNTHETIC",
+        "behaviour_label": "turn_right",
+        "fps": 50.0,
+        "frames": 150,
+        "duration_s": 3.0,
+        "mean_speed_m_s": 0.14,
+        "mean_yaw_rate_rad_s": -0.8
+      },
+      {
+        "clip_id": "stop_start_SYNTHETIC",
+        "path": "data/reference_motion/stop_start_SYNTHETIC.npz",
+        "source_type": "SYNTHETIC",
+        "behaviour_label": "stop_start",
+        "fps": 50.0,
+        "frames": 200,
+        "duration_s": 4.0,
+        "mean_speed_m_s": 0.101,
+        "mean_yaw_rate_rad_s": 0.0
+      }
+    ]
+  }
+}

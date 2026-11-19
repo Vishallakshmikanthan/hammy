@@ -53,3 +53,30 @@ Proceed to **Stage 1: Hamster body model (MJCF)** — build versioned 16-DoF `si
 ### Exact Next Step
 **STOP AT HUMAN CHECKPOINT 1:** Wait for user approval of `renders/stage1/hamster_model_4view.png` and `renders/stage1/hamster_stand_10s.mp4` before starting Stage 2 (Video → Reference Motion + `SYNTHETIC` procedural gait fallback).
 
+---
+
+## Stage 2: Video to Reference Motion — **COMPLETE (Awaiting HUMAN CHECKPOINT 2)**
+
+### What Was Done
+- **Pose Estimation (`scripts/stage2_extract_poses.py`):** Ran DeepLabCut 3.0.2 `superanimal_quadruped` (`hrnet_w32`) on RTX 5070 across 3 usable clips (`video1_syrian_groom`, `video6_wheel_run`, `video7_platform_walk`), saving raw & cleaned 10-keypoint CSVs (`data/keypoints/*_raw.csv`, `*_clean.csv`).
+- **Cleaning & Gait Statistics (`scripts/stage2_clean_retarget_and_render.py`):** Dropped low-confidence keypoints (`p < 0.35`), interpolated gaps (`<= 12` frames), Savitzky-Golay smoothed, normalized body scale, and computed real-video wheel gait & stop-start statistics in [`data/reference_motion/gait_statistics.json`](data/reference_motion/gait_statistics.json).
+- **Retargeting & Unified Drop-In Library (`training/reference_library.py`):**
+  - Saved 2 `REAL_VIDEO` retargeted clips (`real_video1_groom_REAL.npz`, `real_video6_wheel_run_REAL.npz`).
+  - Generated 5 explicitly marked `SYNTHETIC` (`ANIMATION-DRIVEN`) procedural flat-ground locomotion clips (`walk_slow_SYNTHETIC.npz`, `trot_medium_SYNTHETIC.npz`, `turn_left_SYNTHETIC.npz`, `turn_right_SYNTHETIC.npz`, `stop_start_SYNTHETIC.npz`) via `scripts/stage2_generate_synthetic_gaits.py`.
+  - Built source-agnostic `ReferenceMotionLibrary` supporting `synthetic`, `real`, and `mixed` modes without changing Stage 3 training code.
+- **Overlays & Tests:** Rendered 3 real-video keypoint overlay videos + 4 MuJoCo reference playback videos + 2 preview sheets in `renders/stage2/`, recorded [`docs/decisions/ADR-0003-stage2-pose-and-reference-motion.md`](docs/decisions/ADR-0003-stage2-pose-and-reference-motion.md), and passed all 3 Stage 2 acceptance tests in [`tests/test_stage2_reference_motion.py`](tests/test_stage2_reference_motion.py) (3/3 PASSED in 0.55 s).
+
+### Key Metrics
+| Clip / Metric | Raw Jitter (px/f²) | Clean Jitter (px/f²) | Keypoint Validity (`p>=0.35`) | Retarget Clip Err (rad) |
+| :--- | :---: | :---: | :--- | :---: |
+| `video1_syrian_groom` (`REAL_VIDEO`) | `15.92` | `5.02` (-68%) | nose `98%`, ears `99.7–100%`, fl/fr paw `91–99%` | `0.0004` |
+| `video6_wheel_run` (`REAL_VIDEO`) | `24.42` | `13.22` (-46%) | nose `100%`, neck `100%`, fl/bl paw `78–80%` | `0.0112` |
+| `video7_platform_walk` (`REAL_VIDEO`) | `32.75` | `13.17` (-60%) | nose `85.5%`, ears `76–86%`, paws `58–68%` | N/A (oblique) |
+
+- **Real-video wheel gait (`video6`, scaled to `0.145 m` Syrian length):** stride freq `2.09 Hz` (`0.479 s` period), paw excursion `0.432` body lengths → scaled stride length `0.0627 m`, scaled speed `0.131 m/s`.
+- **Real-video stop-start (`video7`, oblique handheld):** moving fraction `0.855`, `39` transitions, mean move bout `0.86 s`, mean stop bout `0.14 s`.
+
+### Exact Next Step
+**STOP AT HUMAN CHECKPOINT 2:** Wait for user review of the keypoint overlay videos and MuJoCo reference renders in `renders/stage2/` before starting Stage 3 (Locomotion RL with imitation + curriculum + ablation + ONNX export).
+
+
