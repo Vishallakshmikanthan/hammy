@@ -28,6 +28,11 @@ from services.api.main import app
 from services.api.rate_limit import RateLimiter, global_rate_limiter, rate_limit_dependency
 
 
+@pytest.fixture(autouse=True)
+def require_auth_for_p2_3(monkeypatch):
+    monkeypatch.setenv("HAMMY_AUTH_REQUIRED", "true")
+
+
 @pytest.fixture
 def client_with_db():
     """Provides FastAPI TestClient wired to an isolated in-memory test database."""

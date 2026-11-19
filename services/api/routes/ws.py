@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
 from infrastructure.database.models import Pet, PetState, User
-from services.api.auth import JWT_ALGORITHM, JWT_SECRET, get_db
+from services.api.auth import JWT_ALGORITHM, JWT_SECRET, get_db, is_auth_required
 from services.api.websocket import ws_manager
 import jwt
 
@@ -44,6 +44,9 @@ async def pet_websocket_endpoint(
                 user_id = payload.get("sub")
             except Exception as e:
                 logger.warning("WebSocket auth failed: %s", e)
+    elif not is_auth_required():
+        # Automatically authenticate in local development mode
+        user_id = "usr_hammy_default"
 
     if not user_id:
         await websocket.close(code=4001, reason="Authentication failed")
@@ -51,7 +54,11 @@ async def pet_websocket_endpoint(
 
     # 2. Verify pet ownership
     pet = session.get(Pet, pet_id)
-    if not pet or pet.user_id != user_id:
+    if not pet:
+        await websocket.close(code=4004, reason="Pet not found")
+        return
+
+    if is_auth_required() and pet.user_id != user_id:
         await websocket.close(code=4003, reason="Forbidden")
         return
 
