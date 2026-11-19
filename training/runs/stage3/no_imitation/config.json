@@ -4,7 +4,7 @@
   "model_version": "hamster_mjcf_v1.0.0",
   "source_filter": "mixed",
   "use_imitation": false,
-  "total_timesteps": 500000,
+  "total_timesteps": 1000000,
   "n_envs": 64,
   "seed": 42,
   "curriculum": "auto_success_gated (stand->perturb->walk->turn->stop->target)",
