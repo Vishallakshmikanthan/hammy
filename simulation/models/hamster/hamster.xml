@@ -1,0 +1,239 @@
+<mujoco model="hamster_mjcf_v1.0.0">
+  <!--
+    HAMSTER Stage 1 — Syrian Hamster (Mesocricetus auratus) MJCF v1.0.0
+    Actuated DoF: 16 (2 spine + 2 neck/head + 4x3 legs) + 1 passive tail DoF
+    Nominal dimensions: ~0.145 m nose-to-rump, ~0.060 m width, ~0.060 m standing height
+    Total mass: 0.125 kg (pelvis 0.042 + torso 0.038 + head 0.020 + 4 legs 0.024 + tail 0.001)
+    Visual geometry: group="2" (contype=0, conaffinity=0)
+    Collision geometry: group="3" (contype=1, conaffinity=1)
+  -->
+  <compiler angle="radian" coordinate="local" inertiafromgeom="true"/>
+  <option timestep="0.002" iterations="60" solver="Newton" gravity="0 0 -9.81"/>
+
+  <visual>
+    <global offwidth="960" offheight="540"/>
+    <headlight ambient="0.35 0.35 0.35" diffuse="0.6 0.6 0.6" specular="0.1 0.1 0.1"/>
+    <map znear="0.005" zfar="10.0"/>
+  </visual>
+
+  <asset>
+    <texture name="grid_tex" type="2d" builtin="checker" rgb1="0.88 0.86 0.82" rgb2="0.78 0.75 0.70"
+             width="512" height="512" mark="edge" markrgb="0.55 0.52 0.48"/>
+    <material name="floor_mat" texture="grid_tex" texrepeat="16 16" reflectance="0.05"/>
+    <material name="fur_golden" rgba="0.78 0.55 0.31 1" specular="0.1" shininess="0.1"/>
+    <material name="fur_cream" rgba="0.93 0.88 0.79 1" specular="0.05" shininess="0.05"/>
+    <material name="ear_pink" rgba="0.72 0.50 0.48 1" specular="0.1" shininess="0.2"/>
+    <material name="paw_pink" rgba="0.91 0.71 0.69 1" specular="0.1" shininess="0.2"/>
+    <material name="eye_black" rgba="0.06 0.05 0.05 1" specular="0.8" shininess="0.9"/>
+    <material name="nose_pink" rgba="0.92 0.58 0.60 1" specular="0.3" shininess="0.4"/>
+  </asset>
+
+  <default>
+    <joint damping="0.015" armature="0.0002" frictionloss="0.002" limited="true"/>
+    <geom condim="3" friction="1.0 0.01 0.005" solref="0.012 1.0" solimp="0.9 0.95 0.001"/>
+    <default class="visual">
+      <geom group="2" contype="0" conaffinity="0" density="0"/>
+    </default>
+    <default class="collision">
+      <geom group="3" contype="1" conaffinity="1" rgba="0.2 0.6 0.9 0.35"/>
+    </default>
+    <default class="leg_act">
+      <position kp="0.80" kv="0.03" forcerange="-0.25 0.25"/>
+    </default>
+    <default class="spine_act">
+      <position kp="1.00" kv="0.04" forcerange="-0.30 0.30"/>
+    </default>
+    <default class="neck_act">
+      <position kp="0.40" kv="0.02" forcerange="-0.15 0.15"/>
+    </default>
+  </default>
+
+  <worldbody>
+    <light name="key_light" pos="0.4 -0.4 0.8" dir="-0.4 0.4 -0.8" diffuse="0.85 0.83 0.80" castshadow="true"/>
+    <light name="fill_light" pos="-0.4 0.5 0.6" dir="0.4 -0.5 -0.6" diffuse="0.35 0.38 0.42" castshadow="false"/>
+    <geom name="floor" type="plane" size="2.0 2.0 0.05" material="floor_mat" friction="1.0 0.01 0.005"/>
+
+    <!-- Root: Pelvis / Hindquarter (z = 0.047 m so paws rest cleanly on z = 0) -->
+    <body name="pelvis" pos="0 0 0.047">
+      <freejoint name="root_free"/>
+      <site name="pelvis_imu" pos="0 0 0" size="0.003" rgba="1 0 0 0.5"/>
+      <camera name="track_three_quarter" mode="trackcom" pos="0.20 -0.22 0.13" xyaxes="0.74 0.67 0 -0.25 0.28 0.93"/>
+      <camera name="track_side" mode="trackcom" pos="0.02 -0.26 0.06" xyaxes="1 0 0 0 0.2 0.98"/>
+      <camera name="track_front" mode="trackcom" pos="0.26 0.0 0.07" xyaxes="0 1 0 -0.2 0 0.98"/>
+      <camera name="track_top" mode="trackcom" pos="0.02 0.0 0.32" xyaxes="1 0 0 0 1 0"/>
+
+      <!-- Pelvis collision & visual -->
+      <geom class="collision" name="pelvis_col" type="capsule" fromto="-0.022 0 0 0.010 0 0" size="0.024" mass="0.042"/>
+      <geom class="visual" name="pelvis_vis_back" type="ellipsoid" pos="-0.006 0 0.003" size="0.036 0.031 0.027" material="fur_golden"/>
+      <geom class="visual" name="pelvis_vis_belly" type="ellipsoid" pos="-0.004 0 -0.008" size="0.030 0.025 0.017" material="fur_cream"/>
+
+      <!-- Passive Stubby Tail (1 passive DoF) -->
+      <body name="tail" pos="-0.040 0 -0.002">
+        <joint name="tail_pitch" type="hinge" axis="0 1 0" range="-0.45 0.45" stiffness="0.02" damping="0.005" frictionloss="0.0005"/>
+        <geom class="collision" name="tail_col" type="capsule" fromto="0 0 0 -0.012 0 0.002" size="0.004" mass="0.001"/>
+        <geom class="visual" name="tail_vis" type="capsule" fromto="0 0 0 -0.013 0 0.002" size="0.0055" material="paw_pink"/>
+      </body>
+
+      <!-- 2-DoF Spine -> Thorax / Anterior Torso -->
+      <body name="torso" pos="0.018 0 0.002">
+        <joint name="spine_pitch" type="hinge" axis="0 1 0" range="-0.45 0.45"/>
+        <joint name="spine_yaw" type="hinge" axis="0 0 1" range="-0.45 0.45"/>
+        <geom class="collision" name="torso_col" type="capsule" fromto="0 0 0 0.036 0 0" size="0.022" mass="0.038"/>
+        <geom class="visual" name="torso_vis_back" type="ellipsoid" pos="0.018 0 0.003" size="0.036 0.028 0.025" material="fur_golden"/>
+        <geom class="visual" name="torso_vis_belly" type="ellipsoid" pos="0.018 0 -0.008" size="0.030 0.023 0.016" material="fur_cream"/>
+
+        <!-- 2-DoF Neck -> Head -->
+        <body name="head" pos="0.050 0 0.006">
+          <joint name="neck_pitch" type="hinge" axis="0 1 0" range="-0.50 0.50"/>
+          <joint name="neck_yaw" type="hinge" axis="0 0 1" range="-0.60 0.60"/>
+          <geom class="collision" name="head_col" type="sphere" pos="0.010 0 0" size="0.020" mass="0.020"/>
+          <geom class="visual" name="head_vis_skull" type="ellipsoid" pos="0.010 0 0.001" size="0.026 0.023 0.020" material="fur_golden"/>
+          <geom class="visual" name="head_vis_cheek_l" type="ellipsoid" pos="0.008 0.014 -0.005" size="0.015 0.012 0.012" material="fur_cream"/>
+          <geom class="visual" name="head_vis_cheek_r" type="ellipsoid" pos="0.008 -0.014 -0.005" size="0.015 0.012 0.012" material="fur_cream"/>
+          <geom class="visual" name="head_vis_snout" type="ellipsoid" pos="0.028 0 -0.003" size="0.011 0.010 0.009" material="fur_cream"/>
+          <geom class="visual" name="nose_vis" type="sphere" pos="0.038 0 -0.003" size="0.0038" material="nose_pink"/>
+          <geom class="visual" name="eye_l" type="sphere" pos="0.024 0.015 0.006" size="0.0042" material="eye_black"/>
+          <geom class="visual" name="eye_r" type="sphere" pos="0.024 -0.015 0.006" size="0.0042" material="eye_black"/>
+          <geom class="visual" name="ear_l" type="ellipsoid" pos="0.002 0.018 0.018" euler="0.3 -0.2 0.3" size="0.006 0.009 0.004" material="ear_pink"/>
+          <geom class="visual" name="ear_r" type="ellipsoid" pos="0.002 -0.018 0.018" euler="-0.3 -0.2 -0.3" size="0.006 0.009 0.004" material="ear_pink"/>
+        </body>
+
+        <!-- Front-Left Leg (3 DoF: abd, hip_pitch, knee_pitch) -->
+        <body name="fl_hip" pos="0.030 0.022 -0.012">
+          <joint name="fl_hip_abd" type="hinge" axis="1 0 0" range="-0.40 0.40"/>
+          <geom class="collision" name="fl_hip_col" type="sphere" size="0.0045" mass="0.002"/>
+          <body name="fl_thigh" pos="0 0.003 0">
+            <joint name="fl_hip_pitch" type="hinge" axis="0 1 0" range="-0.85 0.85"/>
+            <geom class="collision" name="fl_thigh_col" type="capsule" fromto="0 0 0 0 0 -0.018" size="0.0048" mass="0.002"/>
+            <geom class="visual" name="fl_thigh_vis" type="capsule" fromto="0 0 0 0 0 -0.018" size="0.0065" material="fur_golden"/>
+            <body name="fl_shin" pos="0 0 -0.018">
+              <joint name="fl_knee_pitch" type="hinge" axis="0 1 0" range="-1.10 0.60"/>
+              <geom class="collision" name="fl_shin_col" type="capsule" fromto="0 0 0 0 0 -0.014" size="0.0040" mass="0.001"/>
+              <geom class="collision" name="fl_foot_col" type="sphere" pos="0.002 0 -0.016" size="0.0055" mass="0.001"/>
+              <geom class="visual" name="fl_shin_vis" type="capsule" fromto="0 0 0 0 0 -0.015" size="0.0048" material="fur_cream"/>
+              <geom class="visual" name="fl_paw_vis" type="ellipsoid" pos="0.003 0 -0.017" size="0.0075 0.0055 0.0035" material="paw_pink"/>
+              <site name="fl_foot_site" pos="0.002 0 -0.016" size="0.006"/>
+            </body>
+          </body>
+        </body>
+
+        <!-- Front-Right Leg (3 DoF) -->
+        <body name="fr_hip" pos="0.030 -0.022 -0.012">
+          <joint name="fr_hip_abd" type="hinge" axis="1 0 0" range="-0.40 0.40"/>
+          <geom class="collision" name="fr_hip_col" type="sphere" size="0.0045" mass="0.002"/>
+          <body name="fr_thigh" pos="0 -0.003 0">
+            <joint name="fr_hip_pitch" type="hinge" axis="0 1 0" range="-0.85 0.85"/>
+            <geom class="collision" name="fr_thigh_col" type="capsule" fromto="0 0 0 0 0 -0.018" size="0.0048" mass="0.002"/>
+            <geom class="visual" name="fr_thigh_vis" type="capsule" fromto="0 0 0 0 0 -0.018" size="0.0065" material="fur_golden"/>
+            <body name="fr_shin" pos="0 0 -0.018">
+              <joint name="fr_knee_pitch" type="hinge" axis="0 1 0" range="-1.10 0.60"/>
+              <geom class="collision" name="fr_shin_col" type="capsule" fromto="0 0 0 0 0 -0.014" size="0.0040" mass="0.001"/>
+              <geom class="collision" name="fr_foot_col" type="sphere" pos="0.002 0 -0.016" size="0.0055" mass="0.001"/>
+              <geom class="visual" name="fr_shin_vis" type="capsule" fromto="0 0 0 0 0 -0.015" size="0.0048" material="fur_cream"/>
+              <geom class="visual" name="fr_paw_vis" type="ellipsoid" pos="0.003 0 -0.017" size="0.0075 0.0055 0.0035" material="paw_pink"/>
+              <site name="fr_foot_site" pos="0.002 0 -0.016" size="0.006"/>
+            </body>
+          </body>
+        </body>
+      </body>
+
+      <!-- Hind-Left Leg (3 DoF) -->
+      <body name="bl_hip" pos="-0.022 0.024 -0.010">
+        <joint name="bl_hip_abd" type="hinge" axis="1 0 0" range="-0.40 0.40"/>
+        <geom class="collision" name="bl_hip_col" type="sphere" size="0.0050" mass="0.002"/>
+        <body name="bl_thigh" pos="0 0.003 0">
+          <joint name="bl_hip_pitch" type="hinge" axis="0 1 0" range="-0.85 0.85"/>
+          <geom class="collision" name="bl_thigh_col" type="capsule" fromto="0 0 0 0 0 -0.020" size="0.0055" mass="0.002"/>
+          <geom class="visual" name="bl_thigh_vis" type="capsule" fromto="0 0 0 0 0 -0.020" size="0.0080" material="fur_golden"/>
+          <body name="bl_shin" pos="0 0 -0.020">
+            <joint name="bl_knee_pitch" type="hinge" axis="0 1 0" range="-1.10 0.60"/>
+            <geom class="collision" name="bl_shin_col" type="capsule" fromto="0 0 0 0 0 -0.015" size="0.0045" mass="0.001"/>
+            <geom class="collision" name="bl_foot_col" type="sphere" pos="0.003 0 -0.016" size="0.0065" mass="0.001"/>
+            <geom class="visual" name="bl_shin_vis" type="capsule" fromto="0 0 0 0 0 -0.016" size="0.0055" material="fur_cream"/>
+            <geom class="visual" name="bl_paw_vis" type="ellipsoid" pos="0.004 0 -0.017" size="0.0095 0.0060 0.0038" material="paw_pink"/>
+            <site name="bl_foot_site" pos="0.003 0 -0.016" size="0.007"/>
+          </body>
+        </body>
+      </body>
+
+      <!-- Hind-Right Leg (3 DoF) -->
+      <body name="br_hip" pos="-0.022 -0.024 -0.010">
+        <joint name="br_hip_abd" type="hinge" axis="1 0 0" range="-0.40 0.40"/>
+        <geom class="collision" name="br_hip_col" type="sphere" size="0.0050" mass="0.002"/>
+        <body name="br_thigh" pos="0 -0.003 0">
+          <joint name="br_hip_pitch" type="hinge" axis="0 1 0" range="-0.85 0.85"/>
+          <geom class="collision" name="br_thigh_col" type="capsule" fromto="0 0 0 0 0 -0.020" size="0.0055" mass="0.002"/>
+          <geom class="visual" name="br_thigh_vis" type="capsule" fromto="0 0 0 0 0 -0.020" size="0.0080" material="fur_golden"/>
+          <body name="br_shin" pos="0 0 -0.020">
+            <joint name="br_knee_pitch" type="hinge" axis="0 1 0" range="-1.10 0.60"/>
+            <geom class="collision" name="br_shin_col" type="capsule" fromto="0 0 0 0 0 -0.015" size="0.0045" mass="0.001"/>
+            <geom class="collision" name="br_foot_col" type="sphere" pos="0.003 0 -0.016" size="0.0065" mass="0.001"/>
+            <geom class="visual" name="br_shin_vis" type="capsule" fromto="0 0 0 0 0 -0.016" size="0.0055" material="fur_cream"/>
+            <geom class="visual" name="br_paw_vis" type="ellipsoid" pos="0.004 0 -0.017" size="0.0095 0.0060 0.0038" material="paw_pink"/>
+            <site name="br_foot_site" pos="0.003 0 -0.016" size="0.007"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <contact>
+    <exclude body1="pelvis" body2="torso"/>
+    <exclude body1="pelvis" body2="tail"/>
+    <exclude body1="torso" body2="head"/>
+    <exclude body1="torso" body2="fl_hip"/>
+    <exclude body1="torso" body2="fl_thigh"/>
+    <exclude body1="torso" body2="fr_hip"/>
+    <exclude body1="torso" body2="fr_thigh"/>
+    <exclude body1="pelvis" body2="bl_hip"/>
+    <exclude body1="pelvis" body2="bl_thigh"/>
+    <exclude body1="pelvis" body2="br_hip"/>
+    <exclude body1="pelvis" body2="br_thigh"/>
+  </contact>
+
+  <!-- 16 Actuated Position Servos (canonical order) -->
+  <actuator>
+    <position class="spine_act" name="act_spine_pitch" joint="spine_pitch" ctrlrange="-0.45 0.45"/>
+    <position class="spine_act" name="act_spine_yaw"   joint="spine_yaw"   ctrlrange="-0.45 0.45"/>
+    <position class="neck_act"  name="act_neck_pitch"  joint="neck_pitch"  ctrlrange="-0.50 0.50"/>
+    <position class="neck_act"  name="act_neck_yaw"    joint="neck_yaw"    ctrlrange="-0.60 0.60"/>
+
+    <position class="leg_act" name="act_fl_hip_abd"    joint="fl_hip_abd"    ctrlrange="-0.40 0.40"/>
+    <position class="leg_act" name="act_fl_hip_pitch"  joint="fl_hip_pitch"  ctrlrange="-0.85 0.85"/>
+    <position class="leg_act" name="act_fl_knee_pitch" joint="fl_knee_pitch" ctrlrange="-1.10 0.60"/>
+
+    <position class="leg_act" name="act_fr_hip_abd"    joint="fr_hip_abd"    ctrlrange="-0.40 0.40"/>
+    <position class="leg_act" name="act_fr_hip_pitch"  joint="fr_hip_pitch"  ctrlrange="-0.85 0.85"/>
+    <position class="leg_act" name="act_fr_knee_pitch" joint="fr_knee_pitch" ctrlrange="-1.10 0.60"/>
+
+    <position class="leg_act" name="act_bl_hip_abd"    joint="bl_hip_abd"    ctrlrange="-0.40 0.40"/>
+    <position class="leg_act" name="act_bl_hip_pitch"  joint="bl_hip_pitch"  ctrlrange="-0.85 0.85"/>
+    <position class="leg_act" name="act_bl_knee_pitch" joint="bl_knee_pitch" ctrlrange="-1.10 0.60"/>
+
+    <position class="leg_act" name="act_br_hip_abd"    joint="br_hip_abd"    ctrlrange="-0.40 0.40"/>
+    <position class="leg_act" name="act_br_hip_pitch"  joint="br_hip_pitch"  ctrlrange="-0.85 0.85"/>
+    <position class="leg_act" name="act_br_knee_pitch" joint="br_knee_pitch" ctrlrange="-1.10 0.60"/>
+  </actuator>
+
+  <sensor>
+    <framequat name="pelvis_quat" objtype="site" objname="pelvis_imu"/>
+    <gyro name="pelvis_gyro" site="pelvis_imu"/>
+    <velocimeter name="pelvis_linvel" site="pelvis_imu"/>
+    <touch name="fl_touch" site="fl_foot_site"/>
+    <touch name="fr_touch" site="fr_foot_site"/>
+    <touch name="bl_touch" site="bl_foot_site"/>
+    <touch name="br_touch" site="br_foot_site"/>
+  </sensor>
+
+  <!--
+    Standing keyframe:
+    qpos (24): [root_xyz(3), root_quat(4), tail_pitch(1), spine_p, spine_y, neck_p, neck_y,
+                fl_abd, fl_hp, fl_kp, fr_abd, fr_hp, fr_kp, bl_abd, bl_hp, bl_kp, br_abd, br_hp, br_kp]
+    ctrl (16): matches the 16 actuated joints in canonical order
+  -->
+  <keyframe>
+    <key name="stand"
+         qpos="0 0 0.047  1 0 0 0  0.0  0.0 0.0  -0.05 0.0  0.0 0.25 -0.50  0.0 0.25 -0.50  0.0 0.28 -0.55  0.0 0.28 -0.55"
+         ctrl="0.0 0.0  -0.05 0.0  0.0 0.25 -0.50  0.0 0.25 -0.50  0.0 0.28 -0.55  0.0 0.28 -0.55"/>
+  </keyframe>
+</mujoco>

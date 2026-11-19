@@ -1,0 +1,21 @@
+{
+  "model_version": "hamster_mjcf_v1.0.0",
+  "total_mass_kg": 0.125,
+  "actuated_dof": 16,
+  "sim_duration_s": 10.0,
+  "dt_s": 0.002,
+  "nan_count": 0,
+  "pelvis_z_min_mm": 47.07,
+  "pelvis_z_max_mm": 49.46,
+  "pelvis_z_final_mm": 49.45,
+  "max_tilt_deg": 2.065,
+  "final_xy_drift_mm": 1.663,
+  "mean_paw_touch_N": {
+    "fl_touch": 0.396,
+    "fr_touch": 0.396,
+    "bl_touch": 0.217,
+    "br_touch": 0.217
+  },
+  "video_path": "renders/stage1/hamster_stand_10s.mp4",
+  "four_view_path": "renders/stage1/hamster_model_4view.png"
+}

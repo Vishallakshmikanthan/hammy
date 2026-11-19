@@ -23,3 +23,33 @@
 
 ### Exact Next Step
 Proceed to **Stage 1: Hamster body model (MJCF)** — build versioned 16-DoF `simulation/models/hamster/hamster.xml` + versioned observation/action contracts in `contracts/` + physics stability tests + rendered 10 s standing video, then stop at **HUMAN CHECKPOINT 1**.
+
+---
+
+## Stage 1: Hamster Body Model (MJCF) — **COMPLETE (Awaiting HUMAN CHECKPOINT 1)**
+
+### What Was Done
+- Built versioned 16-actuated-DoF (+ 1 passive tail DoF) Syrian hamster MJCF model in [`simulation/models/hamster/hamster.xml`](simulation/models/hamster/hamster.xml) (`hamster_mjcf_v1.0.0`) and metadata/uncertainty spec in [`simulation/models/hamster/model_spec.json`](simulation/models/hamster/model_spec.json).
+- Separated visual (`group="2"`, `density="0"`, no contact) and collision (`group="3"`, capsules/spheres) geometry; added torque-limited position actuators (`forcerange`), 4 paw touch sensors, and pelvis IMU sensors (`framequat`, `gyro`, `velocimeter`).
+- Defined versioned observation (`locomotion_obs_v1.0.0`, fixed 64-dim vector) and action (`locomotion_act_v1.0.0`, 16-dim joint targets + safety clamp) contracts in [`contracts/locomotion_contracts.py`](contracts/locomotion_contracts.py) and exported JSON schemas in `contracts/json_schema/`.
+- Recorded morphology assumptions and decisions in [`docs/decisions/ADR-0002-hamster-mjcf-morphology.md`](docs/decisions/ADR-0002-hamster-mjcf-morphology.md).
+- Wrote and passed all 4 acceptance tests in [`tests/test_stage1_mjcf.py`](tests/test_stage1_mjcf.py) (4/4 PASSED in 0.42 s).
+- Rendered 10 s multi-angle standing video (`renders/stage1/hamster_stand_10s.mp4`), 4-view model sheet (`renders/stage1/hamster_model_4view.png`), and metrics log (`renders/stage1/standing_metrics.json`).
+
+### Metrics (10 s Standing Test, `dt=0.002 s`, 5,000 steps)
+| Metric | Value | Acceptance Target | Status |
+| :--- | :---: | :---: | :---: |
+| Total mass | `0.125 kg` | `0.100–0.140 kg` (Syrian) | PASS |
+| Actuated DoF (+ passive) | `16 (+1 tail)` | `~16 (+ passive tail)` | PASS |
+| NaN / Inf count | `0` | `0` | PASS |
+| Pelvis height (min / max / final) | `47.07 / 49.46 / 49.45 mm` | Stable in `[30, 65] mm` | PASS |
+| Max body tilt | `2.065 deg` | `< 12 deg` | PASS |
+| Final XY drift (10 s) | `1.663 mm` | `< 15 mm` | PASS |
+| Mean paw contact forces (FL/FR/BL/BR) | `0.396 / 0.396 / 0.217 / 0.217 N` | All > 0, sum = `1.226 N` | PASS |
+
+### Problems Caught & Fixed
+- Initial MJCF run flagged `total_mass = 0.563 kg` via automated mass test because `class="visual"` ellipsoids defaulted to `density="1000"`. Fixed with `density="0"` on `class="visual"`, yielding exact `0.125 kg`.
+
+### Exact Next Step
+**STOP AT HUMAN CHECKPOINT 1:** Wait for user approval of `renders/stage1/hamster_model_4view.png` and `renders/stage1/hamster_stand_10s.mp4` before starting Stage 2 (Video → Reference Motion + `SYNTHETIC` procedural gait fallback).
+

@@ -1,0 +1,89 @@
+{
+  "description": "Versioned locomotion observation contract (64-dim flat vector).",
+  "properties": {
+    "schema_version": {
+      "const": "locomotion_obs_v1.0.0",
+      "default": "locomotion_obs_v1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "model_version": {
+      "default": "hamster_mjcf_v1.0.0",
+      "title": "Model Version",
+      "type": "string"
+    },
+    "joint_pos": {
+      "description": "16 actuated joint positions (rad)",
+      "items": {
+        "type": "number"
+      },
+      "title": "Joint Pos",
+      "type": "array"
+    },
+    "joint_vel": {
+      "description": "16 actuated joint velocities (rad/s)",
+      "items": {
+        "type": "number"
+      },
+      "title": "Joint Vel",
+      "type": "array"
+    },
+    "body_quat": {
+      "description": "Pelvis orientation quaternion [w, x, y, z]",
+      "items": {
+        "type": "number"
+      },
+      "title": "Body Quat",
+      "type": "array"
+    },
+    "body_ang_vel": {
+      "description": "Pelvis angular velocity [wx, wy, wz] (rad/s)",
+      "items": {
+        "type": "number"
+      },
+      "title": "Body Ang Vel",
+      "type": "array"
+    },
+    "foot_contacts": {
+      "description": "Normalized paw contacts [fl, fr, bl, br] in [0, 1]",
+      "items": {
+        "type": "number"
+      },
+      "title": "Foot Contacts",
+      "type": "array"
+    },
+    "command": {
+      "description": "Commanded [vx_m_s, vy_m_s, yaw_rate_rad_s] (zero-padded when unused)",
+      "items": {
+        "type": "number"
+      },
+      "title": "Command",
+      "type": "array"
+    },
+    "prev_action": {
+      "description": "Previous 16-dim joint target action (rad)",
+      "items": {
+        "type": "number"
+      },
+      "title": "Prev Action",
+      "type": "array"
+    },
+    "ref_phase": {
+      "description": "Reference gait phase [sin(2pi*phi), cos(2pi*phi)] (zero-padded if none)",
+      "items": {
+        "type": "number"
+      },
+      "title": "Ref Phase",
+      "type": "array"
+    }
+  },
+  "required": [
+    "joint_pos",
+    "joint_vel",
+    "body_quat",
+    "body_ang_vel",
+    "foot_contacts"
+  ],
+  "title": "LocomotionObservationV1",
+  "type": "object"
+}

@@ -1,0 +1,35 @@
+{
+  "description": "Versioned locomotion action contract (16-dim joint position targets).",
+  "properties": {
+    "schema_version": {
+      "const": "locomotion_act_v1.0.0",
+      "default": "locomotion_act_v1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "model_version": {
+      "default": "hamster_mjcf_v1.0.0",
+      "title": "Model Version",
+      "type": "string"
+    },
+    "control_mode": {
+      "const": "position",
+      "default": "position",
+      "title": "Control Mode",
+      "type": "string"
+    },
+    "joint_targets": {
+      "description": "16 actuated joint position targets (rad)",
+      "items": {
+        "type": "number"
+      },
+      "title": "Joint Targets",
+      "type": "array"
+    }
+  },
+  "required": [
+    "joint_targets"
+  ],
+  "title": "LocomotionActionV1",
+  "type": "object"
+}

@@ -1,0 +1,54 @@
+{
+  "model_version": "hamster_mjcf_v1.0.0",
+  "species": "Mesocricetus auratus (Syrian hamster)",
+  "actuated_dof": 16,
+  "passive_dof": 1,
+  "total_mass_kg": 0.125,
+  "dimensions_m": {
+    "nose_to_rump_length": 0.145,
+    "pelvis_width": 0.062,
+    "torso_width": 0.056,
+    "standing_dorsal_height": 0.068,
+    "forelimb_extended": 0.034,
+    "hindlimb_extended": 0.038,
+    "tail_length": 0.013
+  },
+  "assumptions_and_uncertainty": {
+    "mass_kg_range": [0.100, 0.140],
+    "length_m_range": [0.130, 0.160],
+    "video_calibration_notes": [
+      "hamster-video1.mp4 (fixed side view, Syrian hamster): crouched silhouette aspect ratio height/length = 0.705.",
+      "hamster-video6.mp4 (side view, dwarf hamster in wheel): wheel diameter = 1035.9 px, confirming limb extension ~22-25% of body length.",
+      "No metric fiducial was present in the raw videos; absolute metric scale is anchored to published adult Syrian hamster morphometrics."
+    ]
+  },
+  "actuated_joints": [
+    "spine_pitch", "spine_yaw",
+    "neck_pitch", "neck_yaw",
+    "fl_hip_abd", "fl_hip_pitch", "fl_knee_pitch",
+    "fr_hip_abd", "fr_hip_pitch", "fr_knee_pitch",
+    "bl_hip_abd", "bl_hip_pitch", "bl_knee_pitch",
+    "br_hip_abd", "br_hip_pitch", "br_knee_pitch"
+  ],
+  "passive_joints": ["tail_pitch"],
+  "joint_limits_rad": {
+    "spine_pitch": [-0.45, 0.45],
+    "spine_yaw": [-0.45, 0.45],
+    "neck_pitch": [-0.50, 0.50],
+    "neck_yaw": [-0.60, 0.60],
+    "fl_hip_abd": [-0.40, 0.40],
+    "fl_hip_pitch": [-0.85, 0.85],
+    "fl_knee_pitch": [-1.10, 0.60],
+    "fr_hip_abd": [-0.40, 0.40],
+    "fr_hip_pitch": [-0.85, 0.85],
+    "fr_knee_pitch": [-1.10, 0.60],
+    "bl_hip_abd": [-0.40, 0.40],
+    "bl_hip_pitch": [-0.85, 0.85],
+    "bl_knee_pitch": [-1.10, 0.60],
+    "br_hip_abd": [-0.40, 0.40],
+    "br_hip_pitch": [-0.85, 0.85],
+    "br_knee_pitch": [-1.10, 0.60]
+  },
+  "control_hz": 50,
+  "physics_dt_s": 0.002
+}
