@@ -72,6 +72,12 @@ data/clips/*.mp4
 data/keypoints/dlc_raw/
 reference/video/*.mp4
 
+# Heavy Stage 3 TensorBoard event files and intermediate checkpoints (keep final ONNX, CSV, JSON, renders)
+training/runs/stage3/*/tb/
+training/runs/stage3/*/checkpoints/
+training/runs/stage3/*/final_model.zip
+training/runs/stage3/*/vecnorm.pkl
+
 
 
 

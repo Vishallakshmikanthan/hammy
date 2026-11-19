@@ -1,0 +1,13 @@
+{
+  "condition_name": "imitation_synthetic",
+  "honesty_label": "LEARNED (imitation from SYNTHETIC reference)",
+  "model_version": "hamster_mjcf_v1.0.0",
+  "source_filter": "synthetic",
+  "use_imitation": true,
+  "total_timesteps": 500000,
+  "n_envs": 64,
+  "seed": 42,
+  "curriculum": "auto_success_gated (stand->perturb->walk->turn->stop->target)",
+  "domain_randomization": true,
+  "control_hz": 50
+}

@@ -1,0 +1,15 @@
+{
+  "condition_name": "imitation_real",
+  "honesty_label": "LEARNED (imitation from REAL_VIDEO wheel/groom reference)",
+  "model_version": "hamster_mjcf_v1.0.0",
+  "source_filter": "real",
+  "use_imitation": true,
+  "total_timesteps": 500000,
+  "n_envs": 64,
+  "seed": 42,
+  "curriculum": "auto_success_gated (stand->perturb->walk->turn->stop->target)",
+  "domain_randomization": true,
+  "control_hz": 50,
+  "train_wall_sec": 181.09,
+  "train_fps": 2761.0
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "n_envs": 8,
+    "backend": "SubprocVecEnv",
+    "rollout_steps_per_sec": 11634.5,
+    "ppo_train_steps_per_sec": 413.3,
+    "gpu_peak_allocated_mb": 18.06
+  },
+  {
+    "n_envs": 64,
+    "backend": "DummyVecEnv",
+    "rollout_steps_per_sec": 4124.2,
+    "ppo_train_steps_per_sec": 2855.4,
+    "gpu_peak_allocated_mb": 18.07
+  }
+]

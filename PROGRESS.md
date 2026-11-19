@@ -79,4 +79,27 @@ Proceed to **Stage 1: Hamster body model (MJCF)** — build versioned 16-DoF `si
 ### Exact Next Step
 **STOP AT HUMAN CHECKPOINT 2:** Wait for user review of the keypoint overlay videos and MuJoCo reference renders in `renders/stage2/` before starting Stage 3 (Locomotion RL with imitation + curriculum + ablation + ONNX export).
 
+---
+
+## Stage 3: Locomotion RL with Imitation — **COMPLETE (Awaiting HUMAN CHECKPOINT 3)**
+
+### What Was Done
+- Built 50 Hz MuJoCo Gymnasium env ([`training/hamster_locomotion_env.py`](training/hamster_locomotion_env.py)) using versioned 64-dim obs / 16-dim action contracts, 8 separately logged reward terms, 6-stage success-gated curriculum (`stand → perturb → walk → turn → stop → target`), plausible domain randomization (`±12%` mass, `±25%` friction, `±15%` actuator gain, sensor noise, `0–20 ms` control delay), and DeepMimic RSI.
+- Benchmarked 64 parallel envs on RTX 5070 ([`training/runs/stage3/bench_64envs.json`](training/runs/stage3/bench_64envs.json)): `64 DummyVecEnv` achieved `2,855.4` PPO train steps/s at `18.07 MB` peak GPU VRAM.
+- Ran full 4-way PPO ablation (`500,000` steps each, `64` envs, `seed=42`) and 100-episode standardized evaluation ([`training/runs/stage3/ablation_report.json`](training/runs/stage3/ablation_report.json)).
+- Exported best policy (`imitation_mixed`) to [`training/runs/stage3/best_policy.onnx`](training/runs/stage3/best_policy.onnx) with baked `VecNormalize` (`max_abs_diff = 1.07e-6`, latency `0.0132 ms`, size `340.85 KB`).
+- Rendered policy walk, turn, and stop-start videos in `renders/stage3/`, wrote [`docs/decisions/ADR-0004-stage3-locomotion-rl-ablation.md`](docs/decisions/ADR-0004-stage3-locomotion-rl-ablation.md), and passed **3/3** Stage 3 acceptance tests in [`tests/test_stage3_locomotion.py`](tests/test_stage3_locomotion.py) (`0.44 s`).
+
+### 4-Way Ablation Metrics (100 Randomized Episodes Each)
+| Condition | Honesty Label | Non-Fall (%) | Speed Err (m/s) | Walk Dist 5 s (m) | Joint RMSE (rad) | Stop Settle (s) |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **`imitation_mixed`** (Best) | `LEARNED` (MIXED real+synthetic) | **`100.0%`** | **`0.0741`** | `0.617` | `0.2495` | `0.357` |
+| `imitation_synthetic` | `LEARNED` (SYNTHETIC ref) | `100.0%` | `0.0809` | `0.623` | **`0.2224`** | `0.232` |
+| `imitation_real` | `LEARNED` (REAL_VIDEO wheel/groom) | `100.0%` | `0.0793` | `0.386` | `0.2979` | **`0.166`** |
+| `no_imitation` | `LEARNED` (pure RL baseline) | `100.0%` | `0.0816` | `0.676` | `0.2864` | `0.478` |
+
+### Exact Next Step
+**STOP AT HUMAN CHECKPOINT 3:** Wait for user review of `renders/stage3/policy_walk_speeds.mp4`, `renders/stage3/policy_turn_left_right.mp4`, `renders/stage3/policy_stop_start.mp4`, and `renders/stage3/stage3_policy_preview.png`.
+
+
 

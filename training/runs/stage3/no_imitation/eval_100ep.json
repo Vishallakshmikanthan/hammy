@@ -1,0 +1,25 @@
+{
+  "n_episodes": 100,
+  "non_fall_rate_pct": 100.0,
+  "mean_speed_err_m_s": 0.0816,
+  "mean_yaw_err_rad_s": 1.7517,
+  "mean_joint_track_rmse_rad": 0.2864,
+  "mean_walk_distance_5s_m": 0.676,
+  "measured_stride_freq_hz": 8.45,
+  "measured_stride_length_m": 0.0163,
+  "mean_stop_settling_s": 0.478,
+  "all_actions_finite": true,
+  "mean_reward_terms": {
+    "r_command": 1.238,
+    "r_energy": -0.0025,
+    "r_fall": 0.0,
+    "r_smooth": -0.009,
+    "r_track_contact": 0.1854,
+    "r_track_joint": 0.3722,
+    "r_track_vel": 0.4685,
+    "r_upright": 0.3189
+  },
+  "honesty_label": "LEARNED (pure RL baseline, no imitation)",
+  "source_filter": "mixed",
+  "use_imitation": false
+}

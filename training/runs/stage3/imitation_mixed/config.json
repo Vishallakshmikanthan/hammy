@@ -1,0 +1,13 @@
+{
+  "condition_name": "imitation_mixed",
+  "honesty_label": "LEARNED (imitation from MIXED real+synthetic reference)",
+  "model_version": "hamster_mjcf_v1.0.0",
+  "source_filter": "mixed",
+  "use_imitation": true,
+  "total_timesteps": 500000,
+  "n_envs": 64,
+  "seed": 42,
+  "curriculum": "auto_success_gated (stand->perturb->walk->turn->stop->target)",
+  "domain_randomization": true,
+  "control_hz": 50
+}

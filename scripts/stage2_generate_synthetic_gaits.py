@@ -42,16 +42,18 @@ def _leg_cycle(
     knee = np.zeros_like(p, dtype=np.float32)
     contact = in_stance.astype(np.float32)
 
-    # Stance phase: hip sweeps backward smoothly (+amp -> -amp)
+    # Right-hand rule around +Y axis on downward leg (0,0,-L):
+    #   -hip_pitch swings paw FORWARD (+X); +hip_pitch pushes paw BACKWARD (-X).
+    # Stance phase: paw sweeps front (-amp) -> rear (+amp) to propel body +X forward!
     s = np.where(in_stance, p / max(duty_factor, 1e-6), 0.0)
-    # Swing phase: hip sweeps forward (-amp -> +amp) while knee flexes to clear ground
+    # Swing phase: knee lifts paw while hip returns rear (+amp) -> front (-amp)
     w = np.where(~in_stance, (p - duty_factor) / max(1.0 - duty_factor, 1e-6), 0.0)
 
-    hip_stance = hip_base + hip_amp * np.cos(np.pi * s)
-    hip_swing = hip_base - hip_amp * np.cos(np.pi * w)
+    hip_stance = hip_base - hip_amp * np.cos(np.pi * s)
+    hip_swing = hip_base + hip_amp * np.cos(np.pi * w)
     hip = np.where(in_stance, hip_stance, hip_swing).astype(np.float32)
 
-    knee_stance = knee_base + 0.05 * np.sin(np.pi * s)
+    knee_stance = knee_base + 0.06 * np.sin(np.pi * s)
     knee_swing = knee_base - knee_lift * np.sin(np.pi * w)
     knee = np.where(in_stance, knee_stance, knee_swing).astype(np.float32)
     return hip, knee, contact

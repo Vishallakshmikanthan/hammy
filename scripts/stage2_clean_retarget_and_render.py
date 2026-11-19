@@ -325,8 +325,8 @@ def retarget_side_video_to_mjcf(
         dx_centered = dx_norm - np.median(dx_norm)
         dy_centered = dy_norm - np.median(dy_norm)
 
-        # Map fore-aft excursion to hip_pitch and upward lift to knee_pitch flexion
-        hip_raw = hb + 2.2 * dx_centered
+        # Right-hand rule around +Y: forward paw (+dx) corresponds to negative hip_pitch
+        hip_raw = hb - 2.2 * dx_centered
         knee_raw = kb - 2.0 * np.maximum(dy_centered, 0.0)
 
         hip_col = 4 + leg_i * 3

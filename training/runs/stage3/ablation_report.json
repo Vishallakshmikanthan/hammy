@@ -1,0 +1,118 @@
+{
+  "best_condition": "imitation_mixed",
+  "best_honesty_label": "LEARNED (imitation from MIXED real+synthetic reference)",
+  "onnx_export": {
+    "onnx_path": "training/runs/stage3/best_policy.onnx",
+    "max_abs_diff_vs_pytorch": 1.0728836059570312e-06,
+    "single_step_latency_ms": 0.0132,
+    "model_size_kb": 340.85
+  },
+  "rendered_videos": [
+    "renders/stage3/policy_walk_speeds.mp4",
+    "renders/stage3/policy_turn_left_right.mp4",
+    "renders/stage3/policy_stop_start.mp4",
+    "renders/stage3/stage3_policy_preview.png"
+  ],
+  "ablation": {
+    "imitation_synthetic": {
+      "n_episodes": 100,
+      "non_fall_rate_pct": 100.0,
+      "mean_speed_err_m_s": 0.0809,
+      "mean_yaw_err_rad_s": 1.9359,
+      "mean_joint_track_rmse_rad": 0.2224,
+      "mean_walk_distance_5s_m": 0.623,
+      "measured_stride_freq_hz": 9.64,
+      "measured_stride_length_m": 0.0132,
+      "mean_stop_settling_s": 0.232,
+      "all_actions_finite": true,
+      "mean_reward_terms": {
+        "r_command": 1.0974,
+        "r_energy": -0.0041,
+        "r_fall": 0.0,
+        "r_smooth": -0.0179,
+        "r_track_contact": 0.1848,
+        "r_track_joint": 0.6289,
+        "r_track_vel": 0.4616,
+        "r_upright": 0.3137
+      },
+      "honesty_label": "LEARNED (imitation from SYNTHETIC reference)",
+      "source_filter": "synthetic",
+      "use_imitation": true
+    },
+    "imitation_real": {
+      "n_episodes": 100,
+      "non_fall_rate_pct": 100.0,
+      "mean_speed_err_m_s": 0.0793,
+      "mean_yaw_err_rad_s": 1.715,
+      "mean_joint_track_rmse_rad": 0.2979,
+      "mean_walk_distance_5s_m": 0.386,
+      "measured_stride_freq_hz": 11.21,
+      "measured_stride_length_m": 0.0072,
+      "mean_stop_settling_s": 0.166,
+      "all_actions_finite": true,
+      "mean_reward_terms": {
+        "r_command": 1.1452,
+        "r_energy": -0.0035,
+        "r_fall": 0.0,
+        "r_smooth": -0.0156,
+        "r_track_contact": 0.1961,
+        "r_track_joint": 0.3612,
+        "r_track_vel": 0.5298,
+        "r_upright": 0.2989
+      },
+      "honesty_label": "LEARNED (imitation from REAL_VIDEO wheel/groom reference)",
+      "source_filter": "real",
+      "use_imitation": true
+    },
+    "imitation_mixed": {
+      "n_episodes": 100,
+      "non_fall_rate_pct": 100.0,
+      "mean_speed_err_m_s": 0.0741,
+      "mean_yaw_err_rad_s": 1.9654,
+      "mean_joint_track_rmse_rad": 0.2495,
+      "mean_walk_distance_5s_m": 0.617,
+      "measured_stride_freq_hz": 9.7,
+      "measured_stride_length_m": 0.0135,
+      "mean_stop_settling_s": 0.357,
+      "all_actions_finite": true,
+      "mean_reward_terms": {
+        "r_command": 1.2528,
+        "r_energy": -0.0034,
+        "r_fall": 0.0,
+        "r_smooth": -0.0146,
+        "r_track_contact": 0.1857,
+        "r_track_joint": 0.5151,
+        "r_track_vel": 0.4738,
+        "r_upright": 0.3096
+      },
+      "honesty_label": "LEARNED (imitation from MIXED real+synthetic reference)",
+      "source_filter": "mixed",
+      "use_imitation": true
+    },
+    "no_imitation": {
+      "n_episodes": 100,
+      "non_fall_rate_pct": 100.0,
+      "mean_speed_err_m_s": 0.0816,
+      "mean_yaw_err_rad_s": 1.7517,
+      "mean_joint_track_rmse_rad": 0.2864,
+      "mean_walk_distance_5s_m": 0.676,
+      "measured_stride_freq_hz": 8.45,
+      "measured_stride_length_m": 0.0163,
+      "mean_stop_settling_s": 0.478,
+      "all_actions_finite": true,
+      "mean_reward_terms": {
+        "r_command": 1.238,
+        "r_energy": -0.0025,
+        "r_fall": 0.0,
+        "r_smooth": -0.009,
+        "r_track_contact": 0.1854,
+        "r_track_joint": 0.3722,
+        "r_track_vel": 0.4685,
+        "r_upright": 0.3189
+      },
+      "honesty_label": "LEARNED (pure RL baseline, no imitation)",
+      "source_filter": "mixed",
+      "use_imitation": false
+    }
+  }
+}

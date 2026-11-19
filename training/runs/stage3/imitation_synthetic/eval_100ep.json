@@ -1,0 +1,25 @@
+{
+  "n_episodes": 100,
+  "non_fall_rate_pct": 100.0,
+  "mean_speed_err_m_s": 0.0809,
+  "mean_yaw_err_rad_s": 1.9359,
+  "mean_joint_track_rmse_rad": 0.2224,
+  "mean_walk_distance_5s_m": 0.623,
+  "measured_stride_freq_hz": 9.64,
+  "measured_stride_length_m": 0.0132,
+  "mean_stop_settling_s": 0.232,
+  "all_actions_finite": true,
+  "mean_reward_terms": {
+    "r_command": 1.0974,
+    "r_energy": -0.0041,
+    "r_fall": 0.0,
+    "r_smooth": -0.0179,
+    "r_track_contact": 0.1848,
+    "r_track_joint": 0.6289,
+    "r_track_vel": 0.4616,
+    "r_upright": 0.3137
+  },
+  "honesty_label": "LEARNED (imitation from SYNTHETIC reference)",
+  "source_filter": "synthetic",
+  "use_imitation": true
+}

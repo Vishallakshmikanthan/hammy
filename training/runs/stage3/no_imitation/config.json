@@ -1,0 +1,13 @@
+{
+  "condition_name": "no_imitation",
+  "honesty_label": "LEARNED (pure RL baseline, no imitation)",
+  "model_version": "hamster_mjcf_v1.0.0",
+  "source_filter": "mixed",
+  "use_imitation": false,
+  "total_timesteps": 500000,
+  "n_envs": 64,
+  "seed": 42,
+  "curriculum": "auto_success_gated (stand->perturb->walk->turn->stop->target)",
+  "domain_randomization": true,
+  "control_hz": 50
+}
