@@ -40,3 +40,20 @@
      - We will ALSO generate explicitly labeled **`SYNTHETIC`** procedural walk/trot/turn/stop reference clips (marked in filenames `*_SYNTHETIC.npz`, metadata `source_type="SYNTHETIC"`, and all reports).
      - The reference-clip loader in Stage 2/3 will be **source-agnostic** so real flat-ground walking clips added later to `data/raw_video/` can drop in to replace or blend with `SYNTHETIC` clips without changing training code.
 3. **Watermarks:** Clips 1–5 carry stock watermarks (`envato`/`videohive`); clips 6–8 are clean 1080p without stock watermarks.
+
+---
+
+## Batch 2 Update: 13 Newly Uploaded Real Videos (21 Total in `data/raw_video/`)
+
+| Clip (Batch 2) | Duration (s) | FPS | Res | View / Camera | Behaviours | Extracted Real-Video Stats (`gait_statistics.json`) | Verdict |
+| :--- | :---: | :---: | :---: | :--- | :--- | :--- | :--- |
+| `european-hamster-walks-into-view-sniffs-then-moves-away-in-grass.webm` | 17.72 | 25.0 | 898×506 | Fixed side profile | **Flat-ground walk, stop, sniff, turn** | `0.077 m/s`, `1.64 Hz`, `0.047 m` stride, move `0.72 s` / stop `1.16 s` | **USABLE — Retargeted (`real_grass_walk_sniff_REAL.npz`)** |
+| `mouse-eating-...-child.webm` | 8.80 | 25.0 | 898×506 | Fixed side profile (flat mat) | **Turn, eat, walk away** | `0.089 m/s`, `1.48 Hz`, `0.060 m` stride, move `0.76 s` / stop `0.25 s` | **USABLE — Retargeted (`real_flat_mat_eat_walk_REAL.npz`)** |
+| `curious-white-dwarf-hamster-standing-on-hind-legs...webm` | 6.03 | 30.0 | 898×506 | Fixed front/side | **Bipedal rearing, sniff, drop** | `0.082 m/s`, `1.66 Hz`, move `0.73 s` / stop `0.16 s` | **USABLE — Retargeted (`real_rear_sniff_enclosure_REAL.npz`)** |
+| `a-small-pet-hamster-running-across-a-child-s-hands.webm` | 9.11 | 29.97 | 898×506 | Oblique close-up | **Hand-walking / taming** | `0.129 m/s`, `1.54 Hz`, move `1.75 s` / stop `0.07 s` | **USABLE — Retargeted (`real_hand_taming_walk_REAL.npz`)** |
+| `hamster-cute-little-animal-pet (4).webm` | 16.52 | 29.97 | 898×506 | **Fixed true top-down** | **Enclosure explore, bowl, turn, stop-start** | `0.099 m/s`, `1.27 Hz`, move `1.22 s` / stop `1.10 s` | **USABLE — Top-down trajectory & timing** |
+| `russian-hamster-in-its-wooden-cage-pet-in-its-little-house.webm` | 48.03 | 30.0 | 898×506 | Fixed wide side | **Full habitat ethogram (hideout → ramp → wheel → mat)** | Behaviour sequence reference | **USABLE (behaviour reference)** |
+| `mouse-eating-...-child (1).webm` | 14.96 | 25.0 | 898×506 | Fixed side macro | Stationary carrot eating | Posture reference | Secondary |
+| `hamster-cute-little-animal-pet.webm`, `(1)`, `(2)`, `(3)` | 15.6–18.3 | 29.97 | 898×506 | Handheld top/oblique | Bedding explore/burrow | Camera motion | Secondary |
+| `four-cute-golden-syrian-hamsters-gathering.webm`, `multiple-hamsters-enjoying-food.webm` | 6.9 / 13.0 | 30 / 60 | 898×506 | Oblique / top | Multi-hamster social/eat | Multi-individual occlusion | Rejected for single-animal pose |
+
