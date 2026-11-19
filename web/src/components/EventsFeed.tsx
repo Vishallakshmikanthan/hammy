@@ -93,9 +93,9 @@ export const EventsFeed: React.FC<EventsFeedProps> = ({ events }) => {
             No events recorded yet for this pet.
           </div>
         ) : (
-          <div className="rounded-2xl border border-[#F4EDE0]/15 bg-[#0B1325]/45 overflow-hidden backdrop-blur-md">
+          <div className="rounded-2xl border border-[#F4EDE0]/15 bg-[#0B1325]/45 overflow-x-auto max-h-[700px] overflow-y-auto backdrop-blur-md">
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 z-10 bg-[#0E182E]/95 backdrop-blur-md">
                 <TableRow>
                   <TableHead>Record ID</TableHead>
                   <TableHead>Sim Time (s)</TableHead>

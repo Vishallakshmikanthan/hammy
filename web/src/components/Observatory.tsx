@@ -1,106 +1,36 @@
 import React from "react";
-import { AlertTriangle, Sparkles, ShieldCheck, Box } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  Box,
+  Brain,
+  Gauge,
+  Pause,
+  Play,
+  Radio,
+  RefreshCw,
+} from "lucide-react";
 import { usePetObservatory } from "../hooks/usePetObservatory";
-import { ActiveBrainView } from "./ActiveBrainView";
-import { DrivesPanel } from "./DrivesPanel";
-import { EventsFeed } from "./EventsFeed";
-import { ObservatoryBanner } from "./ObservatoryBanner";
 import { ParentInteractionPanel } from "./ParentInteractionPanel";
 import { HabitatSceneView } from "../three/habitat/HabitatSceneView";
 import { Badge } from "@/components/ui/badge";
-import type { Pet, PetState, WorldEvent } from "../types";
+import { Button } from "@/components/ui/button";
+import {
+  AUTONOMOUS_FALLBACK_EVENTS,
+  AUTONOMOUS_FALLBACK_PET,
+  AUTONOMOUS_FALLBACK_STATE,
+} from "../lib/fallbackObservatoryData";
 
 interface ObservatoryProps {
   petId?: string;
   token?: string;
+  onOpenTelemetry?: () => void;
 }
-
-const AUTONOMOUS_FALLBACK_PET: Pet = {
-  id: "pet_hammy_01",
-  user_id: "usr_hammy_default",
-  name: "Hammy",
-  species: "Syrian Hamster (Mesocricetus auratus)",
-  morphology_version: "syrian_golden_rig_v3",
-  birth_date: "2026-10-01T00:00:00Z",
-  created_at: "2026-10-01T00:00:00Z",
-};
-
-const AUTONOMOUS_FALLBACK_STATE: PetState = {
-  pet_id: "pet_hammy_01",
-  version: 108,
-  schema_version: "2.0.0",
-  environment_version: "terrarium_pbr_v3",
-  sim_time_sec: 50400.0,
-  simulated_age_days: 18.4,
-  real_time_scale: 1.0,
-  last_simulated_at: null,
-  is_paused: false,
-  drives: {
-    hunger: 0.28,
-    thirst: 0.22,
-    energy: 0.86,
-    comfort: 0.91,
-    stress: 0.12,
-    curiosity: 0.74,
-    circadian_phase: 3.665,
-  },
-  position_xyz: [-0.08, 0.16, 0.12],
-  yaw_rad: 0.42,
-  velocity_xy: [0.08, 0.03],
-  angular_velocity_z: 0.0,
-  inside_hideout: false,
-  inside_tunnel: false,
-  on_wheel: false,
-  cheek_pouch_fill: 0.35,
-  active_skill: "explore_habitat",
-  updated_at: null,
-};
-
-const AUTONOMOUS_FALLBACK_EVENTS: WorldEvent[] = [
-  {
-    event_id: "evt_live_3d_wheel_sprint_01",
-    pet_id: "pet_hammy_01",
-    world_tick: 108,
-    sim_time_sec: 50400.0,
-    event_type: "autonomous_ethogram_step",
-    skill_name: "wheel_run",
-    origin: "observed_physics",
-    behaviour_type: "learned",
-    seed: 42108,
-    payload: { zone: "running_wheel", bedding_deform: true },
-    created_at: "2026-11-14T12:00:00Z",
-  },
-  {
-    event_id: "evt_live_3d_forage_bowl_02",
-    pet_id: "pet_hammy_01",
-    world_tick: 107,
-    sim_time_sec: 50370.0,
-    event_type: "cheek_pouch_forage",
-    skill_name: "forage",
-    origin: "sampled_from_skill_model",
-    behaviour_type: "learned",
-    seed: 42107,
-    payload: { seeds_collected: 3, pouch_fill: 0.35 },
-    created_at: "2026-11-14T11:59:30Z",
-  },
-  {
-    event_id: "evt_live_3d_bedding_dig_03",
-    pet_id: "pet_hammy_01",
-    world_tick: 106,
-    sim_time_sec: 50340.0,
-    event_type: "bedding_heightfield_scoop",
-    skill_name: "digging",
-    origin: "observed_physics",
-    behaviour_type: "scripted",
-    seed: 42106,
-    payload: { paws_active: 4, depth_mm: 6.2 },
-    created_at: "2026-11-14T11:59:00Z",
-  },
-];
 
 export const Observatory: React.FC<ObservatoryProps> = ({
   petId = "pet_hammy_01",
   token,
+  onOpenTelemetry,
 }) => {
   const {
     pet,
@@ -130,49 +60,90 @@ export const Observatory: React.FC<ObservatoryProps> = ({
 
   const effectivePet = pet ?? AUTONOMOUS_FALLBACK_PET;
   const effectiveState = state ?? AUTONOMOUS_FALLBACK_STATE;
-  const effectiveEvents = events.length > 0 ? events : state ? events : AUTONOMOUS_FALLBACK_EVENTS;
+  const effectiveEvents =
+    events.length > 0 ? events : state ? events : AUTONOMOUS_FALLBACK_EVENTS;
+
+  const isPaused = effectiveState.is_paused ?? false;
+  const timeScale = effectiveState.real_time_scale ?? 1.0;
+  const connectionVariant =
+    connectionStatus === "connected"
+      ? "success"
+      : connectionStatus === "reconnecting"
+      ? "warning"
+      : "default";
 
   return (
     <div
-      className="max-w-[1600px] mx-auto w-full px-4 sm:px-6 py-3 space-y-4"
+      className="max-w-[1600px] mx-auto w-full px-4 sm:px-6 py-3 space-y-3"
       data-testid="observatory-root"
     >
-      {/* Top Glass Hero Banner */}
-      <ObservatoryBanner
-        state={effectiveState}
-        connectionStatus={connectionStatus}
-        onPause={pause}
-        onResume={resume}
-        onRefresh={refresh}
-      />
+      {/* Unified Production Studio Command Strip */}
+      <header
+        className="relative overflow-hidden rounded-2xl glass-surface fluted-glass-backdrop px-4 sm:px-5 py-2.5 border border-[#F4EDE0]/15"
+        data-testid="observatory-banner"
+      >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-16 left-1/4 h-36 w-72 -translate-x-1/2 rounded-full bg-[#FF6B5B]/25 blur-[65px]"
+        />
 
-      {/* Prominent Home Page 3D Habitat Showcase Section — immediately visible above the fold */}
-      <section aria-label="Live 3D Hamster Habitat" className="space-y-2.5">
-        <div className="glass-card rounded-2xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
+          {/* Left: Pet Identity + Live Telemetry Status */}
           <div className="flex flex-wrap items-center gap-2.5">
-            <Badge variant="coralSolid" className="px-3 py-0.5 text-xs">
-              <Box className="h-3.5 w-3.5" />
+            <Badge variant="coralSolid" className="px-2.5 py-0.5 text-[11px]">
+              <Box className="h-3 w-3" />
               LIVE 3D HABITAT
             </Badge>
-            <h2 className="font-display text-2xl text-[#F4EDE0] tracking-wide">
+            <h1 className="font-display text-2xl text-[#F4EDE0] tracking-wide leading-none">
               {effectivePet.name}
-            </h2>
-            <span className="text-xs text-[#F4EDE0]/70">
-              Species: <strong className="text-[#F4EDE0]">{effectivePet.species}</strong>
+            </h1>
+            <span className="hidden sm:inline text-xs text-[#F4EDE0]/65">
+              {effectivePet.species}
             </span>
-            <span className="rounded-full border border-[#F4EDE0]/15 bg-[#0B1325]/60 px-2.5 py-0.5 font-mono text-xs text-[#FF6B5B]">
-              ID: {effectivePet.id || petId}
-            </span>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+            <span className="hidden md:inline-block h-4 w-px bg-[#F4EDE0]/15 mx-0.5" />
+
+            <Badge
+              variant={isPaused ? "warning" : "success"}
+              className="px-2.5 py-0.5 text-[11px] tracking-wider uppercase"
+              data-testid="status-indicator"
+            >
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  isPaused
+                    ? "bg-amber-400"
+                    : "bg-emerald-400 shadow-[0_0_8px_#34d399]"
+                }`}
+              />
+              {isPaused ? "PAUSED" : "RUNNING"}
+            </Badge>
+
+            <Badge
+              variant={connectionVariant}
+              className="px-2.5 py-0.5 text-[11px] tracking-wider uppercase"
+              data-testid="connection-status"
+            >
+              <Radio className="h-3 w-3" />
+              {connectionStatus.toUpperCase()}
+            </Badge>
+
+            <span
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#F4EDE0]/15 bg-[#14213D]/65 px-2.5 py-0.5 text-[11px] text-[#F4EDE0]/75"
+              data-testid="time-scale"
+            >
+              <Gauge className="h-3 w-3 text-[#FF6B5B]" />
+              <strong className="text-[#F4EDE0] font-mono">
+                {timeScale.toFixed(1)}x
+              </strong>
+            </span>
+
             {error && (
               <div
-                className="inline-flex items-center gap-2 rounded-full border border-[#FF6B5B]/40 bg-[#FF6B5B]/15 px-3 py-1 text-xs text-[#F4EDE0]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#FF6B5B]/40 bg-[#FF6B5B]/15 px-2.5 py-0.5 text-[11px] text-[#F4EDE0]"
                 data-testid="observatory-error"
               >
-                <AlertTriangle className="h-3.5 w-3.5 text-[#FF6B5B]" />
-                <span>Autonomous 3D Mode ({error})</span>
+                <AlertTriangle className="h-3 w-3 text-[#FF6B5B]" />
+                <span>Autonomous 3D Mode</span>
                 <button
                   type="button"
                   onClick={refresh}
@@ -182,14 +153,69 @@ export const Observatory: React.FC<ObservatoryProps> = ({
                 </button>
               </div>
             )}
-            <div className="hidden md:flex items-center gap-1.5 text-xs text-[#F4EDE0]/70">
-              <ShieldCheck className="h-3.5 w-3.5 text-[#FF6B5B]" />
-              <span>Drag to Orbit • Scroll to Zoom</span>
-            </div>
+          </div>
+
+          {/* Right: Telemetry Quick-Jump + Simulation Controls */}
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {onOpenTelemetry && (
+              <Button
+                type="button"
+                variant="glass"
+                size="sm"
+                onClick={onOpenTelemetry}
+                data-testid="open-telemetry-btn"
+                className="h-8 px-3 text-xs gap-1.5 border-[#FF6B5B]/30 hover:border-[#FF6B5B]/60"
+              >
+                <Brain className="h-3.5 w-3.5 text-[#FF6B5B]" />
+                Brain &amp; Telemetry
+                <ArrowUpRight className="h-3 w-3 text-[#F4EDE0]/60" />
+              </Button>
+            )}
+
+            {isPaused ? (
+              <Button
+                type="button"
+                variant="coral"
+                size="sm"
+                onClick={resume}
+                data-testid="resume-btn"
+                className="h-8 px-3.5 text-xs"
+              >
+                <Play className="h-3.5 w-3.5 fill-current" />
+                Resume
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="coral"
+                size="sm"
+                onClick={pause}
+                data-testid="pause-btn"
+                className="h-8 px-3.5 text-xs"
+              >
+                <Pause className="h-3.5 w-3.5 fill-current" />
+                Pause
+              </Button>
+            )}
+
+            <Button
+              type="button"
+              variant="glass"
+              size="sm"
+              onClick={refresh}
+              data-testid="refresh-btn"
+              title="Refresh server state"
+              className="h-8 px-3 text-xs"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Refresh
+            </Button>
           </div>
         </div>
+      </header>
 
-        {/* Embedded 3D Habitat right on the Home Page */}
+      {/* Main 3D Habitat Stage + Right Lateral Tabbed Studio Panel */}
+      <section aria-label="Live 3D Hamster Habitat" className="space-y-3">
         <HabitatSceneView
           petId={petId}
           token={token}
@@ -199,45 +225,9 @@ export const Observatory: React.FC<ObservatoryProps> = ({
           externalConnectionStatus={connectionStatus}
         />
 
-        {/* Stage 5: Parent Petting / Taming & MuJoCo ONNX Physics Bridge */}
+        {/* Parent Petting / Taming & MuJoCo ONNX Physics Interaction Dock */}
         <ParentInteractionPanel />
       </section>
-
-      {/* Bento Telemetry Grid: Active Brain, Homeostatic Drives, and Authoritative Events */}
-      <main className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start pt-1">
-        <div className="lg:col-span-5 space-y-5">
-          <ActiveBrainView pet={effectivePet} state={effectiveState} />
-          <DrivesPanel drives={effectiveState.drives ?? null} />
-        </div>
-
-        <div className="lg:col-span-7 space-y-5">
-          <EventsFeed events={effectiveEvents} />
-
-          {/* Feature Highlights Strip */}
-          <div className="glass-card rounded-2xl p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="space-y-1">
-              <Sparkles className="h-4 w-4 text-[#FF6B5B]" />
-              <p className="text-xs font-semibold text-[#F4EDE0]">Shell + Fin Fur</p>
-              <p className="text-[11px] text-[#F4EDE0]/60">Anisotropic agouti coat shader</p>
-            </div>
-            <div className="space-y-1">
-              <Sparkles className="h-4 w-4 text-[#FF6B5B]" />
-              <p className="text-xs font-semibold text-[#F4EDE0]">Deformable Bedding</p>
-              <p className="text-[11px] text-[#F4EDE0]/60">4-paw heightfield imprints</p>
-            </div>
-            <div className="space-y-1">
-              <Sparkles className="h-4 w-4 text-[#FF6B5B]" />
-              <p className="text-xs font-semibold text-[#F4EDE0]">Homeostatic Brain</p>
-              <p className="text-[11px] text-[#F4EDE0]/60">6-drive utility &amp; RND curiosity</p>
-            </div>
-            <div className="space-y-1">
-              <Sparkles className="h-4 w-4 text-[#FF6B5B]" />
-              <p className="text-xs font-semibold text-[#F4EDE0]">Circadian Lighting</p>
-              <p className="text-[11px] text-[#F4EDE0]/60">Solar key + nocturnal lamp</p>
-            </div>
-          </div>
-        </div>
-      </main>
     </div>
   );
 };

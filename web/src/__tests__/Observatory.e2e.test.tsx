@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Observatory } from "../components/Observatory";
+import { TelemetryView } from "../components/TelemetryView";
 
 // Mock WebSocket class
 class MockWebSocket {
@@ -138,12 +139,12 @@ describe("Observatory End-to-End & WebSocket Reconnection", () => {
     vi.restoreAllMocks();
   });
 
-  it("hydrates from REST API, connects WebSocket, updates state on snapshot, and restores state on reconnect", async () => {
-    render(<Observatory petId="pet_hammy_01" />);
+  it("hydrates from REST API, connects WebSocket, updates state on snapshot, and restores state on reconnect in Brain & Telemetry", async () => {
+    render(<TelemetryView petId="pet_hammy_01" />);
 
     // 1. Initial REST Hydration
     await waitFor(() => {
-      expect(screen.getByTestId("observatory-root")).toBeInTheDocument();
+      expect(screen.getByTestId("telemetry-root")).toBeInTheDocument();
       expect(screen.getByTestId("status-indicator")).toHaveTextContent("RUNNING");
       expect(screen.getByTestId("drive-hunger-val")).toHaveTextContent("20.0%");
     });
@@ -240,6 +241,23 @@ describe("Observatory End-to-End & WebSocket Reconnection", () => {
         expect.objectContaining({ method: "POST" })
       );
     });
+  });
+
+  it("keeps the Home 3D Habitat view focused without inline brain, drives, or events panels", async () => {
+    const onOpenTelemetry = vi.fn();
+    render(<Observatory petId="pet_hammy_01" onOpenTelemetry={onOpenTelemetry} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("observatory-root")).toBeInTheDocument();
+      expect(screen.getByTestId("status-indicator")).toHaveTextContent("RUNNING");
+    });
+
+    expect(screen.queryByTestId("active-brain-view")).toBeNull();
+    expect(screen.queryByTestId("drives-panel")).toBeNull();
+    expect(screen.queryByTestId("events-feed")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("open-telemetry-btn"));
+    expect(onOpenTelemetry).toHaveBeenCalledTimes(1);
   });
 });
 

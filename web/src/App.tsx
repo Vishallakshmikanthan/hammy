@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Sparkles, Box, Cpu, Layers, FlaskConical, KeyRound, PawPrint } from "lucide-react";
+import { Sparkles, Box, Brain, Cpu, Layers, FlaskConical, PawPrint } from "lucide-react";
 import { Observatory } from "./components/Observatory";
+import { TelemetryView } from "./components/TelemetryView";
 import { TrainingLabView } from "./components/TrainingLabView";
 import { FurBenchmarkView } from "./three/fur/FurBenchmarkView";
 import { RigStudioView } from "./three/rig/RigStudioView";
@@ -8,7 +9,7 @@ import { HabitatSceneView } from "./three/habitat/HabitatSceneView";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-type AppView = "observatory" | "fur-benchmark" | "rig-studio" | "habitat" | "training-lab";
+type AppView = "observatory" | "telemetry" | "fur-benchmark" | "rig-studio" | "habitat" | "training-lab";
 
 export const App: React.FC = () => {
   const urlParams = new URLSearchParams(window.location.search);
@@ -16,24 +17,22 @@ export const App: React.FC = () => {
   const initialToken = urlParams.get("token") || "";
   const initialViewParam = urlParams.get("view") as AppView | null;
   const initialView: AppView =
-    initialViewParam && ["observatory", "fur-benchmark", "rig-studio", "habitat", "training-lab"].includes(initialViewParam)
+    initialViewParam && ["observatory", "telemetry", "fur-benchmark", "rig-studio", "habitat", "training-lab"].includes(initialViewParam)
       ? initialViewParam
       : "observatory";
 
   const [view, setView] = useState<AppView>(initialView);
   const [petId, setPetId] = useState(initialPetId);
-  const [token, setToken] = useState(initialToken);
   const [activePetId, setActivePetId] = useState(initialPetId);
-  const [activeToken, setActiveToken] = useState(initialToken);
 
   const handleApply = (e: React.FormEvent) => {
     e.preventDefault();
     setActivePetId(petId);
-    setActiveToken(token);
   };
 
   const navItems: { id: AppView; label: string; icon: React.ReactNode }[] = [
     { id: "observatory", label: "Home • 3D Habitat", icon: <Box className="h-3.5 w-3.5" /> },
+    { id: "telemetry", label: "Brain & Telemetry", icon: <Brain className="h-3.5 w-3.5" /> },
     { id: "habitat", label: "P3.3 Studio", icon: <Sparkles className="h-3.5 w-3.5" /> },
     { id: "rig-studio", label: "P3.2 Rig", icon: <Cpu className="h-3.5 w-3.5" /> },
     { id: "fur-benchmark", label: "P3.1 Fur", icon: <Layers className="h-3.5 w-3.5" /> },
@@ -75,11 +74,10 @@ export const App: React.FC = () => {
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => setView(item.id)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 ${
-                    isActive
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 ${isActive
                       ? "bg-[#F4EDE0]/15 text-[#F4EDE0] shadow-sm border border-[#F4EDE0]/25"
                       : "text-[#F4EDE0]/70 hover:text-[#F4EDE0] hover:bg-[#F4EDE0]/[0.06]"
-                  }`}
+                    }`}
                 >
                   {isActive && (
                     <span className="h-2 w-2 rounded-full bg-[#FF6B5B] shadow-[0_0_8px_#FF6B5B]" />
@@ -92,7 +90,7 @@ export const App: React.FC = () => {
           </div>
 
           {/* Right Connection Controls */}
-          {(view === "observatory" || view === "habitat") && (
+          {(view === "observatory" || view === "telemetry" || view === "habitat") && (
             <form
               className="flex items-center gap-1.5 text-xs shrink-0"
               onSubmit={handleApply}
@@ -104,23 +102,12 @@ export const App: React.FC = () => {
                   type="text"
                   value={petId}
                   onChange={(e) => setPetId(e.target.value)}
-                  className="w-28 h-7 text-xs px-2.5"
+                  className="w-32 h-7 text-xs px-2.5"
                   placeholder="pet_hammy_01"
                 />
               </label>
-              <label className="flex items-center gap-1 text-[#F4EDE0]/75">
-                <KeyRound className="h-3.5 w-3.5 text-[#FF6B5B]" />
-                <span className="sr-only">JWT Token:</span>
-                <Input
-                  type="password"
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  className="w-24 h-7 text-xs px-2.5"
-                  placeholder="Token"
-                />
-              </label>
               <Button type="submit" variant="coral" size="sm" className="h-7 px-3 text-xs">
-                Connect
+                Switch Pet
               </Button>
             </form>
           )}
@@ -129,10 +116,23 @@ export const App: React.FC = () => {
 
       {/* Main View Content */}
       <div className="flex-1">
-        {view === "observatory" && <Observatory petId={activePetId} token={activeToken || undefined} />}
+        {view === "observatory" && (
+          <Observatory
+            petId={activePetId}
+            token={initialToken || undefined}
+            onOpenTelemetry={() => setView("telemetry")}
+          />
+        )}
+        {view === "telemetry" && (
+          <TelemetryView
+            petId={activePetId}
+            token={initialToken || undefined}
+            onNavigateHabitat={() => setView("observatory")}
+          />
+        )}
         {view === "fur-benchmark" && <FurBenchmarkView />}
         {view === "rig-studio" && <RigStudioView />}
-        {view === "habitat" && <HabitatSceneView petId={activePetId} token={activeToken || undefined} />}
+        {view === "habitat" && <HabitatSceneView petId={activePetId} token={initialToken || undefined} />}
         {view === "training-lab" && <TrainingLabView />}
       </div>
     </div>
