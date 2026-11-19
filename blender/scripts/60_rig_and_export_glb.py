@@ -86,6 +86,17 @@ def _recenter_hamster_to_origin():
                 obj.data.transform(shift)
                 obj.data.update()
 
+    # Ensure eyes sit prominently on the outer orbital surface (matching 50_fur_setup.py (+/-0.0252, -0.0518, 0.0452))
+    for ename, target_x in (("ham_eye_L", -0.0252), ("ham_eye_R", 0.0252)):
+        eobj = bpy.data.objects.get(ename)
+        if eobj and eobj.type == "MESH" and len(eobj.data.vertices) > 0:
+            cur_c = sum((v.co for v in eobj.data.vertices), Vector()) / len(eobj.data.vertices)
+            target_c = Vector((target_x, -0.0518, 0.0440))
+            delta = target_c - cur_c
+            if delta.length > 0.001:
+                eobj.data.transform(Matrix.Translation(delta))
+                eobj.data.update()
+
 
 def _create_hamster_armature() -> bpy.types.Object:
     """Create the HamsterRig armature aligned with the recentered hamster."""
