@@ -490,7 +490,7 @@ export class HamsterBehaviorController {
     if ((this.goal === "bowl" || latestSkill === "eat" || latestSkill === "hoard") && this.pos.distanceTo(anchors.bowlPos) < 0.15) {
       this.goalStage = "active";
       this.faceTargetPos = anchors.bowlPos.clone();
-      this.enterPhase("forage_eat", 1.8 + this.nextRand() * 1.8);
+      this.enterPhase("forage_eat", 3.8 + this.nextRand() * 3.2);
       return;
     }
     if (
@@ -499,24 +499,24 @@ export class HamsterBehaviorController {
     ) {
       this.goalStage = "active";
       this.faceTargetPos = anchors.spoutPos.clone();
-      this.enterPhase("drink", 1.6 + this.nextRand() * 1.4);
+      this.enterPhase("drink", 3.2 + this.nextRand() * 2.5);
       return;
     }
     if ((this.goal === "chew" || latestSkill === "gnaw") && this.pos.distanceTo(anchors.chewPos) < 0.13) {
       this.goalStage = "active";
       this.faceTargetPos = anchors.chewPos.clone();
-      this.enterPhase("gnaw", 1.6 + this.nextRand() * 1.5);
+      this.enterPhase("gnaw", 3.2 + this.nextRand() * 2.6);
       return;
     }
 
-    // Naturalistic ethogram transitions on open bedding
+    // Naturalistic ethogram transitions calibrated to real video stop-start timing
     const r = this.nextRand();
     if (energy < 0.25 && r < 0.45) {
-      this.enterPhase("rest", 2.4 + this.nextRand() * 2.2);
+      this.enterPhase("rest", 5.0 + this.nextRand() * 4.0);
       return;
     }
     if ((this.prevPhase === "forage_eat" || this.prevPhase === "dig") && r < 0.55) {
-      this.enterPhase("groom", 1.8 + this.nextRand() * 1.5);
+      this.enterPhase("groom", 3.5 + this.nextRand() * 2.8);
       return;
     }
 
@@ -525,20 +525,20 @@ export class HamsterBehaviorController {
     const digProb = groomProb + (petState?.inside_tunnel ? 0.05 : 0.16 + curiosity * 0.08);
 
     if (r < rearProb) {
-      this.enterPhase("rear_up", 1.1 + this.nextRand() * 1.3);
+      this.enterPhase("rear_up", 2.4 + this.nextRand() * 2.2);
     } else if (r < groomProb) {
-      this.enterPhase("groom", 1.6 + this.nextRand() * 1.6);
+      this.enterPhase("groom", 3.4 + this.nextRand() * 2.8);
     } else if (r < digProb) {
-      this.enterPhase("dig", 1.0 + this.nextRand() * 1.1);
+      this.enterPhase("dig", 2.2 + this.nextRand() * 1.8);
     } else {
-      this.enterPhase("sniff", 0.9 + this.nextRand() * 1.3);
+      this.enterPhase("sniff", 2.0 + this.nextRand() * 2.2);
     }
   }
 
   private updateHeadSaccade(dt: number, yawRange: number, pitchBase: number, pitchRange: number, rollRange: number): void {
     this.headSaccadeTimer -= dt;
     if (this.headSaccadeTimer <= 0) {
-      this.headSaccadeTimer = 0.18 + this.nextRand() * 0.45;
+      this.headSaccadeTimer = 0.70 + this.nextRand() * 1.15;
       this.targetHeadYaw = (this.nextRand() * 2 - 1) * yawRange;
       this.targetHeadPitch = pitchBase + (this.nextRand() * 2 - 1) * pitchRange;
       this.targetHeadRoll = (this.nextRand() * 2 - 1) * rollRange;
@@ -670,24 +670,25 @@ export class HamsterBehaviorController {
       }
 
       if (this.phase === "wheel_run") {
-        targetSpeed = this.wheelBurstSpeed;
-        this.gaitPhase += clampedDt * 20.5;
-        wheelSpinDelta = clampedDt * 5.6;
+        // Calibrated to real hamster-video6.mp4 wheel running (2.09 Hz stride, ~0.13 m/s scaled)
+        targetSpeed = 0.13 + this.wheelBurstSpeed * 0.15;
+        this.gaitPhase += clampedDt * 13.1;
+        wheelSpinDelta = clampedDt * 2.6;
         targetCrouch = 0.25;
         this.targetHeadYaw = 0;
         this.targetHeadPitch = -0.06;
         this.targetHeadRoll = 0;
-        activityLabel = "Sprinting on Wheel";
+        activityLabel = "Running on Wheel";
       } else if (this.phase === "wheel_pause") {
         targetSpeed = 0;
         this.wheelPauseElapsed += clampedDt;
         // Damped wheel coasting + gentle pendulum rock
-        this.wheelCoastVel *= Math.exp(-4.5 * clampedDt);
+        this.wheelCoastVel *= Math.exp(-3.2 * clampedDt);
         const rock =
-          this.wheelPauseElapsed < 1.1
-            ? Math.sin(this.wheelPauseElapsed * 8.5) * Math.exp(-this.wheelPauseElapsed * 3.0) * 0.8
+          this.wheelPauseElapsed < 1.3
+            ? Math.sin(this.wheelPauseElapsed * 5.2) * Math.exp(-this.wheelPauseElapsed * 2.2) * 0.45
             : 0;
-        wheelSpinDelta = (this.wheelCoastVel + rock) * clampedDt;
+        wheelSpinDelta = (this.wheelCoastVel * 0.45 + rock) * clampedDt;
         this.updateHeadSaccade(clampedDt, 0.35, -0.05, 0.12, 0.08);
         activityLabel = "Catching Breath on Wheel";
       }
@@ -790,16 +791,19 @@ export class HamsterBehaviorController {
           const dz = this.targetPos.z - this.pos.z;
           const desiredYaw = Math.atan2(dx, dz);
           const dYaw = shortestAngleDiff(this.yaw, desiredYaw);
-          const turnStep = THREE.MathUtils.clamp(dYaw, -8.5 * clampedDt, 8.5 * clampedDt);
+          // Natural turning rate (~130 deg/s instead of robotic 487 deg/s)
+          const turnStep = THREE.MathUtils.clamp(dYaw, -2.3 * clampedDt, 2.3 * clampedDt);
           this.yaw += turnStep;
           yawRate = turnStep / clampedDt;
 
           // Head leads the turn slightly, nose slightly down sniffing path
-          this.targetHeadYaw = THREE.MathUtils.clamp(dYaw * 0.65, -0.55, 0.55);
+          this.targetHeadYaw = THREE.MathUtils.clamp(dYaw * 0.55, -0.48, 0.48);
           this.targetHeadPitch = 0.12;
-          this.targetHeadRoll = THREE.MathUtils.clamp(-dYaw * 0.2, -0.15, 0.15);
+          this.targetHeadRoll = THREE.MathUtils.clamp(-dYaw * 0.14, -0.12, 0.12);
 
-          const maxMoveSpeed = petState?.inside_tunnel ? 0.17 : 0.25 + curiosity * 0.05;
+          // Calibrated to real-video measured flat-ground hamster speed (0.08–0.12 m/s)
+          const alignScale = Math.max(0.25, Math.cos(Math.min(Math.abs(dYaw), Math.PI * 0.5)));
+          const maxMoveSpeed = (petState?.inside_tunnel ? 0.075 : 0.085 + curiosity * 0.030) * alignScale;
           targetSpeed = maxMoveSpeed;
           const stepDist = Math.min(distToTarget, this.currentSpeed * clampedDt);
           const prevX = this.pos.x;
@@ -843,7 +847,9 @@ export class HamsterBehaviorController {
               : this.sampleGroundY(this.pos.x, this.pos.z, anchors);
           this.pos.y = THREE.MathUtils.lerp(this.pos.y, groundY, Math.min(1, clampedDt * 14));
 
-          this.gaitPhase += clampedDt * 16.5;
+          // Lock gait cadence to physical ground speed (real stride length ~0.055 m -> ~1.6-2.0 Hz)
+          const strideLenM = 0.055;
+          this.gaitPhase += clampedDt * (this.currentSpeed / strideLenM) * Math.PI * 2;
           activityLabel = petState?.inside_tunnel
             ? "Exploring Tunnel"
             : this.goal === "wheel"
@@ -873,7 +879,7 @@ export class HamsterBehaviorController {
           if (Math.hypot(fdx, fdz) > 1e-3) {
             const desiredFaceYaw = Math.atan2(fdx, fdz);
             const dFace = shortestAngleDiff(this.yaw, desiredFaceYaw);
-            const turnStep = THREE.MathUtils.clamp(dFace, -8.0 * clampedDt, 8.0 * clampedDt);
+            const turnStep = THREE.MathUtils.clamp(dFace, -2.4 * clampedDt, 2.4 * clampedDt);
             this.yaw += turnStep;
             yawRate = turnStep / clampedDt;
           }
@@ -881,8 +887,8 @@ export class HamsterBehaviorController {
 
         if (this.phaseTimer <= 0) {
           this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
-          this.enterPhase("scurry", 7.5);
-          activityLabel = "Scurrying";
+          this.enterPhase("scurry", 9.0);
+          activityLabel = "Exploring";
         } else {
           switch (this.phase) {
             case "rear_up": {
@@ -895,8 +901,8 @@ export class HamsterBehaviorController {
               targetRear = 0.48;
               targetGroom = 1.0;
               targetChew = 0.35;
-              this.posture.groomPhase += clampedDt * 30.0;
-              this.posture.chewPhase += clampedDt * 22.0;
+              this.posture.groomPhase += clampedDt * 11.0;
+              this.posture.chewPhase += clampedDt * 9.0;
               this.targetHeadYaw = Math.sin(this.posture.groomPhase * 0.25) * 0.12;
               this.targetHeadPitch = 0.18;
               this.targetHeadRoll = Math.sin(this.posture.groomPhase * 0.2) * 0.14;
@@ -906,7 +912,7 @@ export class HamsterBehaviorController {
             case "forage_eat": {
               targetCrouch = 0.62;
               targetChew = 0.9;
-              this.posture.chewPhase += clampedDt * 26.0;
+              this.posture.chewPhase += clampedDt * 10.5;
               this.targetHeadYaw = Math.sin(this.posture.chewPhase * 0.15) * 0.14;
               this.targetHeadPitch = 0.28 + Math.sin(this.posture.chewPhase * 0.35) * 0.08;
               this.targetHeadRoll = 0;
@@ -916,7 +922,7 @@ export class HamsterBehaviorController {
             case "drink": {
               targetRear = 0.40;
               targetChew = 0.55;
-              this.posture.chewPhase += clampedDt * 20.0;
+              this.posture.chewPhase += clampedDt * 8.5;
               this.targetHeadYaw = 0;
               this.targetHeadPitch = -0.34;
               this.targetHeadRoll = 0.08;
@@ -926,7 +932,7 @@ export class HamsterBehaviorController {
             case "gnaw": {
               targetCrouch = 0.55;
               targetChew = 0.95;
-              this.posture.chewPhase += clampedDt * 28.0;
+              this.posture.chewPhase += clampedDt * 11.0;
               this.targetHeadYaw = Math.sin(this.posture.chewPhase * 0.2) * 0.12;
               this.targetHeadPitch = 0.15 + Math.sin(this.posture.chewPhase * 0.5) * 0.1;
               this.targetHeadRoll = 0.15;
@@ -936,7 +942,7 @@ export class HamsterBehaviorController {
             case "dig": {
               targetCrouch = 0.45;
               targetDig = 1.0;
-              this.posture.digPhase += clampedDt * 40.0;
+              this.posture.digPhase += clampedDt * 15.0;
               this.targetHeadYaw = Math.sin(this.posture.digPhase * 0.12) * 0.15;
               this.targetHeadPitch = 0.34;
               this.targetHeadRoll = 0;
@@ -954,7 +960,7 @@ export class HamsterBehaviorController {
             case "sniff":
             default: {
               this.updateHeadSaccade(clampedDt, 0.48, 0.06, 0.18, 0.14);
-              const sniffTurn = Math.sin(this.phaseTimer * 2.4) * 0.14 * clampedDt;
+              const sniffTurn = Math.sin(this.phaseTimer * 1.4) * 0.08 * clampedDt;
               this.yaw += sniffTurn;
               yawRate = sniffTurn / clampedDt;
               activityLabel = "Sniffing & Scanning";
@@ -965,20 +971,20 @@ export class HamsterBehaviorController {
       }
     }
 
-    // Snappy acceleration / braking characteristic of real hamsters
-    const accelRate = targetSpeed > this.currentSpeed ? 18.0 : 22.0;
+    // Organic acceleration & braking (no robotic instant start/stop)
+    const accelRate = targetSpeed > this.currentSpeed ? 5.5 : 7.5;
     this.currentSpeed = damp(this.currentSpeed, targetSpeed, accelRate, clampedDt);
 
-    // Smoothly blend posture channels (head snaps fast, body postures blend organically)
-    this.posture.rearAmount = damp(this.posture.rearAmount, targetRear, 9.0, clampedDt);
-    this.posture.crouchAmount = damp(this.posture.crouchAmount, targetCrouch, 10.0, clampedDt);
-    this.posture.curlAmount = damp(this.posture.curlAmount, targetCurl, 5.0, clampedDt);
-    this.posture.groomAmount = damp(this.posture.groomAmount, targetGroom, 11.0, clampedDt);
-    this.posture.digAmount = damp(this.posture.digAmount, targetDig, 12.0, clampedDt);
-    this.posture.chewAmount = damp(this.posture.chewAmount, targetChew, 14.0, clampedDt);
-    this.posture.headYaw = damp(this.posture.headYaw, this.targetHeadYaw, 16.0, clampedDt);
-    this.posture.headPitch = damp(this.posture.headPitch, this.targetHeadPitch, 16.0, clampedDt);
-    this.posture.headRoll = damp(this.posture.headRoll, this.targetHeadRoll, 14.0, clampedDt);
+    // Smoothly blend posture channels (calibrated for lifelike mammal motion)
+    this.posture.rearAmount = damp(this.posture.rearAmount, targetRear, 3.6, clampedDt);
+    this.posture.crouchAmount = damp(this.posture.crouchAmount, targetCrouch, 4.2, clampedDt);
+    this.posture.curlAmount = damp(this.posture.curlAmount, targetCurl, 2.5, clampedDt);
+    this.posture.groomAmount = damp(this.posture.groomAmount, targetGroom, 4.5, clampedDt);
+    this.posture.digAmount = damp(this.posture.digAmount, targetDig, 4.8, clampedDt);
+    this.posture.chewAmount = damp(this.posture.chewAmount, targetChew, 6.0, clampedDt);
+    this.posture.headYaw = damp(this.posture.headYaw, this.targetHeadYaw, 5.8, clampedDt);
+    this.posture.headPitch = damp(this.posture.headPitch, this.targetHeadPitch, 5.8, clampedDt);
+    this.posture.headRoll = damp(this.posture.headRoll, this.targetHeadRoll, 5.2, clampedDt);
 
     // Cheek pouch fill from backend state + active foraging puff
     const baseCheek = petState?.cheek_pouch_fill ?? 0;

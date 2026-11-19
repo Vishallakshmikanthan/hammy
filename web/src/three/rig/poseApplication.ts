@@ -72,7 +72,8 @@ export class PoseApplicationLayer {
     );
 
     const speed = Math.hypot(pose.velocity[0], pose.velocity[1], pose.velocity[2]);
-    const speedFactor = THREE.MathUtils.clamp(speed / 0.32, 0, 1);
+    // Calibrated to real-video hamster walking speed (~0.10–0.13 m/s)
+    const speedFactor = THREE.MathUtils.clamp(speed / 0.12, 0, 1);
     const yawRate = pose.angularVelocity[1];
     const p = pose.posture;
 
