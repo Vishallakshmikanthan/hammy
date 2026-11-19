@@ -12,8 +12,8 @@
       "environment_version": "habitat_mujoco_v1.0.0",
       "fps": 20.0,
       "num_keyframes": 57,
-      "duration_s": 2.26,
-      "displacement_m": 0.226,
+      "duration_s": 2.24,
+      "displacement_m": 0.231,
       "asset_url": "/assets/mujoco_clips/mjclip_783bfa0efdc256.json"
     },
     {
@@ -24,9 +24,9 @@
       "morphology_version": "hamster_mjcf_v1.0.0",
       "environment_version": "habitat_mujoco_v1.0.0",
       "fps": 20.0,
-      "num_keyframes": 68,
-      "duration_s": 2.7,
-      "displacement_m": 0.258,
+      "num_keyframes": 47,
+      "duration_s": 1.86,
+      "displacement_m": 0.25,
       "asset_url": "/assets/mujoco_clips/mjclip_c1fd9e556c0275.json"
     },
     {
@@ -37,9 +37,9 @@
       "morphology_version": "hamster_mjcf_v1.0.0",
       "environment_version": "habitat_mujoco_v1.0.0",
       "fps": 20.0,
-      "num_keyframes": 39,
-      "duration_s": 1.54,
-      "displacement_m": 0.081,
+      "num_keyframes": 43,
+      "duration_s": 1.68,
+      "displacement_m": 0.093,
       "asset_url": "/assets/mujoco_clips/mjclip_0dc69127a2e720.json"
     },
     {
@@ -50,9 +50,9 @@
       "morphology_version": "hamster_mjcf_v1.0.0",
       "environment_version": "habitat_mujoco_v1.0.0",
       "fps": 20.0,
-      "num_keyframes": 72,
-      "duration_s": 2.84,
-      "displacement_m": 0.24,
+      "num_keyframes": 71,
+      "duration_s": 2.82,
+      "displacement_m": 0.237,
       "asset_url": "/assets/mujoco_clips/mjclip_051f77e7a734ad.json"
     },
     {
@@ -63,9 +63,9 @@
       "morphology_version": "hamster_mjcf_v1.0.0",
       "environment_version": "habitat_mujoco_v1.0.0",
       "fps": 20.0,
-      "num_keyframes": 42,
-      "duration_s": 1.66,
-      "displacement_m": 0.125,
+      "num_keyframes": 39,
+      "duration_s": 1.54,
+      "displacement_m": 0.099,
       "asset_url": "/assets/mujoco_clips/mjclip_98610ecf5d57e4.json"
     },
     {
@@ -76,9 +76,9 @@
       "morphology_version": "hamster_mjcf_v1.0.0",
       "environment_version": "habitat_mujoco_v1.0.0",
       "fps": 20.0,
-      "num_keyframes": 49,
-      "duration_s": 1.94,
-      "displacement_m": 0.177,
+      "num_keyframes": 46,
+      "duration_s": 1.82,
+      "displacement_m": 0.162,
       "asset_url": "/assets/mujoco_clips/mjclip_7322e96e53da63.json"
     }
   ]

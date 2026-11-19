@@ -44,13 +44,13 @@ CURRICULUM_STAGES = (
 
 @dataclass
 class RewardWeights:
-    imitation_joint: float = 1.50
-    imitation_vel: float = 0.80
-    imitation_contact: float = 0.40
+    imitation_joint: float = 1.80
+    imitation_vel: float = 0.90
+    imitation_contact: float = 0.55
     upright: float = 0.35
-    command: float = 3.20
-    smoothness: float = 0.05
-    energy: float = 0.005
+    command: float = 3.40
+    smoothness: float = 0.28
+    energy: float = 0.015
     fall_penalty: float = 3.0
 
 
@@ -130,6 +130,9 @@ class HamsterLocomotionEnv(gym.Env):
         self._fixed_command: np.ndarray | None = None
         self._target_xy = np.array([0.6, 0.0], dtype=np.float32)
         self._prev_action = DEFAULT_STAND_JOINTS.copy()
+        self._prev_prev_action = DEFAULT_STAND_JOINTS.copy()
+        self._prev_contacts_bin = np.ones(4, dtype=np.float32)
+        self._contact_age_s = np.full(4, 0.5, dtype=np.float32)
         self._action_delay_steps = 0
         self._action_queue: deque[np.ndarray] = deque(maxlen=3)
         self._next_push_step = 75
@@ -211,12 +214,19 @@ class HamsterLocomotionEnv(gym.Env):
     def _get_obs(self, ref_state: dict[str, np.ndarray] | None) -> np.ndarray:
         qpos = self.data.qpos[self._jnt_qposadr].astype(np.float32)
         qvel = self.data.qvel[self._jnt_qveladr].astype(np.float32)
-        quat = self.data.sensordata[self._quat_adr : self._quat_adr + 4].astype(np.float32)
-        qnorm = float(np.linalg.norm(quat))
-        if qnorm > 1e-6:
-            quat = quat / qnorm
-        else:
-            quat = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float32)
+        quat_raw = self.data.sensordata[self._quat_adr : self._quat_adr + 4].astype(np.float32)
+        qnorm = float(np.linalg.norm(quat_raw))
+        quat_raw = quat_raw / qnorm if qnorm > 1e-6 else np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float32)
+        # Yaw-invariant tilt quaternion so policy generalizes natively to any heading in the habitat
+        w, x, y, z = [float(v) for v in quat_raw]
+        yaw = float(np.arctan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z)))
+        cy, sy = float(np.cos(-yaw / 2.0)), float(np.sin(-yaw / 2.0))
+        quat = np.array(
+            [cy * w - sy * z, cy * x - sy * y, cy * y + sy * x, cy * z + sy * w],
+            dtype=np.float32,
+        )
+        if quat[0] < 0.0:
+            quat = -quat
         gyro = self.data.sensordata[self._gyro_adr : self._gyro_adr + 3].astype(np.float32)
         raw_touch = self.data.sensordata[self._touch_adrs].astype(np.float32)
         contacts = np.clip(raw_touch / 0.20, 0.0, 1.0)
@@ -263,6 +273,9 @@ class HamsterLocomotionEnv(gym.Env):
         self._step_count = 0
         self._sim_time = 0.0
         self._prev_action = DEFAULT_STAND_JOINTS.copy()
+        self._prev_prev_action = DEFAULT_STAND_JOINTS.copy()
+        self._prev_contacts_bin = np.ones(4, dtype=np.float32)
+        self._contact_age_s = np.full(4, 0.5, dtype=np.float32)
         self._action_queue.clear()
         for _ in range(3):
             self._action_queue.append(DEFAULT_STAND_JOINTS.copy())
@@ -346,13 +359,13 @@ class HamsterLocomotionEnv(gym.Env):
         vy_err = float(linvel[1] - self._command[1])
         yaw_err = float(gyro[2] - self._command[2])
         vel_track = float(np.exp(-40.0 * (vx_err * vx_err + vy_err * vy_err)))
-        yaw_track = float(np.exp(-3.0 * yaw_err * yaw_err))
+        yaw_track = float(np.exp(-4.0 * yaw_err * yaw_err))
         # Sharp progress + tracking reward; standing still during walk command yields ~0
         if self._command[0] > 0.03:
             progress = float(np.clip(linvel[0] / self._command[0], -0.5, 1.15))
-            r_command = float(w.command * (0.45 * vel_track + 0.55 * progress + 0.25 * yaw_track) - 1.2)
+            r_command = float(w.command * (0.40 * vel_track + 0.50 * progress + 0.35 * yaw_track) - 1.2)
         else:
-            r_command = float(w.command * (0.75 * vel_track + 0.25 * yaw_track))
+            r_command = float(w.command * (0.65 * vel_track + 0.35 * yaw_track))
 
         # Imitation terms (zero when use_imitation=False or stationary stand command)
         cmd_mag = float(np.hypot(self._command[0], self._command[2]))
@@ -370,8 +383,19 @@ class HamsterLocomotionEnv(gym.Env):
             r_track_contact = 0.0
             joint_track_rmse = 0.0
 
+        # Smoothness: 1st-order velocity + 2nd-order jerk + anti-chatter paw micro-bounce penalty
         act_delta = joint_target - self._prev_action
-        r_smooth = float(-w.smoothness * float(np.mean(act_delta * act_delta)))
+        act_jerk = joint_target - 2.0 * self._prev_action + self._prev_prev_action
+        c_bin = (contacts > 0.3).astype(np.float32)
+        toggled = np.abs(c_bin - self._prev_contacts_bin) > 0.5
+        chatter_pen = float(np.sum(toggled & (self._contact_age_s < 0.12))) * 0.06
+        self._contact_age_s = np.where(toggled, 0.0, self._contact_age_s + self.control_dt)
+        self._prev_contacts_bin = c_bin
+
+        r_smooth = float(
+            -w.smoothness * (float(np.mean(act_delta * act_delta)) + 0.5 * float(np.mean(act_jerk * act_jerk)))
+            - chatter_pen
+        )
 
         tau = self.data.actuator_force.astype(np.float32)
         power = tau * qvel
@@ -381,6 +405,7 @@ class HamsterLocomotionEnv(gym.Env):
 
         total_reward = r_upright + r_command + r_track_joint + r_track_vel + r_track_contact + r_smooth + r_energy + r_fall
 
+        self._prev_prev_action = self._prev_action.copy()
         self._prev_action = joint_target.copy()
         obs = self._get_obs(ref) if not non_finite else np.zeros(OBS_DIM, dtype=np.float32)
 

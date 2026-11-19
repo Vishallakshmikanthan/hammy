@@ -94,7 +94,7 @@
     "real_video6_wheel_run_REAL": {
       "clip_id": "real_video6_wheel_run_REAL",
       "source_type": "REAL_VIDEO",
-      "mean_limit_clip_err_rad": 0.0112,
+      "mean_limit_clip_err_rad": 0.0233,
       "frames_at_50hz": 599,
       "duration_s": 11.97,
       "estimated_unobserved_dofs": [
@@ -177,5 +177,251 @@
         "mean_yaw_rate_rad_s": 0.0
       }
     ]
+  },
+  "real_video_batch2_flat_and_behaviours": {
+    "grass_walk_sniff": {
+      "clip": {
+        "src": "stock-footage-european-hamster-walks-into-view-sniffs-then-moves-away-in-grass.webm",
+        "dst": "data/clips/clip_grass_walk_sniff.mp4",
+        "fps": 25.0,
+        "frames": 443,
+        "duration_s": 17.72
+      },
+      "superanimal": "superanimal_quadruped",
+      "cleaning": {
+        "frames": 443,
+        "raw_jitter_px_per_f2": 10.047,
+        "clean_jitter_px_per_f2": 5.438,
+        "median_body_length_px": 156.5,
+        "valid_pct_at_0_35": {
+          "nose": 97.1,
+          "left_ear": 94.4,
+          "right_ear": 95.3,
+          "neck": 96.8,
+          "mid_spine": 74.7,
+          "tail_base": 94.6,
+          "fl_paw": 80.4,
+          "fr_paw": 85.3,
+          "bl_paw": 40.4,
+          "br_paw": 80.6
+        }
+      },
+      "gait_stats": {
+        "source_type": "REAL_VIDEO",
+        "median_body_px": 156.5,
+        "moving_fraction": 0.409,
+        "mean_moving_speed_m_s": 0.077,
+        "peak_speed_m_s": 0.133,
+        "stride_freq_hz": 1.64,
+        "est_stride_length_m": 0.047,
+        "mean_move_bout_s": 0.72,
+        "mean_stop_bout_s": 1.16
+      },
+      "retargeting": {
+        "clip_id": "real_grass_walk_sniff_REAL",
+        "source_type": "REAL_VIDEO",
+        "mean_limit_clip_err_rad": 0.0036,
+        "frames_at_50hz": 886,
+        "duration_s": 17.72,
+        "estimated_unobserved_dofs": [
+          "spine_yaw",
+          "neck_yaw",
+          "fl/fr/bl/br_hip_abd"
+        ]
+      }
+    },
+    "flat_mat_eat_walk": {
+      "clip": {
+        "src": "stock-footage-mouse-eating-a-piece-of-carrot-hamster-eating-little-white-hamster-eating-carrot-held-in-a-child.webm",
+        "dst": "data/clips/clip_flat_mat_eat_walk.mp4",
+        "fps": 25.0,
+        "frames": 220,
+        "duration_s": 8.8
+      },
+      "superanimal": "superanimal_quadruped",
+      "cleaning": {
+        "frames": 220,
+        "raw_jitter_px_per_f2": 14.529,
+        "clean_jitter_px_per_f2": 7.824,
+        "median_body_length_px": 229.2,
+        "valid_pct_at_0_35": {
+          "nose": 94.1,
+          "left_ear": 52.3,
+          "right_ear": 77.3,
+          "neck": 45.5,
+          "mid_spine": 14.1,
+          "tail_base": 5.0,
+          "fl_paw": 83.6,
+          "fr_paw": 67.7,
+          "bl_paw": 45.9,
+          "br_paw": 28.6
+        }
+      },
+      "gait_stats": {
+        "source_type": "REAL_VIDEO",
+        "median_body_px": 229.2,
+        "moving_fraction": 0.773,
+        "mean_moving_speed_m_s": 0.089,
+        "peak_speed_m_s": 0.186,
+        "stride_freq_hz": 1.48,
+        "est_stride_length_m": 0.0601,
+        "mean_move_bout_s": 0.76,
+        "mean_stop_bout_s": 0.25
+      },
+      "retargeting": {
+        "clip_id": "real_flat_mat_eat_walk_REAL",
+        "source_type": "REAL_VIDEO",
+        "mean_limit_clip_err_rad": 0.0334,
+        "frames_at_50hz": 440,
+        "duration_s": 8.8,
+        "estimated_unobserved_dofs": [
+          "spine_yaw",
+          "neck_yaw",
+          "fl/fr/bl/br_hip_abd"
+        ]
+      }
+    },
+    "rear_sniff_enclosure": {
+      "clip": {
+        "src": "stock-footage-curious-white-dwarf-hamster-standing-on-hind-legs-and-sniffing-inside-a-pet-enclosure.webm",
+        "dst": "data/clips/clip_rear_sniff_enclosure.mp4",
+        "fps": 30.0,
+        "frames": 181,
+        "duration_s": 6.03
+      },
+      "superanimal": "superanimal_quadruped",
+      "cleaning": {
+        "frames": 181,
+        "raw_jitter_px_per_f2": 17.658,
+        "clean_jitter_px_per_f2": 12.209,
+        "median_body_length_px": 300.0,
+        "valid_pct_at_0_35": {
+          "nose": 74.6,
+          "left_ear": 84.5,
+          "right_ear": 65.2,
+          "neck": 81.2,
+          "mid_spine": 50.3,
+          "tail_base": 22.1,
+          "fl_paw": 31.5,
+          "fr_paw": 53.0,
+          "bl_paw": 18.2,
+          "br_paw": 21.0
+        }
+      },
+      "gait_stats": {
+        "source_type": "REAL_VIDEO",
+        "median_body_px": 300.0,
+        "moving_fraction": 0.845,
+        "mean_moving_speed_m_s": 0.082,
+        "peak_speed_m_s": 0.181,
+        "stride_freq_hz": 1.66,
+        "est_stride_length_m": 0.0496,
+        "mean_move_bout_s": 0.73,
+        "mean_stop_bout_s": 0.16
+      },
+      "retargeting": {
+        "clip_id": "real_rear_sniff_enclosure_REAL",
+        "source_type": "REAL_VIDEO",
+        "mean_limit_clip_err_rad": 0.0367,
+        "frames_at_50hz": 302,
+        "duration_s": 6.03,
+        "estimated_unobserved_dofs": [
+          "spine_yaw",
+          "neck_yaw",
+          "fl/fr/bl/br_hip_abd"
+        ]
+      }
+    },
+    "hand_taming_walk": {
+      "clip": {
+        "src": "stock-footage-a-small-pet-hamster-running-across-a-child-s-hands.webm",
+        "dst": "data/clips/clip_hand_taming_walk.mp4",
+        "fps": 29.97,
+        "frames": 273,
+        "duration_s": 9.11
+      },
+      "superanimal": "superanimal_quadruped",
+      "cleaning": {
+        "frames": 273,
+        "raw_jitter_px_per_f2": 25.137,
+        "clean_jitter_px_per_f2": 18.021,
+        "median_body_length_px": 284.9,
+        "valid_pct_at_0_35": {
+          "nose": 52.4,
+          "left_ear": 18.7,
+          "right_ear": 33.3,
+          "neck": 43.2,
+          "mid_spine": 3.3,
+          "tail_base": 44.3,
+          "fl_paw": 27.1,
+          "fr_paw": 26.7,
+          "bl_paw": 20.5,
+          "br_paw": 16.5
+        }
+      },
+      "gait_stats": {
+        "source_type": "REAL_VIDEO",
+        "median_body_px": 284.9,
+        "moving_fraction": 0.96,
+        "mean_moving_speed_m_s": 0.129,
+        "peak_speed_m_s": 0.284,
+        "stride_freq_hz": 1.54,
+        "est_stride_length_m": 0.0842,
+        "mean_move_bout_s": 1.75,
+        "mean_stop_bout_s": 0.07
+      },
+      "retargeting": {
+        "clip_id": "real_hand_taming_walk_REAL",
+        "source_type": "REAL_VIDEO",
+        "mean_limit_clip_err_rad": 0.157,
+        "frames_at_50hz": 455,
+        "duration_s": 9.11,
+        "estimated_unobserved_dofs": [
+          "spine_yaw",
+          "neck_yaw",
+          "fl/fr/bl/br_hip_abd"
+        ]
+      }
+    },
+    "topdown_enclosure_explore": {
+      "clip": {
+        "src": "stock-footage-hamster-cute-little-animal-pet (4).webm",
+        "dst": "data/clips/clip_topdown_enclosure_explore.mp4",
+        "fps": 29.97,
+        "frames": 450,
+        "duration_s": 15.02
+      },
+      "superanimal": "superanimal_topviewmouse",
+      "cleaning": {
+        "frames": 450,
+        "raw_jitter_px_per_f2": 1.581,
+        "clean_jitter_px_per_f2": 0.751,
+        "median_body_length_px": 63.6,
+        "valid_pct_at_0_35": {
+          "nose": 2.4,
+          "left_ear": 0.9,
+          "right_ear": 4.0,
+          "neck": 1.6,
+          "mid_spine": 0.2,
+          "tail_base": 0.9,
+          "fl_paw": 0.0,
+          "fr_paw": 0.2,
+          "bl_paw": 0.0,
+          "br_paw": 0.0
+        }
+      },
+      "gait_stats": {
+        "source_type": "REAL_VIDEO",
+        "median_body_px": 63.6,
+        "moving_fraction": 0.489,
+        "mean_moving_speed_m_s": 0.099,
+        "peak_speed_m_s": 0.17,
+        "stride_freq_hz": 1.27,
+        "est_stride_length_m": 0.0785,
+        "mean_move_bout_s": 1.22,
+        "mean_stop_bout_s": 1.1
+      },
+      "retargeting": null
+    }
   }
 }

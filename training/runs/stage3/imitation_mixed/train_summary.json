@@ -4,12 +4,12 @@
   "model_version": "hamster_mjcf_v1.0.0",
   "source_filter": "mixed",
   "use_imitation": true,
-  "total_timesteps": 500000,
+  "total_timesteps": 1000000,
   "n_envs": 64,
   "seed": 42,
   "curriculum": "auto_success_gated (stand->perturb->walk->turn->stop->target)",
   "domain_randomization": true,
   "control_hz": 50,
-  "train_wall_sec": 182.63,
-  "train_fps": 2737.8
+  "train_wall_sec": 392.35,
+  "train_fps": 2548.7
 }

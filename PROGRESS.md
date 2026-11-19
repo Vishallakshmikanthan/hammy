@@ -136,6 +136,19 @@ Proceed to **Stage 1: Hamster body model (MJCF)** — build versioned 16-DoF `si
 ### Exact Next Step
 Ready for either: (a) dropping real flat-ground walking videos into `data/raw_video/` to re-run Stage 2/3 and compare `real-only` vs `synthetic-only` vs `mixed`, or (b) wiring a dedicated Petting / Offer Treat button in `web/` UI to `POST /api/v1/mujoco/interact` and previewing live in the browser.
 
+---
+
+## Stage 2b + 3b + 5b: Real Flat-Ground Video Upgrade, 1M-Step Smoothness Refinement & UI Wiring — **COMPLETE**
+
+### What Was Done
+- **13 New Videos Audited (`21` total in `data/raw_video/`):** Extracted DeepLabCut 3.0.2 SuperAnimal poses, real flat-ground gait statistics, and 4 additional `REAL_VIDEO` MJCF reference clips (`real_grass_walk_sniff_REAL.npz`, `real_flat_mat_eat_walk_REAL.npz`, `real_rear_sniff_enclosure_REAL.npz`, `real_hand_taming_walk_REAL.npz`, now **6 `REAL_VIDEO` + 5 `SYNTHETIC`** clips in `data/reference_motion/`) via [`scripts/stage2b_extract_new_real_videos.py`](scripts/stage2b_extract_new_real_videos.py).
+- **1M-Step High-Smoothness PPO Refinement:** Upgraded [`training/hamster_locomotion_env.py`](training/hamster_locomotion_env.py) with native yaw-invariant tilt observations, 2nd-order action jerk + anti-chatter paw cadence penalties, and stronger yaw tracking; trained all 4 ablation conditions for `1,000,000` steps each (`64` envs on RTX 5070):
+  - `imitation_real` (purely from 6 `REAL_VIDEO` clips): **`98.0%` non-fall**, **lowest speed error (`0.0989 m/s`)**.
+  - `imitation_mixed` (6 `REAL_VIDEO` + 5 `SYNTHETIC`, exported to `best_policy.onnx`): **`98.0%` non-fall**, **`0.114 m/s`** speed error, **`0.673 m`** walk distance, ONNX diff **`1.16e-6`**, latency **`0.0126 ms`**.
+  - Re-ran Stage 4 habitat eval (**`100.0%` success**, **`0.0%` falls**) and refreshed all 6 Stage 5 MuJoCo + ONNX web clips.
+- **UI Wiring (`web/`):** Built [`web/src/components/ParentInteractionPanel.tsx`](web/src/components/ParentInteractionPanel.tsx) (Offer Treat / Gentle Pet / Call Attention, live Familiarity & Stress meters, non-forced response badge, honesty labels, MuJoCo clip link) and mounted it in [`web/src/components/Observatory.tsx`](web/src/components/Observatory.tsx). Verified `tsc && vite build` (`2.96 s`, 0 errors) and all regression tests (**10/10** Docker + **2/2** Stage 5 bridge tests passing).
+
+
 
 
 

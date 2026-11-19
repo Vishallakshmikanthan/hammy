@@ -5,6 +5,7 @@ import { ActiveBrainView } from "./ActiveBrainView";
 import { DrivesPanel } from "./DrivesPanel";
 import { EventsFeed } from "./EventsFeed";
 import { ObservatoryBanner } from "./ObservatoryBanner";
+import { ParentInteractionPanel } from "./ParentInteractionPanel";
 import { HabitatSceneView } from "../three/habitat/HabitatSceneView";
 import { Badge } from "@/components/ui/badge";
 import type { Pet, PetState, WorldEvent } from "../types";
@@ -197,6 +198,9 @@ export const Observatory: React.FC<ObservatoryProps> = ({
           externalEvents={effectiveEvents}
           externalConnectionStatus={connectionStatus}
         />
+
+        {/* Stage 5: Parent Petting / Taming & MuJoCo ONNX Physics Bridge */}
+        <ParentInteractionPanel />
       </section>
 
       {/* Bento Telemetry Grid: Active Brain, Homeostatic Drives, and Authoritative Events */}

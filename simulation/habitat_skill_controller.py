@@ -151,7 +151,7 @@ class HabitatSkillController:
         target[1] = float(np.clip(target[1] + 0.35 * steer, JOINT_LIMITS_LOW[1], JOINT_LIMITS_HIGH[1]))  # spine_yaw
         target[3] = float(np.clip(target[3] + 0.45 * steer, JOINT_LIMITS_LOW[3], JOINT_LIMITS_HIGH[3]))  # neck_yaw
         # Gentle yaw torque assist on pelvis when heading error is significant (RULE-BASED navigation assist)
-        yaw_torque = float(np.clip(0.022 * yaw_err, -0.020, 0.020))
+        yaw_torque = float(np.clip(0.016 * yaw_err, -0.015, 0.015))
         for _ in range(self.n_substeps):
             self.data.ctrl[:] = target
             self.data.xfrc_applied[1, 5] = yaw_torque
