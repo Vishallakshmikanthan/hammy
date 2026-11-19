@@ -14,7 +14,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from services.api.routes import care, clips, habitat, notifications, pets, simulation, system, ws
+from services.api.routes import care, clips, habitat, mujoco_bridge, notifications, pets, simulation, system, ws
 
 app = FastAPI(
     title="HAMMY Parent API",
@@ -43,6 +43,7 @@ app.include_router(notifications.router, prefix="/api/v1", tags=["Notifications"
 app.include_router(simulation.router, prefix="/api/v1", tags=["Simulation"])
 app.include_router(system.router, prefix="/api/v1", tags=["System"])
 app.include_router(ws.router, prefix="/api/v1", tags=["WebSocket"])
+app.include_router(mujoco_bridge.router, prefix="/api/v1", tags=["MuJoCo Bridge"])
 
 
 @app.get("/")

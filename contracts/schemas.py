@@ -26,8 +26,8 @@ SUPPORTED_SCHEMA_VERSIONS: Dict[str, List[str]] = {
     "event": ["1.0.0"],
     "command": ["1.0.0"],
     "trajectory_clip": ["1.0.0"],
-    "morphology": ["simple_agent_v1", "syrian_quadruped_v1", "hamster_v1.0.0"],
-    "environment": ["habitat_v1"],
+    "morphology": ["simple_agent_v1", "syrian_quadruped_v1", "hamster_v1.0.0", "hamster_mjcf_v1.0.0"],
+    "environment": ["habitat_v1", "habitat_mujoco_v1.0.0"],
 }
 
 
@@ -256,7 +256,7 @@ class TrajectoryKeyframeV1(BaseModel):
     t_sec: float = Field(..., ge=0.0, description="Relative timestamp within clip (seconds)")
     root_pos: List[float] = Field(..., min_length=3, max_length=3)
     root_quat: List[float] = Field(..., min_length=4, max_length=4)
-    joint_angles: List[float] = Field(..., min_length=12, max_length=14)
+    joint_angles: List[float] = Field(..., min_length=12, max_length=16)
     foot_contacts: List[bool] = Field(..., min_length=4, max_length=4)
 
 

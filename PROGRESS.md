@@ -123,6 +123,20 @@ Proceed to **Stage 1: Hamster body model (MJCF)** — build versioned 16-DoF `si
 ### Exact Next Step
 **STOP AT HUMAN CHECKPOINT 4:** Wait for user review of `renders/stage4/stage4_autonomous_habitat.mp4`, `renders/stage4/stage4_petting_taming.mp4`, and `renders/stage4/stage4_habitat_preview.png`. Next stage after approval: bridging the trained ONNX policy & behaviour stream into the existing realistic 3D web habitat (`hamster.glb` + FastAPI backend).
 
+---
+
+## Stage 5: MuJoCo + ONNX Bridge to Photorealistic Web Habitat — **COMPLETE (21/21 Total Tests Passing)**
+
+### What Was Done
+- Extended [`contracts/schemas.py`](contracts/schemas.py) (`SUPPORTED_SCHEMA_VERSIONS` + `TrajectoryKeyframeV1.joint_angles` up to 16 DoF, backward-compatible).
+- Built real MuJoCo + ONNX `TrajectoryClipV1` exporter ([`services/simulation_worker/mujoco_clip_generator.py`](services/simulation_worker/mujoco_clip_generator.py)) and exported 6 verified `observed_physics` / `learned` clips via [`scripts/stage5_export_web_clips.py`](scripts/stage5_export_web_clips.py) to both `LocalObjectStorage` and `web/public/assets/mujoco_clips/` (`forage_bowl`, `drink_water`, `enter_tunnel`, `retreat_to_hideout`, `cautious_sniff`, `accept_petting`) without modifying `hamster.glb`.
+- Added FastAPI bridge router ([`services/api/routes/mujoco_bridge.py`](services/api/routes/mujoco_bridge.py)) mounted in [`services/api/main.py`](services/api/main.py) (`/api/v1/mujoco/status`, `/api/v1/mujoco/interact`, `/api/v1/mujoco/clips/{clip_id}`).
+- Recorded [`docs/decisions/ADR-0006-stage5-mujoco-onnx-web-bridge.md`](docs/decisions/ADR-0006-stage5-mujoco-onnx-web-bridge.md) and passed full Stage 0–5 regression suite (**19/19** Docker GPU tests + **2/2** Stage 5 web bridge tests = **21/21 PASSED**).
+
+### Exact Next Step
+Ready for either: (a) dropping real flat-ground walking videos into `data/raw_video/` to re-run Stage 2/3 and compare `real-only` vs `synthetic-only` vs `mixed`, or (b) wiring a dedicated Petting / Offer Treat button in `web/` UI to `POST /api/v1/mujoco/interact` and previewing live in the browser.
+
+
 
 
 
