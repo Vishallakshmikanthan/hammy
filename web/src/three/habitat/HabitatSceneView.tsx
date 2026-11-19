@@ -338,6 +338,36 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
               box.getCenter(propAnchors.wheelPos);
               propAnchors.wheelBox = box.clone();
               propAnchors.wheelTrackY = box.min.y + 0.012;
+
+              // Add realistic wooden inner grip rungs & spokes to wheelMesh so drum rotation is clearly visible
+              m.geometry.computeBoundingBox();
+              const gBox = m.geometry.boundingBox;
+              if (gBox) {
+                const rad = Math.max(0.06, (gBox.max.x - gBox.min.x) * 0.48);
+                const depth = Math.max(0.04, (gBox.max.y - gBox.min.y) * 0.88);
+                const rungMat = new THREE.MeshStandardMaterial({
+                  color: "#6b4827",
+                  roughness: 0.78,
+                  metalness: 0.02,
+                });
+                const rungGeo = new THREE.BoxGeometry(0.005, depth, 0.005);
+                for (let rIdx = 0; rIdx < 12; rIdx++) {
+                  const ang = (rIdx / 12) * Math.PI * 2;
+                  const rung = new THREE.Mesh(rungGeo, rungMat);
+                  rung.position.set(Math.cos(ang) * (rad - 0.006), 0, Math.sin(ang) * (rad - 0.006));
+                  rung.rotation.y = -ang;
+                  rung.castShadow = false;
+                  rung.receiveShadow = true;
+                  m.add(rung);
+                }
+                const spokeGeo = new THREE.BoxGeometry(rad * 1.92, 0.004, 0.009);
+                for (let sIdx = 0; sIdx < 3; sIdx++) {
+                  const spoke = new THREE.Mesh(spokeGeo, rungMat);
+                  spoke.position.set(0, -depth * 0.45, 0);
+                  spoke.rotation.y = (sIdx / 3) * Math.PI;
+                  m.add(spoke);
+                }
+              }
             }
             if (m.name === "prop_hideout") {
               const box = new THREE.Box3().setFromObject(m);
