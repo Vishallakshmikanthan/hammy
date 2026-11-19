@@ -66,3 +66,104 @@ export interface WorldEvent {
 
 export type ConnectionStatus = "connected" | "reconnecting" | "disconnected";
 
+export type AssetCategory = "food" | "water" | "costume" | "prop" | "decor";
+
+export type CostumeSlot = "head_slot" | "neck_slot" | "back_slot";
+
+export interface ManifestAssetItem {
+  id: string;
+  name: string;
+  category: AssetCategory;
+  file_path: string;
+  web_url: string;
+  source_blend: string;
+  thumbnail: string;
+  thumbnail_url: string;
+  scale: [number, number, number];
+  dimensions_m: [number, number, number];
+  collision_radius_m: number;
+  pivot: string;
+  attachment_slot: CostumeSlot | "paw_hold" | null;
+  hamster_safe: boolean | null;
+  safety_note?: string | null;
+  licence: string;
+  author: string;
+  source: string;
+  origin_label: "GENERATED" | "DOWNLOADED";
+  vertices: number;
+  polygon_count: number;
+  triangle_count: number;
+  file_size_bytes: number;
+}
+
+export interface AssetManifest {
+  schema_version: string;
+  default_cage_policy: string;
+  default_cage_items: string[];
+  default_cage_assumption_note: string;
+  cage_bounds_m: {
+    min_x: number;
+    max_x: number;
+    min_y: number;
+    max_y: number;
+    floor_z: number;
+  };
+  total_assets: number;
+  items: ManifestAssetItem[];
+}
+
+export interface EquippedCostumeEntry {
+  object_id: string;
+  item_id: string;
+  name: string;
+  slot: CostumeSlot;
+}
+
+export interface OfferedFoodEntry {
+  object_id: string;
+  item_id: string;
+  name: string;
+  quantity: number;
+  pose_xyz_m: [number, number, number];
+  spoils_at_sim_sec: number;
+  spoiled: boolean;
+}
+
+export interface WaterSourceEntry {
+  object_id: string;
+  item_id: string;
+  name: string;
+  pose_xyz_m: [number, number, number];
+  water_level: number;
+  capacity_ml: number;
+}
+
+export interface PlacedItemEntry {
+  object_id: string;
+  item_id: string;
+  name: string;
+  category: "prop" | "decor" | "water";
+  pose_xyz_m: [number, number, number];
+  rotation_y_rad: number;
+  collision_radius_m: number;
+}
+
+export interface ShelvesLayoutState {
+  pet_id: string;
+  sim_time_sec: number;
+  cheek_pouch_fill: number;
+  water_level: number;
+  equipped_costumes: Partial<Record<CostumeSlot, EquippedCostumeEntry>>;
+  offered_foods: OfferedFoodEntry[];
+  water_sources: WaterSourceEntry[];
+  placed_items: PlacedItemEntry[];
+}
+
+export interface PlacementDraft {
+  item: ManifestAssetItem;
+  pose_xyz_m: [number, number, number];
+  rotation_y_rad: number;
+  editingObjectId?: string;
+}
+
+

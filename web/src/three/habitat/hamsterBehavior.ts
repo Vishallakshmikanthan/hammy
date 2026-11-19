@@ -21,6 +21,16 @@ export interface HabitatPropAnchors {
   wheelBox?: THREE.Box3;
   wheelTrackY?: number;
   sampleBeddingY?: (x: number, z: number) => number;
+  /** Optional opt-in flags & dynamic obstacles from the Shelf Layout (defaults to true when undefined so legacy unit tests pass unchanged) */
+  hasBowl?: boolean;
+  hasWheel?: boolean;
+  hasHideout?: boolean;
+  hasTunnel?: boolean;
+  hasChew?: boolean;
+  dynamicObstacles?: Array<{ id: string; pos: THREE.Vector3; radius: number }>;
+  offeredFoodTarget?: { objectId: string; itemId: string; pos: THREE.Vector3 } | null;
+  onFoodConsumed?: (objectId: string, itemId: string) => void;
+  onWaterConsumed?: () => void;
 }
 
 export interface HamsterBehaviorStep {
@@ -111,6 +121,12 @@ export class HamsterBehaviorController {
 
   private smoothCheekL = 0;
   private smoothCheekR = 0;
+  public isHoldingFood = false;
+  public heldFoodItemId: string | null = null;
+  private activeFoodObjectId: string | null = null;
+  private lastTrackedFoodObjectId: string | null = null;
+  private hasTriggeredEatCallback = false;
+  private hasTriggeredDrinkCallback = false;
 
   private nextRand(): number {
     this.seed = (this.seed * 1664525 + 1013904223) >>> 0;
@@ -181,27 +197,35 @@ export class HamsterBehaviorController {
     anchors: HabitatPropAnchors,
     petState?: PetState | null
   ): THREE.Vector3 {
-    const bodyRadius = 0.022;
-    const obstacles: Array<{ pos: THREE.Vector3; radius: number }> = [
-      { pos: anchors.bowlPos, radius: 0.064 },
-      { pos: anchors.chewPos, radius: 0.038 },
-    ];
+    const bodyRadius = 0.032;
+    const obstacles: Array<{ pos: THREE.Vector3; radius: number }> = [];
+    if (anchors.hasBowl ?? true) {
+      obstacles.push({ pos: anchors.bowlPos, radius: 0.064 });
+    }
+    if (anchors.hasChew ?? true) {
+      obstacles.push({ pos: anchors.chewPos, radius: 0.038 });
+    }
+    if (anchors.dynamicObstacles) {
+      for (const dyn of anchors.dynamicObstacles) {
+        obstacles.push({ pos: dyn.pos, radius: dyn.radius + bodyRadius });
+      }
+    }
 
     const allowHideout =
       Boolean(petState?.inside_hideout) ||
       (this.goal === "hideout" && this.goalStage !== "approach");
-    if (!allowHideout && !anchors.hideoutBox) {
+    if ((anchors.hasHideout ?? true) && !allowHideout && !anchors.hideoutBox) {
       obstacles.push({ pos: anchors.hideoutPos, radius: 0.115 });
     }
 
     const allowWheel =
       Boolean(petState?.on_wheel) ||
       (this.goal === "wheel" && this.goalStage !== "approach");
-    if (!allowWheel && !anchors.wheelBox) {
+    if ((anchors.hasWheel ?? true) && !allowWheel && !anchors.wheelBox) {
       obstacles.push({ pos: anchors.wheelPos, radius: 0.15 });
     }
 
-    if (!petState?.inside_tunnel && !anchors.tunnelBoxes?.length && !anchors.tunnelBox) {
+    if ((anchors.hasTunnel ?? true) && !petState?.inside_tunnel && !anchors.tunnelBoxes?.length && !anchors.tunnelBox) {
       obstacles.push({ pos: anchors.tunnelPos, radius: 0.115 });
     }
 
@@ -368,7 +392,28 @@ export class HamsterBehaviorController {
     this.faceTargetPos = null;
     this.waypointQueue = [];
 
-    if (latestSkill === "eat" || latestSkill === "hoard") {
+    if (anchors.offeredFoodTarget) {
+      this.goal = "bowl";
+      this.goalStage = "approach";
+      this.activeFoodObjectId = anchors.offeredFoodTarget.objectId;
+      this.heldFoodItemId = anchors.offeredFoodTarget.itemId;
+      this.faceTargetPos = anchors.offeredFoodTarget.pos.clone();
+      this.setGoalTargetWithTunnelCorridor(
+        this.clampFloor(
+          new THREE.Vector3(
+            0.20,
+            anchors.beddingY,
+            0.135
+          ),
+          anchors,
+          petState
+        ),
+        anchors
+      );
+      return;
+    }
+
+    if ((anchors.hasBowl ?? true) && (latestSkill === "eat" || latestSkill === "hoard")) {
       this.goal = "bowl";
       this.goalStage = "approach";
       this.faceTargetPos = anchors.bowlPos.clone();
@@ -388,7 +433,7 @@ export class HamsterBehaviorController {
       );
       return;
     }
-    if (latestSkill === "gnaw") {
+    if ((anchors.hasChew ?? true) && latestSkill === "gnaw") {
       this.goal = "chew";
       this.goalStage = "approach";
       this.faceTargetPos = anchors.chewPos.clone();
@@ -405,20 +450,20 @@ export class HamsterBehaviorController {
     const thirst = petState?.drives.thirst ?? 0.3;
 
     const r = this.nextRand();
-    if (latestSkill === "wheel_run" && this.goal !== "wheel") {
+    if ((anchors.hasWheel ?? true) && latestSkill === "wheel_run" && this.goal !== "wheel") {
       this.goal = "wheel";
       this.goalStage = "approach";
       this.goalCyclesLeft = 2;
       this.setGoalTargetWithTunnelCorridor(this.getWheelEntryPos(anchors), anchors);
       return;
     }
-    if (energy < 0.32 || (this.goal !== "hideout" && r < 0.14)) {
+    if ((anchors.hasHideout ?? true) && (energy < 0.32 || (this.goal !== "hideout" && r < 0.14))) {
       this.goal = "hideout";
       this.goalStage = "approach";
       this.setGoalTargetWithTunnelCorridor(this.getHideoutDoorPos(anchors), anchors);
       return;
     }
-    if (this.goal !== "wheel" && r < 0.48) {
+    if ((anchors.hasWheel ?? true) && this.goal !== "wheel" && r < 0.48) {
       this.goal = "wheel";
       this.goalStage = "approach";
       this.goalCyclesLeft = 2 + Math.floor(this.nextRand() * 2);
@@ -435,7 +480,7 @@ export class HamsterBehaviorController {
       );
       return;
     }
-    if (this.goal !== "bowl" && r < 0.72 + hunger * 0.1) {
+    if ((anchors.hasBowl ?? true) && this.goal !== "bowl" && r < 0.72 + hunger * 0.1) {
       this.goal = "bowl";
       this.goalStage = "approach";
       this.faceTargetPos = anchors.bowlPos.clone();
@@ -445,7 +490,7 @@ export class HamsterBehaviorController {
       );
       return;
     }
-    if (this.goal !== "chew" && r < 0.82) {
+    if ((anchors.hasChew ?? true) && this.goal !== "chew" && r < 0.82) {
       this.goal = "chew";
       this.goalStage = "approach";
       this.faceTargetPos = anchors.chewPos.clone();
@@ -478,6 +523,9 @@ export class HamsterBehaviorController {
     this.phase = next;
     this.phaseTimer = duration;
     this.headSaccadeTimer = 0.05;
+    if (next !== "forage_eat") {
+      this.isHoldingFood = false;
+    }
     if (next === "wheel_pause") {
       this.wheelPauseElapsed = 0;
     }
@@ -492,9 +540,25 @@ export class HamsterBehaviorController {
     const curiosity = petState?.drives.curiosity ?? 0.5;
     const stress = petState?.drives.stress ?? 0.2;
 
-    if ((this.goal === "bowl" || latestSkill === "eat" || latestSkill === "hoard") && this.pos.distanceTo(anchors.bowlPos) < 0.15) {
+    if (anchors.offeredFoodTarget) {
+      const fPos = anchors.offeredFoodTarget.pos;
+      const distToFood = Math.hypot(this.pos.x - fPos.x, this.pos.z - fPos.z);
+      const distToBowl = Math.hypot(this.pos.x - anchors.bowlPos.x, this.pos.z - anchors.bowlPos.z);
+      if (distToFood < 0.22 || distToBowl < 0.19) {
+        this.goalStage = "active";
+        this.faceTargetPos = fPos.clone();
+        this.activeFoodObjectId = anchors.offeredFoodTarget.objectId;
+        this.heldFoodItemId = anchors.offeredFoodTarget.itemId;
+        this.hasTriggeredEatCallback = false;
+        this.enterPhase("forage_eat", 4.2);
+        return;
+      }
+    }
+
+    if ((anchors.hasBowl ?? true) && (this.goal === "bowl" || latestSkill === "eat" || latestSkill === "hoard") && this.pos.distanceTo(anchors.bowlPos) < 0.15) {
       this.goalStage = "active";
       this.faceTargetPos = anchors.bowlPos.clone();
+      this.hasTriggeredEatCallback = false;
       this.enterPhase("forage_eat", 3.8 + this.nextRand() * 3.2);
       return;
     }
@@ -504,6 +568,7 @@ export class HamsterBehaviorController {
     ) {
       this.goalStage = "active";
       this.faceTargetPos = anchors.spoutPos.clone();
+      this.hasTriggeredDrinkCallback = false;
       this.enterPhase("drink", 3.2 + this.nextRand() * 2.5);
       return;
     }
@@ -577,7 +642,30 @@ export class HamsterBehaviorController {
       };
     }
 
-    // Sync server target when PetState updates
+    // Immediately redirect when new offeredFoodTarget appears in the cage
+    if (anchors.offeredFoodTarget && anchors.offeredFoodTarget.objectId !== this.lastTrackedFoodObjectId) {
+      this.lastTrackedFoodObjectId = anchors.offeredFoodTarget.objectId;
+      this.activeFoodObjectId = anchors.offeredFoodTarget.objectId;
+      this.heldFoodItemId = anchors.offeredFoodTarget.itemId;
+      this.goal = "bowl";
+      this.goalStage = "approach";
+      this.faceTargetPos = anchors.offeredFoodTarget.pos.clone();
+      this.setGoalTargetWithTunnelCorridor(
+        this.clampFloor(
+          new THREE.Vector3(
+            0.20,
+            anchors.beddingY,
+            0.135
+          ),
+          anchors,
+          petState
+        ),
+        anchors
+      );
+      this.enterPhase("scurry", 14.0);
+    } else if (!anchors.offeredFoodTarget) {
+      this.lastTrackedFoodObjectId = null;
+    }
     if (petState) {
       const posKey = `${petState.position_xyz[0]?.toFixed(3)},${petState.position_xyz[1]?.toFixed(3)},${petState.on_wheel},${petState.inside_hideout},${petState.inside_tunnel}`;
       if (posKey !== this.lastServerPosKey) {
@@ -610,7 +698,7 @@ export class HamsterBehaviorController {
         }
 
         if (this.pos.distanceTo(this.targetPos) > 0.025) {
-          this.enterPhase("scurry", 4.5);
+          this.enterPhase("scurry", 12.0);
         }
       }
     }
@@ -634,11 +722,11 @@ export class HamsterBehaviorController {
     let targetChew = 0;
 
     const onWheelActive =
-      (petState?.on_wheel && distToTarget < 0.06) ||
+      Boolean(petState?.on_wheel) ||
       (this.goal === "wheel" && this.goalStage === "active" && distToTarget < 0.06);
 
     const insideHideoutActive =
-      (petState?.inside_hideout && distToTarget < 0.06) ||
+      Boolean(petState?.inside_hideout) ||
       (this.goal === "hideout" && this.goalStage === "active" && distToTarget < 0.06);
 
     if (onWheelActive) {
@@ -683,7 +771,7 @@ export class HamsterBehaviorController {
         this.targetHeadYaw = 0;
         this.targetHeadPitch = -0.06;
         this.targetHeadRoll = 0;
-        activityLabel = "Running on Wheel";
+        activityLabel = "Sprinting on Wheel";
       } else if (this.phase === "wheel_pause") {
         targetSpeed = 0;
         this.wheelPauseElapsed += clampedDt;
@@ -832,6 +920,8 @@ export class HamsterBehaviorController {
             this.pos.x = THREE.MathUtils.clamp(this.pos.x, -0.43, 0.43);
             this.pos.z = THREE.MathUtils.clamp(this.pos.z, -0.215, 0.215);
           }
+          // Re-verify obstacle clearance after wall clamping and tangential slide
+          this.pushOutOfProps(this.pos, anchors, petState);
 
           // Anti-jiggle stuck detector: allow 1.4s for calm turning before picking a new goal
           this.stuckTimer += clampedDt;
@@ -915,23 +1005,36 @@ export class HamsterBehaviorController {
               break;
             }
             case "forage_eat": {
-              targetCrouch = 0.62;
-              targetChew = 0.9;
-              this.posture.chewPhase += clampedDt * 10.5;
-              this.targetHeadYaw = Math.sin(this.posture.chewPhase * 0.15) * 0.14;
-              this.targetHeadPitch = 0.28 + Math.sin(this.posture.chewPhase * 0.35) * 0.08;
+              // Step 5/6 realistic eating: sits up on haunches, holds food in both front paws, chews, cheek pouches bulge
+              targetRear = 0.72;
+              targetGroom = 0.75; // brings both front paws together at snout to hold food
+              targetChew = 0.95;
+              this.isHoldingFood = true;
+              this.posture.groomPhase += clampedDt * 4.5;
+              this.posture.chewPhase += clampedDt * 12.5;
+              this.targetHeadYaw = Math.sin(this.posture.chewPhase * 0.15) * 0.10;
+              this.targetHeadPitch = 0.18 + Math.sin(this.posture.chewPhase * 0.4) * 0.08;
               this.targetHeadRoll = 0;
-              activityLabel = "Nibbling & Stuffing Cheeks";
+              activityLabel = "Eating with Both Paws (ANIMATION-DRIVEN)";
+              if (!this.hasTriggeredEatCallback && this.phaseTimer < 1.8 && this.activeFoodObjectId && anchors.onFoodConsumed) {
+                this.hasTriggeredEatCallback = true;
+                anchors.onFoodConsumed(this.activeFoodObjectId, this.heldFoodItemId || "food_carrot_piece");
+              }
               break;
             }
             case "drink": {
               targetRear = 0.40;
               targetChew = 0.55;
+              this.isHoldingFood = false;
               this.posture.chewPhase += clampedDt * 8.5;
               this.targetHeadYaw = 0;
               this.targetHeadPitch = -0.34;
               this.targetHeadRoll = 0.08;
               activityLabel = "Drinking Water";
+              if (!this.hasTriggeredDrinkCallback && this.phaseTimer < 1.5 && anchors.onWaterConsumed) {
+                this.hasTriggeredDrinkCallback = true;
+                anchors.onWaterConsumed();
+              }
               break;
             }
             case "gnaw": {
