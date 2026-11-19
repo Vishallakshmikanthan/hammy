@@ -1,0 +1,74 @@
+[
+  {
+    "clip_id": "mjclip_783bfa0efdc256",
+    "object_key": "pet_hammy_01/mjclip_783bfa0efdc256.clip.json.gz",
+    "skill_id": "forage_bowl",
+    "seed": 42,
+    "origin": "observed_physics",
+    "behaviour_type": "learned",
+    "fps": 20.0,
+    "start_sim_time_sec": 0.0,
+    "end_sim_time_sec": 2.24,
+    "keyframe_count": 57
+  },
+  {
+    "clip_id": "mjclip_c1fd9e556c0275",
+    "object_key": "pet_hammy_01/mjclip_c1fd9e556c0275.clip.json.gz",
+    "skill_id": "drink_water",
+    "seed": 43,
+    "origin": "observed_physics",
+    "behaviour_type": "learned",
+    "fps": 20.0,
+    "start_sim_time_sec": 2.24,
+    "end_sim_time_sec": 4.1,
+    "keyframe_count": 47
+  },
+  {
+    "clip_id": "mjclip_0dc69127a2e720",
+    "object_key": "pet_hammy_01/mjclip_0dc69127a2e720.clip.json.gz",
+    "skill_id": "enter_tunnel",
+    "seed": 44,
+    "origin": "observed_physics",
+    "behaviour_type": "learned",
+    "fps": 20.0,
+    "start_sim_time_sec": 4.1,
+    "end_sim_time_sec": 5.78,
+    "keyframe_count": 43
+  },
+  {
+    "clip_id": "mjclip_051f77e7a734ad",
+    "object_key": "pet_hammy_01/mjclip_051f77e7a734ad.clip.json.gz",
+    "skill_id": "retreat_to_hideout",
+    "seed": 45,
+    "origin": "observed_physics",
+    "behaviour_type": "learned",
+    "fps": 20.0,
+    "start_sim_time_sec": 5.78,
+    "end_sim_time_sec": 8.6,
+    "keyframe_count": 71
+  },
+  {
+    "clip_id": "mjclip_98610ecf5d57e4",
+    "object_key": "pet_hammy_01/mjclip_98610ecf5d57e4.clip.json.gz",
+    "skill_id": "cautious_sniff",
+    "seed": 46,
+    "origin": "observed_physics",
+    "behaviour_type": "learned",
+    "fps": 20.0,
+    "start_sim_time_sec": 8.6,
+    "end_sim_time_sec": 10.14,
+    "keyframe_count": 39
+  },
+  {
+    "clip_id": "mjclip_7322e96e53da63",
+    "object_key": "pet_hammy_01/mjclip_7322e96e53da63.clip.json.gz",
+    "skill_id": "accept_petting",
+    "seed": 47,
+    "origin": "observed_physics",
+    "behaviour_type": "learned",
+    "fps": 20.0,
+    "start_sim_time_sec": 10.14,
+    "end_sim_time_sec": 11.96,
+    "keyframe_count": 46
+  }
+]
