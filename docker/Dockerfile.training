@@ -1,0 +1,40 @@
+# HAMSTER Stage 0-3 Training & Simulation Environment
+# Supports NVIDIA RTX 5070 (Blackwell sm_120) via PyTorch CUDA 12.8+
+FROM nvidia/cuda:12.8.0-runtime-ubuntu24.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    MUJOCO_GL=egl \
+    PYOPENGL_PLATFORM=egl \
+    PIP_NO_CACHE_DIR=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.12 \
+    python3.12-venv \
+    python3-pip \
+    git \
+    ffmpeg \
+    libgl1 \
+    libegl1 \
+    libgles2 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
+    libosmesa6 \
+    libglfw3 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3.12 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN pip install --upgrade pip setuptools wheel
+
+# PyTorch CUDA 12.8 (Blackwell sm_120 support for RTX 5070)
+RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+
+COPY docker/requirements-training.txt /tmp/requirements-training.txt
+RUN pip install -r /tmp/requirements-training.txt
+
+WORKDIR /workspace
+CMD ["bash"]

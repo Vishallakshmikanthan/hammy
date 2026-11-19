@@ -14,3 +14,9 @@
 - **Reference Photos (`reference/photos/images.cv_23mpmrt35vasncelu0dtfo`):**
   - User-provided hamster dataset (`images.cv`, 1,464 images across `train`/`val`/`test`), used strictly for local anatomical proportion and coat-color reference comparison (`renders/compare/05_compare_with_reference.png`).
 
+## 3. Architectural References (No Code Copied)
+- **Pollen Robotics `microduck_rl`** (`https://github.com/pollen-robotics/microduck_rl`, **Apache-2.0 License** for code; CAD/hardware models under separate CC BY-SA-NC):
+  - Studied for RL pipeline design patterns (50 Hz control loop, fixed versioned observation contracts with zero-padding, domain randomization of latency/friction/actuators, and baking observation normalization into exported ONNX graphs).
+  - No source files copied; all hamster environments, rewards, and export utilities are implemented independently.
+
+

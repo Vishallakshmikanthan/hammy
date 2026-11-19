@@ -63,5 +63,13 @@ web/dist/
 !web/src/lib/
 !web/src/lib/**
 
+# Large raw video inputs (keep audit docs & contact sheets tracked)
+data/raw_video/*.mp4
+data/raw_video/*.mov
+data/raw_video/*.avi
+data/raw_video/*.mkv
+reference/video/*.mp4
+
+
 
 
