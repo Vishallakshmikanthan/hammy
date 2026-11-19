@@ -1,0 +1,207 @@
+{
+  "timestamp": "2026-11-19T10:38:11Z",
+  "acceptance_milestones": {
+    "1_fresh_clean_cage": {
+      "raw": "Scene:\nClean Opt-In Habitat (0 props)\nPreset: HIGH | LOD: LOD1\nFPS: 60.0 (16.66 ms) | Calls: 75 | Tris: 72,650\nWater: 75% | Cheeks: 0% | Circadian: 5.3h\nBehavior: Periscoping (Alert) | Link: connected",
+      "scene": "Clean Opt-In Habitat (0 props)",
+      "preset": "HIGH",
+      "lod": "LOD1",
+      "fps": 60,
+      "frame_ms": 16.66,
+      "draw_calls": 75,
+      "triangles": 72650,
+      "water_pct": 75,
+      "cheeks_pct": 0,
+      "behavior": "Periscoping (Alert)",
+      "load_time_ms": 2111.6
+    },
+    "2_offer_carrot_and_eat": {
+      "ate_with_both_paws": true,
+      "hud": {
+        "raw": "Scene:\nClean Opt-In Habitat (0 props)\nPreset: HIGH | LOD: LOD1\nFPS: 60.0 (16.66 ms) | Calls: 75 | Tris: 72,650\nWater: 75% | Cheeks: 35% | Circadian: 5.3h\nBehavior: Heading to Water | Link: connected",
+        "scene": "Clean Opt-In Habitat (0 props)",
+        "preset": "HIGH",
+        "lod": "LOD1",
+        "fps": 60,
+        "frame_ms": 16.66,
+        "draw_calls": 75,
+        "triangles": 72650,
+        "water_pct": 75,
+        "cheeks_pct": 35,
+        "behavior": "Heading to Water"
+      }
+    },
+    "3_water_refill": {
+      "raw": "Scene:\nClean Opt-In Habitat (0 props)\nPreset: HIGH | LOD: LOD1\nFPS: 60.0 (16.66 ms) | Calls: 75 | Tris: 72,650\nWater: 100% | Cheeks: 35% | Circadian: 5.3h\nBehavior: Heading to Water | Link: connected",
+      "scene": "Clean Opt-In Habitat (0 props)",
+      "preset": "HIGH",
+      "lod": "LOD1",
+      "fps": 60,
+      "frame_ms": 16.66,
+      "draw_calls": 75,
+      "triangles": 72650,
+      "water_pct": 100,
+      "cheeks_pct": 35,
+      "behavior": "Heading to Water"
+    },
+    "4_costume_equip_unequip": {
+      "equipped_hud": {
+        "raw": "Scene:\nClean Opt-In Habitat (0 props)\nPreset: HIGH | LOD: LOD1\nFPS: 60.0 (16.67 ms) | Calls: 78 | Tris: 73,378\nWater: 100% | Cheeks: 35% | Circadian: 5.3h\nBehavior: Heading to Water | Link: connected",
+        "scene": "Clean Opt-In Habitat (0 props)",
+        "preset": "HIGH",
+        "lod": "LOD1",
+        "fps": 60,
+        "frame_ms": 16.67,
+        "draw_calls": 78,
+        "triangles": 73378,
+        "water_pct": 100,
+        "cheeks_pct": 35,
+        "behavior": "Heading to Water"
+      },
+      "unequipped_hud": {
+        "raw": "Scene:\nClean Opt-In Habitat (0 props)\nPreset: HIGH | LOD: LOD1\nFPS: 60.0 (16.66 ms) | Calls: 75 | Tris: 72,650\nWater: 100% | Cheeks: 35% | Circadian: 5.3h\nBehavior: Drinking Water | Link: connected",
+        "scene": "Clean Opt-In Habitat (0 props)",
+        "preset": "HIGH",
+        "lod": "LOD1",
+        "fps": 60,
+        "frame_ms": 16.66,
+        "draw_calls": 75,
+        "triangles": 72650,
+        "water_pct": 100,
+        "cheeks_pct": 35,
+        "behavior": "Drinking Water"
+      }
+    },
+    "5_prop_place_persist_remove": {
+      "placed_hud": {
+        "raw": "Scene:\nClean Opt-In Habitat (1 props)\nPreset: HIGH | LOD: LOD1\nFPS: 60.0 (16.66 ms) | Calls: 76 | Tris: 72,874\nWater: 84% | Cheeks: 35% | Circadian: 5.3h\nBehavior: Drinking Water | Link: connected",
+        "scene": "Clean Opt-In Habitat (1 props)",
+        "preset": "HIGH",
+        "lod": "LOD1",
+        "fps": 60,
+        "frame_ms": 16.66,
+        "draw_calls": 76,
+        "triangles": 72874,
+        "water_pct": 84,
+        "cheeks_pct": 35,
+        "behavior": "Drinking Water"
+      },
+      "reloaded_hud": {
+        "raw": "Scene:\nClean Opt-In Habitat (1 props)\nPreset: HIGH | LOD: LOD1\nFPS: 60.0 (16.67 ms) | Calls: 76 | Tris: 72,874\nWater: 84% | Cheeks: 35% | Circadian: 5.3h\nBehavior: Scurrying (drink) | Link: connected",
+        "scene": "Clean Opt-In Habitat (1 props)",
+        "preset": "HIGH",
+        "lod": "LOD1",
+        "fps": 60,
+        "frame_ms": 16.67,
+        "draw_calls": 76,
+        "triangles": 72874,
+        "water_pct": 84,
+        "cheeks_pct": 35,
+        "behavior": "Scurrying (drink)"
+      },
+      "removed_hud": {
+        "raw": "Scene:\nClean Opt-In Habitat (0 props)\nPreset: HIGH | LOD: LOD1\nFPS: 60.0 (16.67 ms) | Calls: 75 | Tris: 72,650\nWater: 84% | Cheeks: 35% | Circadian: 5.3h\nBehavior: Scurrying (drink) | Link: connected",
+        "scene": "Clean Opt-In Habitat (0 props)",
+        "preset": "HIGH",
+        "lod": "LOD1",
+        "fps": 60,
+        "frame_ms": 16.67,
+        "draw_calls": 75,
+        "triangles": 72650,
+        "water_pct": 84,
+        "cheeks_pct": 35,
+        "behavior": "Scurrying (drink)"
+      }
+    }
+  },
+  "benchmarks": {
+    "desktop_1280x800": {
+      "default_clean_cage": {
+        "raw": "Scene:\nClean Opt-In Habitat (0 props)\nPreset: HIGH | LOD: LOD1\nFPS: 60.0 (16.66 ms) | Calls: 75 | Tris: 72,650\nWater: 75% | Cheeks: 0% | Circadian: 5.3h\nBehavior: Periscoping (Alert) | Link: connected",
+        "scene": "Clean Opt-In Habitat (0 props)",
+        "preset": "HIGH",
+        "lod": "LOD1",
+        "fps": 60,
+        "frame_ms": 16.66,
+        "draw_calls": 75,
+        "triangles": 72650,
+        "water_pct": 75,
+        "cheeks_pct": 0,
+        "behavior": "Periscoping (Alert)",
+        "load_time_ms": 2111.6
+      },
+      "lightly_decorated_cage": {
+        "raw": "Scene:\nClean Opt-In Habitat (0 props)\nPreset: HIGH | LOD: LOD1\nFPS: 60.0 (16.66 ms) | Calls: 75 | Tris: 72,650\nWater: 84% | Cheeks: 35% | Circadian: 5.3h\nBehavior: Sniffing & Scanning | Link: connected",
+        "scene": "Clean Opt-In Habitat (0 props)",
+        "preset": "HIGH",
+        "lod": "LOD1",
+        "fps": 60,
+        "frame_ms": 16.66,
+        "draw_calls": 75,
+        "triangles": 72650,
+        "water_pct": 84,
+        "cheeks_pct": 35,
+        "behavior": "Sniffing & Scanning",
+        "load_time_ms": 1687.7
+      },
+      "heavily_decorated_cage": {
+        "raw": "Scene:\nClean Opt-In Habitat (2 props)\nPreset: HIGH | LOD: LOD1\nFPS: 60.0 (16.66 ms) | Calls: 94 | Tris: 73,891\nWater: 84% | Cheeks: 35% | Circadian: 5.3h\nBehavior: Alert Freeze | Link: connected",
+        "scene": "Clean Opt-In Habitat (2 props)",
+        "preset": "HIGH",
+        "lod": "LOD1",
+        "fps": 60,
+        "frame_ms": 16.66,
+        "draw_calls": 94,
+        "triangles": 73891,
+        "water_pct": 84,
+        "cheeks_pct": 35,
+        "behavior": "Alert Freeze",
+        "load_time_ms": 4629.8
+      }
+    },
+    "phone_390x844": {
+      "heavily_decorated_cage": {
+        "raw": "Scene:\nClean Opt-In Habitat (2 props)\nPreset: HIGH | LOD: LOD1\nFPS: 60.0 (16.67 ms) | Calls: 94 | Tris: 73,891\nWater: 84% | Cheeks: 35% | Circadian: 5.3h\nBehavior: Heading to Food Bowl | Link: connected",
+        "scene": "Clean Opt-In Habitat (2 props)",
+        "preset": "HIGH",
+        "lod": "LOD1",
+        "fps": 60,
+        "frame_ms": 16.67,
+        "draw_calls": 94,
+        "triangles": 73891,
+        "water_pct": 84,
+        "cheeks_pct": 35,
+        "behavior": "Heading to Food Bowl",
+        "load_time_ms": 4629.8
+      },
+      "default_clean_cage": {
+        "raw": "Scene:\nClean Opt-In Habitat (0 props)\nPreset: HIGH | LOD: LOD1\nFPS: 60.0 (16.66 ms) | Calls: 75 | Tris: 72,650\nWater: 75% | Cheeks: 0% | Circadian: 5.3h\nBehavior: Heading to Food Bowl | Link: connected",
+        "scene": "Clean Opt-In Habitat (0 props)",
+        "preset": "HIGH",
+        "lod": "LOD1",
+        "fps": 60,
+        "frame_ms": 16.66,
+        "draw_calls": 75,
+        "triangles": 72650,
+        "water_pct": 75,
+        "cheeks_pct": 0,
+        "behavior": "Heading to Food Bowl",
+        "load_time_ms": 2217.2
+      },
+      "lightly_decorated_cage": {
+        "raw": "Scene:\nClean Opt-In Habitat (3 props)\nPreset: HIGH | LOD: LOD1\nFPS: 60.1 (16.65 ms) | Calls: 94 | Tris: 73,774\nWater: 75% | Cheeks: 0% | Circadian: 5.3h\nBehavior: Heading to Water | Link: connected",
+        "scene": "Clean Opt-In Habitat (3 props)",
+        "preset": "HIGH",
+        "lod": "LOD1",
+        "fps": 60.1,
+        "frame_ms": 16.65,
+        "draw_calls": 94,
+        "triangles": 73774,
+        "water_pct": 75,
+        "cheeks_pct": 0,
+        "behavior": "Heading to Water",
+        "load_time_ms": 1687.7
+      }
+    }
+  }
+}

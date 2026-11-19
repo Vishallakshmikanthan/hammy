@@ -158,6 +158,85 @@ Ready for either: (a) dropping real flat-ground walking videos into `data/raw_vi
 - **Visible Wheel Rotation (`8cdc850`):** Added 12 wooden inner grip rungs + 3 back-wall spokes as children of `prop_wheel_drum` in `web/src/three/habitat/HabitatSceneView.tsx` so drum spin and coasting rock are clearly visible.
 - **Documentation:** Updated `data/video_audit.md` for all 21 videos and recorded [`docs/decisions/ADR-0007-real-video-refinement-and-web-calibration.md`](docs/decisions/ADR-0007-real-video-refinement-and-web-calibration.md).
 
+---
+
+## Asset Integration Pipeline — Step 1 (Audit) & Step 2 (Gap Analysis) — **COMPLETE (Awaiting HUMAN CHECKPOINT 1)**
+
+### What Was Done
+- **Step 1 — Unpack & Audit (`scripts/step1_audit_raw_assets.py`, `scripts/step1_write_audit_docs.py`):**
+  - Copied all 4 downloaded archives from `props/` into `assets/raw/` and unpacked **2,766 files** representing **524 unique 3D models** and **255 texture/preview `.png` files**:
+    1. `kenney_food-kit.zip` (`200` models in `.glb`, `.fbx`, `.obj/.mtl` + `512×512` `colormap.png` + `200` preview `.png`s) — **CC0 1.0 Universal** (`License.txt` verified, author: **Kenney**, `https://kenney.nl/assets/food-kit`) → **APPROVED**.
+    2. `KayKit_Dungeon_Pack_1.1_FREE.zip` (`211` models in `.gltf/.bin`, `.fbx`, `.obj/.mtl` + `1024×1024` `dungeon_texture.png`) — **CC0 1.0 Universal** (`License.txt` verified, author: **Kay Lousberg**, `https://kaylousberg.itch.io/kaykit-dungeon`) → **APPROVED**.
+    3. `drive-download-20261119T082111Z-1-001.zip` (`103` models in `.blend`, `.fbx`, `.obj/.mtl`) — **NO LICENSE / README** in archive, and missing external referenced texture `//Blender/DavidThorn/Library/Large/Texture.png` → **REJECTED** (Rule: *Never use an asset with an unclear licence*).
+    4. `Food&DrinksPack.rar` (`10` `.fbx` models + `28` `.png` textures) — **NO LICENSE / README** in archive, and 100% processed human junk food/drinks (`CannedFood`, `Canned_Tuna`, `CoffeeCup`, `FrozenPizza`, `Hamburger`, `HotDog`, `Ice_Cream`, `Milk`, `Pizza`, `Sushi`) → **REJECTED**.
+  - Checked every food asset against veterinary Syrian hamster safety standards (RSPCA, PDSA, Merck Veterinary Manual, California Hamster Association) and excluded toxic/doubtful items (avocado/persin, citrus, alliums/onion/leek, sticky peanut butter jar, nightshades, chocolate/sweets, processed fast food, dairy, alcohol/caffeine).
+  - Wrote full per-file audit and gap report in [`assets/ASSET_AUDIT.md`](assets/ASSET_AUDIT.md), license registry in [`ASSETS_LICENSES.md`](ASSETS_LICENSES.md), and attribution registry in [`CREDITS.md`](CREDITS.md) (plus structured metrics in `assets/audit_data.json`).
+- **Step 2 — Gap Analysis Summary:**
+  - **Foods (7 required, hamster-safe only):** `broccoli` (`kenney_food-kit`, CC0) and `carrot` (`kenney_food-kit`, CC0) are present (`DOWNLOADED`, need rescaling from `~0.16–0.19 m` human scale to `0.014–0.018 m` hamster piece scale + paw pickup pivot). **Gaps to generate in Blender (Step 3):** `food_seed_mix`, `food_sunflower_seed`, `food_peanut` (Kenney only has a peanut-butter jar, which is unsafe for cheek pouches), `food_apple_piece` (seedless slice; Kenney whole/half apples have exposed seeds), and `food_blueberry`.
+  - **Water & Containers (4 required):** `prop_food_bowl` (`kenney_food-kit/bowl.glb`, CC0) and `prop_shelf` (`KayKit/shelf_small.gltf`, CC0) are present (`DOWNLOADED`, need rescaling to hamster dimensions). **Gaps to generate in Blender (Step 3):** `water_bottle` with a separate scalable `water_liquid` mesh, and `water_bowl` with a separate scalable `water_liquid` mesh.
+  - **Costumes (6 required + 1 back-slot item = 7 total):** **100% GAP** (`0` costumes in `assets/raw/`). All 7 (`costume_party_hat`, `costume_top_hat`, `costume_bow_tie`, `costume_scarf`, `costume_crown`, `costume_tiny_glasses`, plus `costume_backpack` so `head_slot`, `neck_slot`, and `back_slot` are all testable) will be generated in Step 3 at Syrian hamster scale with named attachment sockets.
+  - **Props (7 required):** `prop_wheel`, `prop_tunnel_straight`, `prop_tunnel_curved`, and `prop_hideout` exist in our procedural `blender/scripts/10_cage.py` scene and will be exported as standalone base-center-pivoted `.blend`/`.glb` assets; **new gaps to generate in Step 3:** `prop_bridge_ramp` (arched bendy log bridge), `prop_chew_toy` (gnawed applewood dumbbell chew), and `prop_small_ball` (woven willow play ball).
+  - **Decor (5 required):** `decor_wooden_item` (`KayKit/barrel_small.gltf`, CC0) and `decor_flag` (`KayKit/banner_blue.gltf`, CC0) are present (`DOWNLOADED`, need rescaling to hamster cage scale). **Gaps to generate in Blender (Step 3):** `decor_plant` (hamster-safe potted spider plant), `decor_bedding_patch` (organic aspen/paper/moss patch), and `decor_picture_frame` (mini wooden standing frame).
+
+### Exact Next Step
+**STOP AT HUMAN CHECKPOINT 1 (After Step 2):** Present the audit ([`assets/ASSET_AUDIT.md`](assets/ASSET_AUDIT.md), [`ASSETS_LICENSES.md`](ASSETS_LICENSES.md), [`CREDITS.md`](CREDITS.md)) and gap analysis to the user and wait for approval before proceeding to **Step 3 (Generate missing assets in headless Blender 5.2)**, **Step 4 (Convert, optimize & generate thumbnails + `assets/manifest.json`)**, and **Step 5 (Eating animation clip set & HUMAN CHECKPOINT 2)**.
+
+---
+
+## Asset Integration Pipeline — Step 3 (Blender Asset Generation), Step 4 (Conversion, Optimization & Manifest) & Step 5 (Eating Animation) — **COMPLETE (Awaiting HUMAN CHECKPOINT 2)**
+
+### What Was Done
+- **Step 3 — Generate Missing Assets in Headless Blender 5.2.3 LTS (`scripts/step3_step4_build_and_optimize_assets.py`):**
+  - Built 24 missing low-poly, metric hamster-scale (`0.15 m` Syrian hamster reference) 3D models in `assets/source/*.blend` and adapted 6 approved CC0 models from `kenney_food-kit.zip` and `KayKit_Dungeon_Pack_1.1_FREE.zip` (**30 total assets**):
+    - **7 Hamster-Safe Foods (`food_*`, pickup pivot at `pickup_pivot`):** `food_seed_mix` (`GENERATED`, `324` tris), `food_sunflower_seed` (`GENERATED`, `288` tris), `food_peanut` (`GENERATED`, `600` tris), `food_carrot_piece` (`DOWNLOADED` Kenney CC0 rescaled to `0.022 m`, `148` tris), `food_broccoli_floret` (`DOWNLOADED` Kenney CC0 rescaled to `0.019 m`, `220` tris), `food_apple_piece` (`GENERATED` seedless slice, `52` tris), `food_blueberry` (`GENERATED`, `520` tris).
+    - **2 Water Sources (`water_*`, with separate scalable `water_liquid` mesh):** `water_bottle` (`GENERATED`, `536` tris, `0.16 m` body + angled steel ball-spout + separate `water_liquid` cylinder pivoted at bottom for `0..1` water level scaling) and `water_bowl` (`GENERATED`, `360` tris, `0.068 m` ceramic dish + separate `water_liquid` mesh).
+    - **7 Costumes (`costume_*`, with named attachment sockets `head_slot`, `neck_slot`, `back_slot`):** `costume_party_hat` (`head_slot`, `728` tris), `costume_top_hat` (`head_slot`, `324` tris), `costume_bow_tie` (`neck_slot`, `372` tris), `costume_scarf` (`neck_slot`, `780` tris), `costume_crown` (`head_slot`, `860` tris), `costume_tiny_glasses` (`head_slot`, `876` tris), and `costume_backpack` (`back_slot`, `200` tris).
+    - **9 Props (`prop_*`, base-center pivot `Z=0`, all `< 2,500` tris):** `prop_food_bowl` (`DOWNLOADED` Kenney CC0 rescaled to `0.082 m`, `84` tris), `prop_shelf` (`DOWNLOADED` KayKit CC0 rescaled to `0.18 m`, `60` tris), `prop_wheel` (`GENERATED`, `0.28 m` wheel with 12 grip rungs, `816` tris), `prop_tunnel_straight` (`GENERATED`, `224` tris), `prop_tunnel_curved` (`GENERATED`, `1,632` tris), `prop_hideout` (`GENERATED`, `84` tris), `prop_bridge_ramp` (`GENERATED` 11-log bendy arch bridge, `572` tris), `prop_chew_toy` (`GENERATED` applewood dumbbell chew, `212` tris), `prop_small_ball` (`GENERATED` woven willow play ball, `2,304` tris).
+    - **5 Cage Decor Items (`decor_*`, base-center pivot `Z=0`, all `< 600` tris):** `decor_plant` (`GENERATED` terracotta spider plant, `232` tris), `decor_wooden_item` (`DOWNLOADED` KayKit CC0 mini climbing barrel rescaled to `0.062 m`, `207` tris), `decor_bedding_patch` (`GENERATED` moss/aspen mound, `528` tris), `decor_flag` (`DOWNLOADED` KayKit CC0 pennant banner rescaled to `0.115 m`, `97` tris), `decor_picture_frame` (`GENERATED` mini wooden portrait frame, `36` tris).
+- **Step 4 — Convert, Optimize, Render Thumbnails & Build Manifest:**
+  - Exported all 30 assets as Y-up `.glb` files (scale applied, materials merged, textures resized `<= 512px` for small items / `<= 1024px` for props) to both `assets/web/*.glb` and `web/public/assets/items/*.glb`.
+  - Rendered 30 studio `256×256` transparent PNG thumbnails with Cycles OptiX to `assets/thumbnails/*.png` and `web/public/assets/thumbnails/*.png`.
+  - Generated [`assets/manifest.json`](assets/manifest.json) (mirrored to `web/public/assets/manifest.json`) with `id`, `name`, `category`, `file_path`, `web_url`, `thumbnail`, `scale`, `dimensions_m`, `collision_radius_m`, `pivot`, `attachment_slot`, `hamster_safe`, `licence`, `source`, `origin_label` (`GENERATED` / `DOWNLOADED`), and `polygon_count` / `triangle_count`.
+- **Step 5 — Eating Animation Clip Set & Cheek-Pouch Shape Keys (`scripts/step5_author_eating_animation.py`, `scripts/step5_encode_video_and_sheet.py`):**
+  - Added 4 attachment socket bones directly to `HamsterRig` (`head_slot`, `neck_slot`, `back_slot`, `food_hold_socket`) and fixed orbital eye surface placement (`ham_eye_L/R`) in `blender/scripts/60_rig_and_export_glb.py`.
+  - Authored all 7 required `ANIMATION-DRIVEN` NLA clips (`sit_up`, `grab_food`, `bring_to_mouth`, `chew_loop`, `swallow`, `stuff_cheek`, `release_idle`) plus the composite 192-frame `eat_full_sequence` action, calibrating posture and 4.8 Hz jaw/paw cadence to the real eating videos in `data/raw_video/`.
+  - Keyframed `cheek_pouch_left` and `cheek_pouch_right` shape keys (`0.0 → 0.98`) across the 3 LOD meshes (`ham_body_LOD0/1/2`) and exported the updated `web/public/assets/hamster.glb` (`966 KB`).
+  - Rendered the 7-stage contact sheet (`renders/step5/eating_sequence_contact_sheet.png`) and full sequence review video (`renders/step5/eating_animation_sequence.mp4`).
+
+### Exact Next Step
+**STOP AT HUMAN CHECKPOINT 2 (After Step 5):** Present the eating animation render (`renders/step5/eating_animation_sequence.mp4` and `renders/step5/eating_sequence_contact_sheet.png`) and `assets/manifest.json` summary to the user and wait for approval before proceeding to **Step 6 (Shelf-based opt-in backend & frontend integration, collision/navigation updates, command tests & live browser screen recording)** and **Step 7 (Performance & quality check)**.
+
+---
+
+## Asset Integration Pipeline — Step 6 (Shelf-Based Opt-In Integration) & Step 7 (Performance & Quality Check) — **COMPLETE (Awaiting HUMAN CHECKPOINT 3)**
+
+### What Was Done
+- **Step 6 — Server-Authoritative Shelf Commands & Layout Persistence (`services/commands/handler.py`, `services/api/routes/shelves.py`, `services/api/main.py`):**
+  - Implemented 10 idempotent, server-authoritative shelf commands (`offer_food`, `refill_water`, `equip_costume`, `unequip_costume`, `place_prop`, `move_prop`, `remove_prop`, `consume_food`, `consume_water`, `reset_clean_cage`) validated against `assets/manifest.json`, `hamster_safe` food flags, cage bounds (`[-0.44, 0.44] × [-0.19, 0.19] m`), and prop collision radii.
+  - Added server-side food spoilage rule (`SPOILAGE_SIM_SEC = 600.0` seconds) and logged every `offer_food`, `refill_water`, `equip_costume`, `unequip_costume`, `place_prop`, `move_prop`, `remove_prop`, `eat`, and `drink` action as a `WorldEvent` and `CareAction`.
+  - Enforced the **Core Default 3D Habitat + Opt-In Shelves** rule: the default habitat always includes the **Hamster, Home (`prop_hideout`), Logs (`prop_tunnel_*`), Food Bowl (`prop_bowl`), Water Tank (`prop_bottle_*` with scalable `water_liquid` cylinder), and Running Wheel (`prop_wheel_*`)**, while extra chew blocks/sticks, costumes, offered foods, and extra placed props/decor are strictly opt-in via the 5 shelves.
+- **Step 6 — Frontend 5 Separate Opt-In Shelves, Lazy-Loading & Collision/Navigation (`web/src/components/AssetShelfDrawer.tsx`, `web/src/three/habitat/HabitatSceneView.tsx`, `web/src/three/habitat/hamsterBehavior.ts`):**
+  - Built 5 separate closed-by-default shelf drawers (`1. Food Shelf`, `2. Water Shelf`, `3. Costume Shelf`, `4. Props Shelf`, `5. Decor Shelf`), each with search, `Browse` vs. `In cage now` tabs, portion quantity selector (`1x..5x`), costume slot controls (`head_slot`, `neck_slot`, `back_slot` + `Unequip All`), interactive placement mode (X/Y sliders + 45° rotation + bounds/overlap validation + `Send to Shelf`), and `Reset Clean Cage`.
+  - Implemented strict lazy-loading and GPU memory disposal: 256×256 thumbnails load only when a shelf drawer is opened; 3D `.glb` models load only when equipped/placed in the cage and are explicitly disposed (`geometry.dispose()`, `material.dispose()`) when removed.
+  - Wired dynamic obstacle collision & navigation updates in `HamsterBehaviorController` so placed props update `dynamicObstacles` and the hamster walks around them cleanly, approaches offered food, sits up holding the food mesh on `food_hold_socket` (`Eating with Both Paws (ANIMATION-DRIVEN)`), and triggers server-authoritative `consume_food` (bulging `cheek_pouch_left/right` morphs) and `consume_water`.
+- **Step 6 & Step 7 Automated Verification & Live Browser Screen Recording:**
+  - **Backend Pytest Suite:** `python -m pytest tests/test_step6_shelf_commands.py tests/test_p2_3.py -v` -> **21/21 PASSED** (covering manifest safety, clean default cage, idempotent duplicate delivery, out-of-bounds & overlapping placement rejection, costume slot replacement/unequip, server-authoritative eating/drinking, and layout persistence).
+  - **Frontend Vitest & TypeScript Production Build:** `npm --prefix web test -- --run` -> **18/18 PASSED across 5 test files** (including `AssetShelfDrawer.test.tsx` and `phase3.test.ts`); `npm --prefix web run build` -> **0 TypeScript errors**.
+  - **Live Acceptance Screen Recording & Step 7 Telemetry (`scripts/step6_record_acceptance_and_perf.py`):**
+    - Recorded [`renders/step6/step6_acceptance_recording.mp4`](renders/step6/step6_acceptance_recording.mp4) and [`renders/step6/step6_acceptance_contact_sheet.png`](renders/step6/step6_acceptance_contact_sheet.png) showing:
+      1. Fresh load -> clean minimal cage (`0 props`, bedding + 1 basic water bottle, all 5 shelves closed).
+      2. Open `1. Food Shelf` -> choose `Fresh Carrot Piece` -> Offer -> hamster approaches and eats with both front paws (`Eating with Both Paws (ANIMATION-DRIVEN)`), cheek pouches bulge (`0% -> 35%`).
+      3. Open `2. Water Shelf` -> click `Refill Water (100%)` -> visible `water_liquid` scales to `100%`.
+      4. Open `3. Costume Shelf` -> equip `Festive Party Hat` on `head_slot` -> visible on hamster's head -> unequip.
+      5. Open `4. Props Shelf` -> select `Straight Hollow Bark Tunnel` -> rotate 45° & confirm placement -> tunnel lazy-loads into cage -> reload page -> layout persists (`Clean Opt-In Habitat (1 props)`) -> open `In cage now` tab -> `Send to Shelf` removes and unloads tunnel (`0 props`).
+    - Authored [`docs/research/step7_asset_performance_report.md`](docs/research/step7_asset_performance_report.md) with desktop (`1280×800`) and mid-range phone (`390×844`) benchmarks across Default Clean Cage (`46` calls, `54,986` tris, `60.0 FPS`), Lightly Decorated Cage (`65` calls, `56,110` tris, `60.0 FPS`), and Heavily Decorated Cage (`109` calls, `58,134` tris, `60.0 FPS`), plus an honest visual critique of what still looks fake.
+
+### Exact Next Step
+**STOP AT HUMAN CHECKPOINT 3 (After Step 6 & Step 7):** Present the acceptance screen recording ([`renders/step6/step6_acceptance_recording.mp4`](renders/step6/step6_acceptance_recording.mp4)), milestone contact sheet ([`renders/step6/step6_acceptance_contact_sheet.png`](renders/step6/step6_acceptance_contact_sheet.png)), test results, and Step 7 performance & honesty report ([`docs/research/step7_asset_performance_report.md`](docs/research/step7_asset_performance_report.md)) to the user for review.
+
+
+
+
 
 
 
