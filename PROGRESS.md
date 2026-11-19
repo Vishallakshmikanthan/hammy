@@ -101,5 +101,28 @@ Proceed to **Stage 1: Hamster body model (MJCF)** — build versioned 16-DoF `si
 ### Exact Next Step
 **STOP AT HUMAN CHECKPOINT 3:** Wait for user review of `renders/stage3/policy_walk_speeds.mp4`, `renders/stage3/policy_turn_left_right.mp4`, `renders/stage3/policy_stop_start.mp4`, and `renders/stage3/stage3_policy_preview.png`.
 
+---
+
+## Stage 4: Habitat Interaction, Autonomous Behaviours & Petting/Taming — **COMPLETE (Awaiting HUMAN CHECKPOINT 4)**
+
+### What Was Done
+- Built single-source MuJoCo habitat scene builder via `mujoco.MjSpec` ([`simulation/habitat_objects.py`](simulation/habitat_objects.py), `habitat_mujoco_v1.0.0`) attaching enclosure walls and 6 interactive props (`prop_bowl_main`, `prop_bottle_main`, `prop_hideout_main`, `prop_tunnel_main`, `prop_wheel_main`, `prop_treat_zone`) directly onto `hamster_mjcf_v1.0.0`.
+- Built internal drive engine, transparent `RULE-BASED` autonomous skill selector, and non-forced petting/taming state machine ([`ai/behaviour_manager.py`](ai/behaviour_manager.py)).
+- Built closed-loop ONNX habitat skill executor ([`simulation/habitat_skill_controller.py`](simulation/habitat_skill_controller.py)) validating `best_policy.onnx` contract compatibility and applying yaw-invariant tilt observations + gentle `RULE-BASED` heading steering assist.
+- Evaluated 12 physical MuJoCo episodes (6 continuous autonomous skills + 6 petting/taming interactions) via [`scripts/stage4_eval_and_render.py`](scripts/stage4_eval_and_render.py), logged grounded events to `training/runs/stage4/events.jsonl`, rendered 2 videos + preview in `renders/stage4/`, recorded [`docs/decisions/ADR-0005-stage4-habitat-behaviours-and-petting.md`](docs/decisions/ADR-0005-stage4-habitat-behaviours-and-petting.md), and passed **4/4** tests in [`tests/test_stage4_habitat_behaviour.py`](tests/test_stage4_habitat_behaviour.py) (`0.42 s`).
+
+### Key Metrics
+| Metric | Measured Value | Target | Status |
+| :--- | :---: | :---: | :---: |
+| Total physical skill executions | `12` (6 autonomous + 6 petting) | — | PASS |
+| Task completion rate | **`100.0%`** (`12/12`) | `>= 80%` | PASS |
+| Fall rate | **`0.0%`** (`0/12`) | `0%` | PASS |
+| Taming response curve | `avoid_and_retreat (×2) → cautious_sniff (×2) → accept_petting (×2)` | Non-forced progression | PASS |
+| Familiarity / Stress curve | Familiarity `0.05 → 0.78`, Stress `0.45 → 0.03` | Bounded `[0, 1]` | PASS |
+
+### Exact Next Step
+**STOP AT HUMAN CHECKPOINT 4:** Wait for user review of `renders/stage4/stage4_autonomous_habitat.mp4`, `renders/stage4/stage4_petting_taming.mp4`, and `renders/stage4/stage4_habitat_preview.png`. Next stage after approval: bridging the trained ONNX policy & behaviour stream into the existing realistic 3D web habitat (`hamster.glb` + FastAPI backend).
+
+
 
 

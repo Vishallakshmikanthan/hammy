@@ -1,0 +1,342 @@
+{
+  "habitat_version": "habitat_mujoco_v1.0.0",
+  "onnx_policy_used": "training/runs/stage3/best_policy.onnx",
+  "onnx_contract_meta": {
+    "model_version": "hamster_mjcf_v1.0.0",
+    "obs_schema_version": "locomotion_obs_v1.0.0",
+    "act_schema_version": "locomotion_act_v1.0.0",
+    "baked_obs_norm": "true",
+    "obs_dim": "64",
+    "action_dim": "16",
+    "best_condition": "imitation_mixed",
+    "honesty_label": "LEARNED (imitation from MIXED real+synthetic reference)",
+    "source_filter": "mixed"
+  },
+  "summary": {
+    "total_skill_executions": 12,
+    "success_rate_pct": 100.0,
+    "fall_rate_pct": 0.0,
+    "taming_responses": [
+      "avoid_and_retreat",
+      "avoid_and_retreat",
+      "cautious_sniff",
+      "cautious_sniff",
+      "accept_petting",
+      "accept_petting"
+    ],
+    "familiarity_progression": [
+      0.1,
+      0.28,
+      0.46,
+      0.58,
+      0.68,
+      0.78
+    ],
+    "stress_progression": [
+      0.51,
+      0.45,
+      0.37,
+      0.33,
+      0.18,
+      0.03
+    ],
+    "events_logged": 12
+  },
+  "rendered_videos": [
+    "renders/stage4/stage4_autonomous_habitat.mp4",
+    "renders/stage4/stage4_petting_taming.mp4",
+    "renders/stage4/stage4_habitat_preview.png"
+  ],
+  "autonomous_episodes": [
+    {
+      "skill_name": "forage_bowl",
+      "target_object_id": "prop_bowl_main",
+      "success": true,
+      "fell": false,
+      "steps": 113,
+      "duration_s": 2.26,
+      "start_dist_m": 0.313,
+      "final_dist_m": 0.09,
+      "locomotion_label": "LEARNED (ONNX) + RULE-BASED steering assist",
+      "interaction_label": "RULE-BASED",
+      "selection_label": "RULE-BASED",
+      "drives_after": {
+        "hunger": 0.47,
+        "thirst": 0.6,
+        "energy": 0.725,
+        "comfort": 0.65,
+        "stress": 0.23,
+        "curiosity": 0.78,
+        "familiarity": 0.2
+      }
+    },
+    {
+      "skill_name": "drink_water",
+      "target_object_id": "prop_bottle_main",
+      "success": true,
+      "fell": false,
+      "steps": 129,
+      "duration_s": 2.58,
+      "start_dist_m": 0.261,
+      "final_dist_m": 0.091,
+      "locomotion_label": "LEARNED (ONNX) + RULE-BASED steering assist",
+      "interaction_label": "RULE-BASED",
+      "selection_label": "RULE-BASED",
+      "drives_after": {
+        "hunger": 0.51,
+        "thirst": 0.25,
+        "energy": 0.7,
+        "comfort": 0.69,
+        "stress": 0.21,
+        "curiosity": 0.84,
+        "familiarity": 0.2
+      }
+    },
+    {
+      "skill_name": "enter_tunnel",
+      "target_object_id": "prop_tunnel_main",
+      "success": true,
+      "fell": false,
+      "steps": 121,
+      "duration_s": 2.42,
+      "start_dist_m": 0.255,
+      "final_dist_m": 0.098,
+      "locomotion_label": "LEARNED (ONNX) + RULE-BASED steering assist",
+      "interaction_label": "RULE-BASED",
+      "selection_label": "RULE-BASED",
+      "drives_after": {
+        "hunger": 0.55,
+        "thirst": 0.3,
+        "energy": 0.595,
+        "comfort": 0.69,
+        "stress": 0.14,
+        "curiosity": 0.6,
+        "familiarity": 0.2
+      }
+    },
+    {
+      "skill_name": "forage_bowl",
+      "target_object_id": "prop_bowl_main",
+      "success": true,
+      "fell": false,
+      "steps": 178,
+      "duration_s": 3.56,
+      "start_dist_m": 0.3,
+      "final_dist_m": 0.098,
+      "locomotion_label": "LEARNED (ONNX) + RULE-BASED steering assist",
+      "interaction_label": "RULE-BASED",
+      "selection_label": "RULE-BASED",
+      "drives_after": {
+        "hunger": 0.24,
+        "thirst": 0.35,
+        "energy": 0.62,
+        "comfort": 0.74,
+        "stress": 0.12,
+        "curiosity": 0.66,
+        "familiarity": 0.2
+      }
+    },
+    {
+      "skill_name": "enter_tunnel",
+      "target_object_id": "prop_tunnel_main",
+      "success": true,
+      "fell": false,
+      "steps": 155,
+      "duration_s": 3.1,
+      "start_dist_m": 0.303,
+      "final_dist_m": 0.093,
+      "locomotion_label": "LEARNED (ONNX) + RULE-BASED steering assist",
+      "interaction_label": "RULE-BASED",
+      "selection_label": "RULE-BASED",
+      "drives_after": {
+        "hunger": 0.28,
+        "thirst": 0.4,
+        "energy": 0.515,
+        "comfort": 0.74,
+        "stress": 0.05,
+        "curiosity": 0.42,
+        "familiarity": 0.2
+      }
+    },
+    {
+      "skill_name": "drink_water",
+      "target_object_id": "prop_bottle_main",
+      "success": true,
+      "fell": false,
+      "steps": 138,
+      "duration_s": 2.76,
+      "start_dist_m": 0.268,
+      "final_dist_m": 0.085,
+      "locomotion_label": "LEARNED (ONNX) + RULE-BASED steering assist",
+      "interaction_label": "RULE-BASED",
+      "selection_label": "RULE-BASED",
+      "drives_after": {
+        "hunger": 0.32,
+        "thirst": 0.05,
+        "energy": 0.49,
+        "comfort": 0.78,
+        "stress": 0.03,
+        "curiosity": 0.48,
+        "familiarity": 0.2
+      }
+    }
+  ],
+  "petting_taming_episodes": [
+    {
+      "interaction": {
+        "action_requested": "gentle_pet",
+        "hamster_response": "avoid_and_retreat",
+        "target_object_id": "prop_hideout_main",
+        "locomotion_label": "LEARNED",
+        "interaction_label": "RULE-BASED",
+        "familiarity_before": 0.05,
+        "familiarity_after": 0.1,
+        "stress_before": 0.45,
+        "stress_after": 0.51,
+        "rationale": "Low trust (-0.20): retreats to hideout instead of forcing petting."
+      },
+      "execution": {
+        "skill_name": "avoid_and_retreat",
+        "target_object_id": "prop_hideout_main",
+        "success": true,
+        "fell": false,
+        "steps": 142,
+        "duration_s": 2.84,
+        "start_dist_m": 0.331,
+        "final_dist_m": 0.113,
+        "locomotion_label": "LEARNED (ONNX) + RULE-BASED steering assist",
+        "interaction_label": "RULE-BASED"
+      }
+    },
+    {
+      "interaction": {
+        "action_requested": "offer_treat",
+        "hamster_response": "avoid_and_retreat",
+        "target_object_id": "prop_hideout_main",
+        "locomotion_label": "LEARNED",
+        "interaction_label": "RULE-BASED",
+        "familiarity_before": 0.1,
+        "familiarity_after": 0.28,
+        "stress_before": 0.51,
+        "stress_after": 0.45,
+        "rationale": "Low trust (0.04): retreats to hideout instead of forcing petting."
+      },
+      "execution": {
+        "skill_name": "avoid_and_retreat",
+        "target_object_id": "prop_hideout_main",
+        "success": true,
+        "fell": false,
+        "steps": 142,
+        "duration_s": 2.84,
+        "start_dist_m": 0.331,
+        "final_dist_m": 0.113,
+        "locomotion_label": "LEARNED (ONNX) + RULE-BASED steering assist",
+        "interaction_label": "RULE-BASED"
+      }
+    },
+    {
+      "interaction": {
+        "action_requested": "offer_treat",
+        "hamster_response": "cautious_sniff",
+        "target_object_id": "prop_treat_zone",
+        "locomotion_label": "LEARNED",
+        "interaction_label": "RULE-BASED",
+        "familiarity_before": 0.28,
+        "familiarity_after": 0.46,
+        "stress_before": 0.45,
+        "stress_after": 0.37,
+        "rationale": "Moderate trust (0.25): cautiously approaches and sniffs interaction zone."
+      },
+      "execution": {
+        "skill_name": "cautious_sniff",
+        "target_object_id": "prop_treat_zone",
+        "success": true,
+        "fell": false,
+        "steps": 83,
+        "duration_s": 1.66,
+        "start_dist_m": 0.24,
+        "final_dist_m": 0.143,
+        "locomotion_label": "LEARNED (ONNX) + RULE-BASED steering assist",
+        "interaction_label": "RULE-BASED"
+      }
+    },
+    {
+      "interaction": {
+        "action_requested": "gentle_pet",
+        "hamster_response": "cautious_sniff",
+        "target_object_id": "prop_treat_zone",
+        "locomotion_label": "LEARNED",
+        "interaction_label": "RULE-BASED",
+        "familiarity_before": 0.46,
+        "familiarity_after": 0.58,
+        "stress_before": 0.37,
+        "stress_after": 0.33,
+        "rationale": "Moderate trust (0.26): cautiously approaches and sniffs interaction zone."
+      },
+      "execution": {
+        "skill_name": "cautious_sniff",
+        "target_object_id": "prop_treat_zone",
+        "success": true,
+        "fell": false,
+        "steps": 83,
+        "duration_s": 1.66,
+        "start_dist_m": 0.24,
+        "final_dist_m": 0.143,
+        "locomotion_label": "LEARNED (ONNX) + RULE-BASED steering assist",
+        "interaction_label": "RULE-BASED"
+      }
+    },
+    {
+      "interaction": {
+        "action_requested": "offer_treat",
+        "hamster_response": "accept_petting",
+        "target_object_id": "prop_treat_zone",
+        "locomotion_label": "LEARNED",
+        "interaction_label": "RULE-BASED",
+        "familiarity_before": 0.58,
+        "familiarity_after": 0.68,
+        "stress_before": 0.33,
+        "stress_after": 0.18,
+        "rationale": "High trust (0.62): approaches willingly and relaxes for gentle petting."
+      },
+      "execution": {
+        "skill_name": "accept_petting",
+        "target_object_id": "prop_treat_zone",
+        "success": true,
+        "fell": false,
+        "steps": 97,
+        "duration_s": 1.94,
+        "start_dist_m": 0.24,
+        "final_dist_m": 0.078,
+        "locomotion_label": "LEARNED (ONNX) + RULE-BASED steering assist",
+        "interaction_label": "RULE-BASED"
+      }
+    },
+    {
+      "interaction": {
+        "action_requested": "gentle_pet",
+        "hamster_response": "accept_petting",
+        "target_object_id": "prop_treat_zone",
+        "locomotion_label": "LEARNED",
+        "interaction_label": "RULE-BASED",
+        "familiarity_before": 0.68,
+        "familiarity_after": 0.78,
+        "stress_before": 0.18,
+        "stress_after": 0.03,
+        "rationale": "High trust (0.58): approaches willingly and relaxes for gentle petting."
+      },
+      "execution": {
+        "skill_name": "accept_petting",
+        "target_object_id": "prop_treat_zone",
+        "success": true,
+        "fell": false,
+        "steps": 97,
+        "duration_s": 1.94,
+        "start_dist_m": 0.24,
+        "final_dist_m": 0.078,
+        "locomotion_label": "LEARNED (ONNX) + RULE-BASED steering assist",
+        "interaction_label": "RULE-BASED"
+      }
+    }
+  ]
+}
