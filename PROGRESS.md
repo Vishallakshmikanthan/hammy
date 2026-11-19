@@ -148,6 +148,17 @@ Ready for either: (a) dropping real flat-ground walking videos into `data/raw_vi
   - Re-ran Stage 4 habitat eval (**`100.0%` success**, **`0.0%` falls**) and refreshed all 6 Stage 5 MuJoCo + ONNX web clips.
 - **UI Wiring (`web/`):** Built [`web/src/components/ParentInteractionPanel.tsx`](web/src/components/ParentInteractionPanel.tsx) (Offer Treat / Gentle Pet / Call Attention, live Familiarity & Stress meters, non-forced response badge, honesty labels, MuJoCo clip link) and mounted it in [`web/src/components/Observatory.tsx`](web/src/components/Observatory.tsx). Verified `tsc && vite build` (`2.96 s`, 0 errors) and all regression tests (**10/10** Docker + **2/2** Stage 5 bridge tests passing).
 
+---
+
+## Stage 5c: Live Browser Realism Calibration & Wheel Visibility — **COMPLETE**
+
+### What Was Done
+- **Real-Video Speed & Behaviour Calibration (`604dff4`):** Audited user screen recording (`data/audit_frames/screen_recording_check.jpg`) and calibrated `web/src/three/habitat/hamsterBehavior.ts` & `web/src/three/rig/poseApplication.ts` directly to measured real-video statistics (`0.085–0.115 m/s` walk, `2.3 rad/s` turn, speed-locked `0.055 m` stride cadence, `2.09 Hz` wheel cadence, calm `10.5–15.0 rad/s` groom/chew/dig, `2.0–7.0 s` calm bouts).
+- **Center Log-Tunnel Clearance & Wheel Visits (`1c0aa0b`):** Tightened obstacle padding (`0.036 → 0.022 m`), widened front/back BFS corridor waypoints, increased cross-cage timeouts (`14–16 s`), and widened wheel-entry tolerance so Hammy reliably navigates around the log and runs on the wheel.
+- **Visible Wheel Rotation (`8cdc850`):** Added 12 wooden inner grip rungs + 3 back-wall spokes as children of `prop_wheel_drum` in `web/src/three/habitat/HabitatSceneView.tsx` so drum spin and coasting rock are clearly visible.
+- **Documentation:** Updated `data/video_audit.md` for all 21 videos and recorded [`docs/decisions/ADR-0007-real-video-refinement-and-web-calibration.md`](docs/decisions/ADR-0007-real-video-refinement-and-web-calibration.md).
+
+
 
 
 
