@@ -181,10 +181,10 @@ export class HamsterBehaviorController {
     anchors: HabitatPropAnchors,
     petState?: PetState | null
   ): THREE.Vector3 {
-    const bodyRadius = 0.036;
+    const bodyRadius = 0.022;
     const obstacles: Array<{ pos: THREE.Vector3; radius: number }> = [
-      { pos: anchors.bowlPos, radius: 0.072 },
-      { pos: anchors.chewPos, radius: 0.044 },
+      { pos: anchors.bowlPos, radius: 0.064 },
+      { pos: anchors.chewPos, radius: 0.038 },
     ];
 
     const allowHideout =
@@ -303,23 +303,21 @@ export class HamsterBehaviorController {
       return;
     }
 
-    // BFS over open habitat corridor waypoints to route cleanly around rotated tunnel pipes & props
+    // BFS over wide open habitat corridor waypoints around the center log tunnel & props
     const nodes: Array<{ x: number; z: number }> = [
       { x: this.pos.x, z: this.pos.z },
-      { x: -0.26, z: 0.12 },   // front-left open area
-      { x: -0.09, z: 0.14 },   // front-left pocket
-      { x: -0.09, z: 0.213 },  // front-left-center lane
-      { x: 0.05, z: 0.213 },   // front lane in front of tunnel_straight_1
-      { x: 0.17, z: 0.213 },   // front-right corner lane
-      { x: 0.17, z: 0.16 },    // front-right near chew/bowl
-      { x: 0.20, z: 0.12 },    // gap between bowl and chew block
-      { x: 0.22, z: 0.02 },    // open pocket between hideout, chew, and bowl
-      { x: 0.145, z: -0.02 },  // center-right corridor between tunnel & hideout
-      { x: 0.13, z: -0.16 },   // back-right corridor
-      { x: 0.0, z: -0.165 },   // back-center behind tunnel_curve
-      { x: -0.11, z: -0.16 },  // back-left corridor
-      { x: -0.27, z: -0.01 },  // front of upright wheel
-      { x: 0.38, z: 0.04 },    // east corridor (water spout)
+      { x: -0.30, z: 0.14 },   // front-left open area near wheel
+      { x: -0.16, z: 0.18 },   // front-left lane
+      { x: -0.02, z: 0.205 },  // wide front lane in front of log
+      { x: 0.12, z: 0.205 },   // front-right lane
+      { x: 0.20, z: 0.14 },    // near bowl/chew
+      { x: 0.20, z: 0.02 },    // open pocket between hideout, chew, and bowl
+      { x: 0.13, z: -0.06 },   // center-right corridor between log & hideout
+      { x: 0.11, z: -0.175 },  // back-right corridor
+      { x: -0.04, z: -0.185 }, // back-center behind log
+      { x: -0.18, z: -0.175 }, // back-left corridor
+      { x: -0.28, z: 0.02 },   // directly in front of upright wheel
+      { x: 0.36, z: 0.04 },    // east corridor (water spout)
       { x: dest.x, z: dest.z },
     ];
 
@@ -407,16 +405,23 @@ export class HamsterBehaviorController {
     const thirst = petState?.drives.thirst ?? 0.3;
 
     const r = this.nextRand();
-    if (energy < 0.32 || (this.goal !== "hideout" && r < 0.16)) {
+    if (latestSkill === "wheel_run" && this.goal !== "wheel") {
+      this.goal = "wheel";
+      this.goalStage = "approach";
+      this.goalCyclesLeft = 2;
+      this.setGoalTargetWithTunnelCorridor(this.getWheelEntryPos(anchors), anchors);
+      return;
+    }
+    if (energy < 0.32 || (this.goal !== "hideout" && r < 0.14)) {
       this.goal = "hideout";
       this.goalStage = "approach";
       this.setGoalTargetWithTunnelCorridor(this.getHideoutDoorPos(anchors), anchors);
       return;
     }
-    if (this.goal !== "wheel" && r < 0.40) {
+    if (this.goal !== "wheel" && r < 0.48) {
       this.goal = "wheel";
       this.goalStage = "approach";
-      this.goalCyclesLeft = 1 + Math.floor(this.nextRand() * 2);
+      this.goalCyclesLeft = 2 + Math.floor(this.nextRand() * 2);
       this.setGoalTargetWithTunnelCorridor(this.getWheelEntryPos(anchors), anchors);
       return;
     }
@@ -735,23 +740,23 @@ export class HamsterBehaviorController {
           (this.goal === "water" && distToSpout2D < 0.085 && this.waypointQueue.length === 0) ||
           this.phaseTimer <= 0
         ) {
-          if (this.waypointQueue.length > 0 && distToTarget < 0.04) {
+          if (this.waypointQueue.length > 0 && distToTarget < 0.05) {
             this.targetPos.copy(this.waypointQueue.shift()!);
             this.stuckTimer = 0;
             this.stuckCheckPos.copy(this.pos);
-            this.enterPhase("scurry", 6.0);
+            this.enterPhase("scurry", 14.0);
           } else {
-          const arrived = distToTarget < 0.035;
+          const arrived = distToTarget < 0.055;
           // Handle multi-stage prop transitions (wheel & hideout)
           if (this.goal === "wheel" && this.goalStage === "approach") {
             if (arrived) {
               this.goalStage = "active";
               this.targetPos.copy(this.getWheelTrackPos(anchors));
-              this.enterPhase("scurry", 2.5);
+              this.enterPhase("scurry", 4.5);
               activityLabel = "Hopping onto Wheel";
             } else {
               this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
-              this.enterPhase("scurry", 7.5);
+              this.enterPhase("scurry", 16.0);
             }
           } else if (this.goal === "hideout" && this.goalStage === "approach") {
             if (arrived) {
@@ -761,16 +766,16 @@ export class HamsterBehaviorController {
                 this.sampleGroundY(anchors.hideoutPos.x, anchors.hideoutPos.z, anchors) - 0.004,
                 anchors.hideoutPos.z
               );
-              this.enterPhase("scurry", 2.5);
-              this.phaseTimer = 3.2 + this.nextRand() * 2.5;
+              this.enterPhase("scurry", 4.5);
+              this.phaseTimer = 4.5 + this.nextRand() * 3.0;
               activityLabel = "Entering Hideout";
             } else {
               this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
-              this.enterPhase("scurry", 7.5);
+              this.enterPhase("scurry", 16.0);
             }
           } else if (this.goalStage === "exit") {
             this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
-            this.enterPhase("scurry", 4.5);
+            this.enterPhase("scurry", 14.0);
           } else {
             this.choosePauseBehavior(latestSkill, petState, anchors);
           }
@@ -828,15 +833,15 @@ export class HamsterBehaviorController {
             this.pos.z = THREE.MathUtils.clamp(this.pos.z, -0.215, 0.215);
           }
 
-          // Anti-jiggle stuck detector: if net progress < 5mm over 0.45s, pick a fresh unobstructed goal
+          // Anti-jiggle stuck detector: allow 1.4s for calm turning before picking a new goal
           this.stuckTimer += clampedDt;
-          if (this.stuckTimer >= 0.45) {
+          if (this.stuckTimer >= 1.4) {
             const netMoved = Math.hypot(this.pos.x - this.stuckCheckPos.x, this.pos.z - this.stuckCheckPos.z);
             this.stuckCheckPos.copy(this.pos);
             this.stuckTimer = 0;
-            if (netMoved < 0.006 && this.goalStage === "approach") {
+            if (netMoved < 0.008 && this.goalStage === "approach") {
               this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
-              this.enterPhase("scurry", 6.0);
+              this.enterPhase("scurry", 16.0);
             }
           }
 
@@ -887,7 +892,7 @@ export class HamsterBehaviorController {
 
         if (this.phaseTimer <= 0) {
           this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
-          this.enterPhase("scurry", 9.0);
+          this.enterPhase("scurry", 16.0);
           activityLabel = "Exploring";
         } else {
           switch (this.phase) {
