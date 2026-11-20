@@ -1145,6 +1145,7 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
         currentActivity = step.activityLabel;
 
         poseLayer.applyPhysicsPose(step.pose);
+        enhancedVisuals?.updateLimbs(step.pose);
         procLayer.update(dt, step.proceduralConfig);
 
         // Attach held food mesh to `food_hold_socket` (or `head`) while eating with both front paws!
@@ -1162,6 +1163,8 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
               hamsterAsset.bones.get("head");
             if (holdSocket) {
               const holder = new THREE.Group();
+              // Seat food snugly right between both gripping rosy-pink paws under the mouth
+              holder.position.set(0, -0.006, -0.002);
               holdSocket.add(holder);
               heldFoodMesh = holder;
               gltfLoader.load(`/assets/items/${targetFoodId}.glb`, (gltf) => {
@@ -1169,11 +1172,22 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
                   disposeObject3D(gltf.scene);
                   return;
                 }
+                gltf.scene.traverse((c) => {
+                  if ((c as THREE.Mesh).isMesh) {
+                    c.renderOrder = 3;
+                  }
+                });
                 holder.add(gltf.scene);
               });
             }
           }
-          if (heldFoodMesh) heldFoodMesh.visible = true;
+          if (heldFoodMesh) {
+            heldFoodMesh.visible = true;
+            // Subtle food-turning micro-motion synchronized with both hands nibbling
+            const cPhase = step.pose.posture?.chewPhase ?? 0;
+            heldFoodMesh.rotation.z = Math.sin(cPhase * 0.5) * 0.16;
+            heldFoodMesh.rotation.x = Math.sin(cPhase) * 0.08;
+          }
         } else if (heldFoodMesh) {
           heldFoodMesh.visible = false;
         }
