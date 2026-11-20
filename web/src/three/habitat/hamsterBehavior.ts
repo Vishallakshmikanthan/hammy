@@ -795,8 +795,16 @@ export class HamsterBehaviorController {
     if ((anchors.hasBowl ?? true) && (this.goal === "bowl" || latestSkill === "eat" || latestSkill === "hoard") && this.pos.distanceTo(anchors.bowlPos) < 0.15) {
       this.goalStage = "active";
       this.faceTargetPos = anchors.bowlPos.clone();
-      this.hasTriggeredEatCallback = false;
-      this.enterPhase("forage_eat", 3.8 + this.nextRand() * 3.2);
+      const bowlFoodLevel = anchors.foodLevel ?? 1.0;
+      if (bowlFoodLevel > 0.01) {
+        this.activeFoodObjectId = null;
+        this.heldFoodItemId = "food_seed_mix";
+        this.hasTriggeredEatCallback = false;
+        this.enterPhase("forage_eat", 3.8 + this.nextRand() * 2.4);
+      } else {
+        this.isHoldingFood = false;
+        this.enterPhase("sniff", 2.0);
+      }
       return;
     }
     if (
@@ -805,8 +813,13 @@ export class HamsterBehaviorController {
     ) {
       this.goalStage = "active";
       this.faceTargetPos = anchors.spoutPos.clone();
-      this.hasTriggeredDrinkCallback = false;
-      this.enterPhase("drink", 3.2 + this.nextRand() * 2.5);
+      const bottleWaterLevel = anchors.waterLevel ?? 0.75;
+      if (bottleWaterLevel > 0.01) {
+        this.hasTriggeredDrinkCallback = false;
+        this.enterPhase("drink", 3.2 + this.nextRand() * 2.2);
+      } else {
+        this.enterPhase("sniff", 1.8);
+      }
       return;
     }
     if (this.goal === "inspect_prop" && this.activeInspectProp) {
@@ -1429,9 +1442,9 @@ export class HamsterBehaviorController {
               this.targetHeadPitch = 0.18 + Math.sin(this.posture.chewPhase * 0.4) * 0.08;
               this.targetHeadRoll = 0;
               activityLabel = "Eating with Both Paws (ANIMATION-DRIVEN)";
-              if (!this.hasTriggeredEatCallback && this.phaseTimer < 1.8 && this.activeFoodObjectId && anchors.onFoodConsumed) {
+              if (!this.hasTriggeredEatCallback && this.phaseTimer < 1.8 && anchors.onFoodConsumed) {
                 this.hasTriggeredEatCallback = true;
-                anchors.onFoodConsumed(this.activeFoodObjectId, this.heldFoodItemId || "food_carrot_piece");
+                anchors.onFoodConsumed(this.activeFoodObjectId || "", this.heldFoodItemId || "food_seed_mix");
               }
               break;
             }
@@ -1507,11 +1520,11 @@ export class HamsterBehaviorController {
     this.posture.headPitch = damp(this.posture.headPitch, this.targetHeadPitch, 5.8, clampedDt);
     this.posture.headRoll = damp(this.posture.headRoll, this.targetHeadRoll, 5.2, clampedDt);
 
-    // Cheek pouch fill from backend state + active foraging puff
+    // Cheek pouch fill from backend state + active foraging puff (soft-capped at 0.84 for smooth round cheeks)
     const baseCheek = petState?.cheek_pouch_fill ?? 0;
-    const forageBonus = this.phase === "forage_eat" ? 0.25 : 0;
-    const targetCheekL = THREE.MathUtils.clamp(baseCheek + forageBonus, 0, 1);
-    const targetCheekR = THREE.MathUtils.clamp(baseCheek * 0.92 + forageBonus * 0.85, 0, 1);
+    const forageBonus = this.phase === "forage_eat" ? 0.22 : 0;
+    const targetCheekL = THREE.MathUtils.clamp(baseCheek + forageBonus, 0, 0.84);
+    const targetCheekR = THREE.MathUtils.clamp(baseCheek * 0.92 + forageBonus * 0.85, 0, 0.84);
     this.smoothCheekL = damp(this.smoothCheekL, targetCheekL, 5.0, clampedDt);
     this.smoothCheekR = damp(this.smoothCheekR, targetCheekR, 5.0, clampedDt);
 
@@ -1519,7 +1532,11 @@ export class HamsterBehaviorController {
     const vx = Math.sin(this.yaw) * this.currentSpeed;
     const vz = Math.cos(this.yaw) * this.currentSpeed;
 
-    const isAlert = this.phase === "rear_up" || this.microFreezeTimer > 0;
+    const isAlert =
+      this.phase === "rear_up" ||
+      this.phase === "inspect_prop" ||
+      this.phase === "log_perch" ||
+      this.microFreezeTimer > 0;
     const isResting = this.phase === "rest";
     const isWheelRun = this.phase === "wheel_run";
 
