@@ -146,6 +146,7 @@ const CLEAN_LAYOUT: ShelvesLayoutState = {
 describe("Step 6 Opt-In AssetShelfDrawer UI", () => {
   it("renders all 5 shelves closed by default and opens Food, Costume, and Props shelves on click", () => {
     const onOfferFood = vi.fn();
+    const onRefillFood = vi.fn();
     const onRefillWater = vi.fn();
     const onEquipCostume = vi.fn();
     const onUnequipCostume = vi.fn();
@@ -154,7 +155,7 @@ describe("Step 6 Opt-In AssetShelfDrawer UI", () => {
     render(
       <AssetShelfDrawer
         manifest={MOCK_MANIFEST}
-        layout={CLEAN_LAYOUT}
+        layout={{ ...CLEAN_LAYOUT, food_level: 0.45 }}
         busy={false}
         statusMessage={null}
         placementDraft={null}
@@ -162,6 +163,7 @@ describe("Step 6 Opt-In AssetShelfDrawer UI", () => {
         onUpdatePlacementDraft={vi.fn()}
         onConfirmPlacement={vi.fn()}
         onOfferFood={onOfferFood}
+        onRefillFood={onRefillFood}
         onRefillWater={onRefillWater}
         onEquipCostume={onEquipCostume}
         onUnequipCostume={onUnequipCostume}
@@ -175,12 +177,14 @@ describe("Step 6 Opt-In AssetShelfDrawer UI", () => {
     expect(screen.queryByTestId("shelf-drawer-costume")).toBeNull();
     expect(screen.queryByTestId("shelf-drawer-prop")).toBeNull();
 
-    // 1. Open Food Shelf -> offer carrot
+    // 1. Open Food Shelf -> offer carrot & refill food bowl
     fireEvent.click(screen.getByTestId("shelf-btn-food"));
     expect(screen.getByTestId("shelf-drawer-food")).toBeDefined();
     expect(screen.getByTestId("shelf-item-card-food_carrot_piece")).toBeDefined();
     fireEvent.click(screen.getByTestId("btn-offer-food_carrot_piece"));
     expect(onOfferFood).toHaveBeenCalledWith("food_carrot_piece", 1);
+    fireEvent.click(screen.getByTestId("btn-refill-food"));
+    expect(onRefillFood).toHaveBeenCalledWith(25);
 
     // 2. Open Costume Shelf -> equip party hat
     fireEvent.click(screen.getByTestId("shelf-btn-costume"));
