@@ -118,6 +118,21 @@ export function enhanceHamsterVisuals(
   const bodyTargets: THREE.Mesh[] = [];
   let hasVertexColors = false;
 
+  // Replace decimated LOD1's high-aspect sliver triangles with LOD0's smooth mesh geometry
+  // so transitions between LOD0 and LOD1 never exhibit sharp polygonal facets or spiky fur.
+  const lod0Mesh = asset.lodMeshes.LOD0;
+  const lod1Mesh = asset.lodMeshes.LOD1;
+  if (lod0Mesh && lod1Mesh && lod0Mesh.geometry && lod1Mesh.geometry !== lod0Mesh.geometry) {
+    lod1Mesh.geometry = lod0Mesh.geometry;
+    lod1Mesh.morphTargetDictionary = lod0Mesh.morphTargetDictionary;
+    lod1Mesh.morphTargetInfluences = lod0Mesh.morphTargetInfluences;
+    if ((lod0Mesh as THREE.SkinnedMesh).isSkinnedMesh && (lod1Mesh as THREE.SkinnedMesh).isSkinnedMesh) {
+      const sm0 = lod0Mesh as THREE.SkinnedMesh;
+      const sm1 = lod1Mesh as THREE.SkinnedMesh;
+      sm1.bind(sm0.skeleton, sm0.bindMatrix);
+    }
+  }
+
   asset.root.traverse((obj) => {
     if (!(obj as THREE.Mesh).isMesh) return;
     const m = obj as THREE.Mesh;
@@ -135,7 +150,7 @@ export function enhanceHamsterVisuals(
       });
       disposables.push(bodyMat);
       m.material = bodyMat;
-      if (m.name.includes("LOD0") || m.name.includes("LOD1")) {
+      if (m.name.includes("LOD0") || m.name.includes("LOD1") || m.name.includes("LOD2")) {
         bodyTargets.push(m);
       }
     } else if (m.name.includes("ham_eye")) {
