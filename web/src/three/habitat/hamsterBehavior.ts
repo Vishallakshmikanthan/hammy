@@ -179,6 +179,7 @@ export class HamsterBehaviorController {
     digPhase: 0,
     chewAmount: 0,
     chewPhase: 0,
+    eatHoldAmount: 0,
   };
 
   private smoothCheekL = 0;
@@ -999,6 +1000,7 @@ export class HamsterBehaviorController {
     let targetCrouch = 0;
     let targetCurl = 0;
     let targetGroom = 0;
+    let targetEatHold = 0;
     let targetDig = 0;
     let targetChew = 0;
 
@@ -1432,15 +1434,15 @@ export class HamsterBehaviorController {
               break;
             }
             case "forage_eat": {
-              // Step 5/6 realistic eating: sits up on haunches, holds food in both front paws, chews, cheek pouches bulge
-              targetRear = 0.72;
-              targetGroom = 0.75; // brings both front paws together at snout to hold food
+              // Step 5/6 realistic eating: sits up on haunches, cradles food between both 4-fingered pink paws, chews, cheek pouches bulge
+              targetRear = 0.66;
+              targetEatHold = 1.0;
+              targetGroom = 0.0;
               targetChew = 0.95;
               this.isHoldingFood = true;
-              this.posture.groomPhase += clampedDt * 4.5;
               this.posture.chewPhase += clampedDt * 12.5;
-              this.targetHeadYaw = Math.sin(this.posture.chewPhase * 0.15) * 0.10;
-              this.targetHeadPitch = 0.18 + Math.sin(this.posture.chewPhase * 0.4) * 0.08;
+              this.targetHeadYaw = Math.sin(this.posture.chewPhase * 0.15) * 0.08;
+              this.targetHeadPitch = 0.14 + Math.sin(this.posture.chewPhase * 0.4) * 0.06;
               this.targetHeadRoll = 0;
               activityLabel = "Eating with Both Paws (ANIMATION-DRIVEN)";
               if (!this.hasTriggeredEatCallback && this.phaseTimer < 1.8 && anchors.onFoodConsumed) {
@@ -1515,6 +1517,7 @@ export class HamsterBehaviorController {
     this.posture.crouchAmount = damp(this.posture.crouchAmount, targetCrouch, 4.2, clampedDt);
     this.posture.curlAmount = damp(this.posture.curlAmount, targetCurl, 2.5, clampedDt);
     this.posture.groomAmount = damp(this.posture.groomAmount, targetGroom, 4.5, clampedDt);
+    this.posture.eatHoldAmount = damp(this.posture.eatHoldAmount ?? 0, targetEatHold, 5.2, clampedDt);
     this.posture.digAmount = damp(this.posture.digAmount, targetDig, 4.8, clampedDt);
     this.posture.chewAmount = damp(this.posture.chewAmount, targetChew, 6.0, clampedDt);
     this.posture.headYaw = damp(this.posture.headYaw, this.targetHeadYaw, 5.8, clampedDt);
