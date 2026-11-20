@@ -35,6 +35,7 @@ import {
   movePropCommand,
   offerFoodCommand,
   placePropCommand,
+  refillFoodCommand,
   refillWaterCommand,
   removePropCommand,
   resetCleanCageCommand,
@@ -76,6 +77,7 @@ const DEFAULT_CLEAN_LAYOUT: ShelvesLayoutState = {
   pet_id: "pet_hammy_01",
   sim_time_sec: 0,
   cheek_pouch_fill: 0,
+  food_level: 1.0,
   water_level: 0.75,
   equipped_costumes: {},
   offered_foods: [],
@@ -238,6 +240,20 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
     setShelfBusy(true);
     try {
       const res = await offerFoodCommand(petId, itemId, quantity, undefined, token);
+      setLayout(res.layout);
+      setStatusMessage(res.message);
+      onLayoutChanged?.();
+    } catch (err) {
+      setStatusMessage(err instanceof Error ? err.message : String(err));
+    } finally {
+      setShelfBusy(false);
+    }
+  };
+
+  const handleRefillFood = async (amountGrams: number) => {
+    setShelfBusy(true);
+    try {
+      const res = await refillFoodCommand(petId, amountGrams, undefined, token);
       setLayout(res.layout);
       setStatusMessage(res.message);
       onLayoutChanged?.();
@@ -493,6 +509,11 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
     let wheelMesh: THREE.Mesh | null = null;
     let beddingMesh: THREE.Mesh | null = null;
     let waterLiquidMesh: THREE.Mesh | null = null;
+    let foodBowlFillMesh: THREE.Mesh | null = null;
+    let foodBowlFillBaseY = 0.1465;
+    let foodBowlFillHalfH = 0.01225;
+    let targetWaterScaleY = 0.75;
+    let targetFoodScaleY = 1.0;
     let hamsterFootOffsetY = 0;
 
     // Lazy-loaded dynamic asset groups (unloaded and disposed when removed from cage)
@@ -527,10 +548,13 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
       hasHideout: true,
       hasTunnel: true,
       hasChew: false,
+      foodLevel: 1.0,
+      waterLevel: 0.75,
       dynamicObstacles: [],
+      placedProps: [],
       offeredFoodTarget: null,
       onFoodConsumed: (objectId: string) => {
-        consumeFoodCommand(petId, objectId, undefined, token)
+        consumeFoodCommand(petId, objectId || undefined, undefined, token)
           .then((res) => {
             if (!disposed) {
               setLayout(res.layout);
@@ -567,10 +591,24 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
       if (disposed) return;
       const curLayout = layoutRef.current;
 
-      // 1. Scale visible water level mesh (0..1)
+      // 1. Sync visible water bottle & food bowl fill levels (0..1)
+      const waterLvl = THREE.MathUtils.clamp(curLayout.water_level ?? 0.75, 0.0, 1.0);
+      const foodLvl = THREE.MathUtils.clamp(curLayout.food_level ?? 1.0, 0.0, 1.0);
+      targetWaterScaleY = waterLvl;
+      targetFoodScaleY = foodLvl;
+      propAnchors.waterLevel = waterLvl;
+      propAnchors.foodLevel = foodLvl;
       if (waterLiquidMesh) {
-        const lvl = THREE.MathUtils.clamp(curLayout.water_level ?? 0.75, 0.02, 1.0);
-        waterLiquidMesh.scale.y = lvl;
+        waterLiquidMesh.visible = waterLvl > 0.01;
+        waterLiquidMesh.scale.y = Math.max(0.02, waterLvl);
+      }
+      if (foodBowlFillMesh) {
+        foodBowlFillMesh.visible = foodLvl > 0.01;
+        const clampedFood = Math.max(0.04, foodLvl);
+        foodBowlFillMesh.scale.y = clampedFood;
+        // Anchor bottom of kibble mound at bowl interior floor so eating visibly drops the top surface
+        const bottomY = foodBowlFillBaseY - foodBowlFillHalfH;
+        foodBowlFillMesh.position.y = bottomY + foodBowlFillHalfH * clampedFood;
       }
 
       // 2. Sync extra opt-in placed props, decor, water bowls & offered food models (lazy-load on add, dispose on remove)
@@ -618,20 +656,32 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
         }
       }
 
-      // Sync offered foods on the cage floor / bowl
+      // Sync offered foods directly inside the ceramic food bowl interior (never random floor spots)
+      const bowlBottomY = foodBowlFillBaseY - foodBowlFillHalfH;
+      const bowlTopFillY = bowlBottomY + foodBowlFillHalfH * 2 * Math.max(0.05, foodLvl);
+      let foodIdx = 0;
       for (const f of curLayout?.offered_foods ?? []) {
         if (f.quantity <= 0) continue;
         desiredIds.add(f.object_id);
-        const wx = f.pose_xyz_m[0];
-        const wz = -f.pose_xyz_m[1];
-        const wy = (propAnchors.sampleBeddingY ? propAnchors.sampleBeddingY(wx, wz) : propAnchors.beddingY) + 0.008;
+        let fx = f.pose_xyz_m[0];
+        let fz = -f.pose_xyz_m[1];
+        // Ensure dropped food always rests cleanly inside the ceramic food bowl rim
+        const dFromBowl = Math.hypot(fx - propAnchors.bowlPos.x, fz - propAnchors.bowlPos.z);
+        if (dFromBowl > 0.022) {
+          const ang = foodIdx * 2.3999632297;
+          const rad = foodIdx === 0 ? 0.0 : Math.min(0.015, 0.007 + (foodIdx % 3) * 0.003);
+          fx = propAnchors.bowlPos.x + Math.cos(ang) * rad;
+          fz = propAnchors.bowlPos.z + Math.sin(ang) * rad;
+        }
+        const fy = bowlTopFillY + 0.004 + (foodIdx % 2) * 0.003;
+        foodIdx++;
 
         const existingFood = loadedPlacedMeshes.get(f.object_id);
         if (existingFood) {
-          existingFood.position.set(wx, wy, wz);
+          existingFood.position.set(fx, fy, fz);
         } else {
           const foodHolder = new THREE.Group();
-          foodHolder.position.set(wx, wy, wz);
+          foodHolder.position.set(fx, fy, fz);
           placedGroup.add(foodHolder);
           loadedPlacedMeshes.set(f.object_id, foodHolder);
 
@@ -640,6 +690,12 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
               disposeObject3D(gltf.scene);
               return;
             }
+            gltf.scene.traverse((c) => {
+              if ((c as THREE.Mesh).isMesh) {
+                c.castShadow = true;
+                c.receiveShadow = true;
+              }
+            });
             foodHolder.add(gltf.scene);
           });
         }
@@ -799,6 +855,15 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
               box.getCenter(bowlPos);
               propAnchors.bowlPos.copy(bowlPos);
             }
+            if (m.name === "prop_food_bowl_fill") {
+              foodBowlFillMesh = m;
+              foodBowlFillBaseY = m.position.y;
+              m.geometry.computeBoundingBox();
+              const gBox = m.geometry.boundingBox;
+              if (gBox) {
+                foodBowlFillHalfH = Math.max(0.006, (gBox.max.y - gBox.min.y) * 0.5);
+              }
+            }
             if (m.name === "prop_bottle_spout") {
               const box = new THREE.Box3().setFromObject(m);
               box.getCenter(spoutPos);
@@ -867,22 +932,42 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
               return;
             }
             if (m.name === "prop_bottle_body") {
-              // Attach scalable inner water liquid cylinder so water level (0..1) is clearly visible!
-              const liqGeo = new THREE.CylinderGeometry(0.021, 0.021, 0.115, 20);
-              liqGeo.translate(0, 0.115 * 0.5, 0); // Pivot at bottom of liquid column
-              const liqMat = new THREE.MeshPhysicalMaterial({
-                color: "#38bdf8",
+              // Replace opaque-looking transmission shader with crystal-clear acrylic so inner water_liquid is unmistakably visible!
+              m.material = new THREE.MeshPhysicalMaterial({
+                color: "#e6f5ff",
                 transparent: true,
-                opacity: 0.72,
+                opacity: 0.24,
                 roughness: 0.08,
-                transmission: 0.65,
+                metalness: 0.02,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.06,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+              });
+              m.castShadow = false;
+              m.receiveShadow = false;
+              m.renderOrder = 3;
+
+              // Attach scalable inner water liquid cylinder so water level (0..1) visibly drops on drink & rises on refill
+              const liqGeo = new THREE.CylinderGeometry(0.0225, 0.0225, 0.122, 24);
+              liqGeo.translate(0, 0.122 * 0.5, 0); // Pivot at bottom of liquid column
+              const liqMat = new THREE.MeshPhysicalMaterial({
+                color: "#22b8f5",
+                emissive: new THREE.Color("#0c4a6e"),
+                emissiveIntensity: 0.22,
+                transparent: true,
+                opacity: 0.86,
+                roughness: 0.12,
+                clearcoat: 0.85,
+                depthWrite: true,
               });
               waterLiquidMesh = new THREE.Mesh(liqGeo, liqMat);
               waterLiquidMesh.name = "water_liquid";
+              waterLiquidMesh.renderOrder = 2;
               const bBox = new THREE.Box3().setFromObject(m);
               const bCenter = new THREE.Vector3();
               bBox.getCenter(bCenter);
-              waterLiquidMesh.position.set(bCenter.x, bBox.min.y + 0.008, bCenter.z);
+              waterLiquidMesh.position.set(bCenter.x, bBox.min.y + 0.006, bCenter.z);
               scene.add(waterLiquidMesh);
             }
           }
@@ -951,6 +1036,19 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
 
       dust.update(tSec);
       waterDroplet?.update(tSec);
+
+      // Smoothly animate visible water bottle & food bowl fill levels
+      if (waterLiquidMesh) {
+        const nextY = THREE.MathUtils.lerp(waterLiquidMesh.scale.y, Math.max(0.02, targetWaterScaleY), Math.min(1, dt * 6));
+        waterLiquidMesh.scale.y = nextY;
+        waterLiquidMesh.visible = targetWaterScaleY > 0.01;
+      }
+      if (foodBowlFillMesh) {
+        const nextF = THREE.MathUtils.lerp(foodBowlFillMesh.scale.y, Math.max(0.04, targetFoodScaleY), Math.min(1, dt * 6));
+        foodBowlFillMesh.scale.y = nextF;
+        foodBowlFillMesh.position.y = (foodBowlFillBaseY - foodBowlFillHalfH) + foodBowlFillHalfH * nextF;
+        foodBowlFillMesh.visible = targetFoodScaleY > 0.01;
+      }
 
       let activeLod: LodLevel = "LOD0";
       if (hamsterAsset && poseLayer && procLayer) {
@@ -1151,7 +1249,8 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
               {hud.drawCalls} | <strong>Tris:</strong> {hud.triangles.toLocaleString()}
             </div>
             <div>
-              <strong>Water:</strong> {Math.round(layout.water_level * 100)}% | <strong>Cheeks:</strong>{" "}
+              <strong>Food:</strong> {Math.round((layout.food_level ?? 1.0) * 100)}% | <strong>Water:</strong>{" "}
+              {Math.round(layout.water_level * 100)}% | <strong>Cheeks:</strong>{" "}
               {Math.round(layout.cheek_pouch_fill * 100)}% | <strong>Circadian:</strong> {hud.hourOfDay.toFixed(1)}h
             </div>
             <div>
@@ -1282,6 +1381,7 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
                 onUpdatePlacementDraft={setPlacementDraft}
                 onConfirmPlacement={handleConfirmPlacement}
                 onOfferFood={handleOfferFood}
+                onRefillFood={handleRefillFood}
                 onRefillWater={handleRefillWater}
                 onEquipCostume={handleEquipCostume}
                 onUnequipCostume={handleUnequipCostume}
