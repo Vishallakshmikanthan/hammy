@@ -43,7 +43,7 @@ import {
 } from "../../api";
 import { AssetShelfDrawer } from "../../components/AssetShelfDrawer";
 import { BeddingDeformer } from "./beddingDeformer";
-import { HamsterBehaviorController, type HabitatPropAnchors } from "./hamsterBehavior";
+import { HamsterBehaviorController, type HabitatPropAnchors, type PlacedPropAnchor } from "./hamsterBehavior";
 import { enhanceHamsterVisuals, type EnhancedHamsterVisuals } from "./hamsterVisuals";
 import {
   computeDayNightLighting,
@@ -614,25 +614,43 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
       // 2. Sync extra opt-in placed props, decor, water bowls & offered food models (lazy-load on add, dispose on remove)
       const desiredIds = new Set<string>();
       const nextObstacles: Array<{ id: string; pos: THREE.Vector3; radius: number }> = [];
+      const nextPlacedProps: PlacedPropAnchor[] = [];
 
       for (const p of curLayout?.placed_items ?? []) {
         desiredIds.add(p.object_id);
         const wx = p.pose_xyz_m[0];
         const wz = -p.pose_xyz_m[1];
         const wy = propAnchors.sampleBeddingY ? propAnchors.sampleBeddingY(wx, wz) : propAnchors.beddingY;
+        const propRadius = p.collision_radius_m || 0.045;
 
         if (p.item_id !== "decor_bedding_patch") {
           nextObstacles.push({
             id: p.object_id,
             pos: new THREE.Vector3(wx, wy, wz),
-            radius: p.collision_radius_m || 0.045,
+            radius: propRadius,
           });
         }
+        nextPlacedProps.push({
+          objectId: p.object_id,
+          itemId: p.item_id,
+          name: p.name,
+          category: p.category,
+          pos: new THREE.Vector3(wx, wy, wz),
+          radius: propRadius,
+          rotationY: p.rotation_y_rad,
+        });
 
         const existingObj = loadedPlacedMeshes.get(p.object_id);
         if (existingObj) {
           existingObj.position.set(wx, wy, wz);
           existingObj.rotation.y = p.rotation_y_rad;
+          // Sync dynamic water_liquid level on opt-in water bowls as well
+          existingObj.traverse((child) => {
+            if (child.name === "water_liquid") {
+              child.visible = waterLvl > 0.01;
+              child.scale.y = Math.max(0.05, waterLvl);
+            }
+          });
         } else {
           const placeholder = new THREE.Group();
           placeholder.position.set(wx, wy, wz);
@@ -649,6 +667,10 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
               if ((c as THREE.Mesh).isMesh) {
                 c.castShadow = true;
                 c.receiveShadow = true;
+              }
+              if (c.name === "water_liquid") {
+                c.visible = (layoutRef.current.water_level ?? 0.75) > 0.01;
+                c.scale.y = Math.max(0.05, layoutRef.current.water_level ?? 0.75);
               }
             });
             placeholder.add(gltf.scene);
@@ -711,6 +733,7 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
       }
 
       propAnchors.dynamicObstacles = nextObstacles;
+      propAnchors.placedProps = nextPlacedProps;
       // Core 3D habitat props (bowl, wheel, hideout, logs/tunnel) remain active in default cage
       propAnchors.hasWheel = true;
       propAnchors.hasHideout = true;
@@ -985,6 +1008,57 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
         if (propAnchors.wheelTrackY !== undefined) {
           propAnchors.wheelTrackY -= hamsterFootOffsetY;
         }
+
+        // Build functional middle-log spine (hollow tunnel enter/exit + top-of-log climb & perch + precise 2D capsules)
+        const floorAt = (x: number, z: number) =>
+          propAnchors.sampleBeddingY ? propAnchors.sampleBeddingY(x, z) : beddingY;
+        const innerFloor1 = Math.max(0.146 - hamsterFootOffsetY, floorAt(0.055, 0.097) - 0.004);
+        const innerFloor2 = Math.max(0.160 - hamsterFootOffsetY, floorAt(-0.118, -0.012) - 0.002);
+        const topY1 = 0.2185 - hamsterFootOffsetY - 0.002;
+        const topYCurve = 0.218 - hamsterFootOffsetY - 0.002;
+        const topY2 = 0.234 - hamsterFootOffsetY - 0.002;
+        propAnchors.tunnelSpine = {
+          mouthAApproach: new THREE.Vector3(0.090, floorAt(0.090, 0.200), 0.200),
+          mouthBApproach: new THREE.Vector3(-0.232, floorAt(-0.232, 0.019), 0.019),
+          centerline: [
+            new THREE.Vector3(0.072, innerFloor1, 0.160),
+            new THREE.Vector3(0.055, innerFloor1, 0.097),
+            new THREE.Vector3(0.036, innerFloor1, 0.028),
+            new THREE.Vector3(-0.008, (innerFloor1 + innerFloor2) * 0.5, -0.016),
+            new THREE.Vector3(-0.060, innerFloor2, -0.027),
+            new THREE.Vector3(-0.119, innerFloor2, -0.012),
+            new THREE.Vector3(-0.175, innerFloor2, 0.004),
+          ],
+          segments: [
+            // Capsule segments stop slightly shy of open mouths so mouth approaches remain freely traversable
+            {
+              a: new THREE.Vector3(0.037, 0.179, 0.029),
+              b: new THREE.Vector3(0.066, 0.179, 0.136),
+              radius: 0.04,
+              topY: topY1,
+            },
+            {
+              a: new THREE.Vector3(0.035, 0.178, 0.026),
+              b: new THREE.Vector3(-0.058, 0.186, -0.026),
+              radius: 0.042,
+              topY: topYCurve,
+            },
+            {
+              a: new THREE.Vector3(-0.061, 0.195, -0.027),
+              b: new THREE.Vector3(-0.155, 0.195, -0.002),
+              radius: 0.04,
+              topY: topY2,
+            },
+          ],
+          climbEntryPos: new THREE.Vector3(-0.175, floorAt(-0.175, 0.105), 0.105),
+          climbExitPos: new THREE.Vector3(0.155, floorAt(0.155, -0.025), -0.025),
+          topPath: [
+            new THREE.Vector3(-0.118, topY2, -0.012),
+            new THREE.Vector3(-0.055, (topY2 + topYCurve) * 0.5, -0.026),
+            new THREE.Vector3(0.002, topYCurve, -0.014),
+            new THREE.Vector3(0.045, topY1, 0.055),
+          ],
+        };
 
         waterDroplet = createWaterDropletEffect(spoutPos);
         scene.add(waterDroplet.mesh);
