@@ -136,6 +136,7 @@ export class ProceduralRigLayer {
     if (this.hasPrev && safeDt > 1e-4) {
       const vel = curPos.clone().sub(this.prevRootPos).divideScalar(safeDt);
       accel.copy(vel).sub(this.prevVel).divideScalar(safeDt);
+      accel.clampLength(0, 3.5); // prevent sharp spring-bone spikes on sudden turns or snaps
       this.prevVel.copy(vel);
     }
     this.prevRootPos.copy(curPos);
@@ -152,10 +153,10 @@ export class ProceduralRigLayer {
         continue;
       }
       // Spring force F = -k*x - d*v - accel*0.02
-      const force = st.offset.clone().multiplyScalar(-k).addScaledVector(st.velocity, -d).addScaledVector(accel, -0.025 * jAmp);
+      const force = st.offset.clone().multiplyScalar(-k).addScaledVector(st.velocity, -d).addScaledVector(accel, -0.02 * jAmp);
       st.velocity.addScaledVector(force, safeDt);
       st.offset.addScaledVector(st.velocity, safeDt);
-      st.offset.clampLength(0, 0.25);
+      st.offset.clampLength(0, 0.14);
 
       const bone = this.asset.bones.get(bname);
       if (bone) {
