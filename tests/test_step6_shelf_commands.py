@@ -372,3 +372,53 @@ def test_place_move_remove_prop_bounds_overlap_and_events(client_and_session, he
         assert "prop_placed" in evt_types
         assert "prop_moved" in evt_types
         assert "prop_removed" in evt_types
+
+
+def test_functional_food_bowl_drop_depletion_and_refill(client_and_session, headers):
+    client, _ = client_and_session
+    r_reset = client.post(
+        "/api/v1/pets/pet_hammy_01/shelves/reset_clean_cage",
+        headers=headers,
+        json={"command_id": "cmd_reset_bowl_func_01"},
+    )
+    assert r_reset.status_code == 200
+    assert r_reset.json()["layout"]["food_level"] == 1.0
+
+    # 1. Autonomous bowl eating drops food_level even when no extra offered_food item exists
+    r_eat_bowl = client.post(
+        "/api/v1/pets/pet_hammy_01/shelves/consume_food",
+        headers=headers,
+        json={"command_id": "cmd_consume_bowl_kibble_01"},
+    )
+    assert r_eat_bowl.status_code == 200
+    lvl_after_eat = r_eat_bowl.json()["layout"]["food_level"]
+    assert lvl_after_eat < 1.0
+
+    # 2. Offering food lands directly inside the food bowl (~[0.28, -0.11]), never random cage corners
+    r_offer = client.post(
+        "/api/v1/pets/pet_hammy_01/shelves/offer_food",
+        headers=headers,
+        json={"command_id": "cmd_offer_in_bowl_01", "item_id": "food_blueberry", "quantity": 1},
+    )
+    assert r_offer.status_code == 200
+    offered_pose = r_offer.json()["result"]["pose_xyz_m"]
+    assert abs(offered_pose[0] - 0.28) <= 0.02
+    assert abs(offered_pose[1] - (-0.11)) <= 0.02
+
+    # 3. Eating offered food also drops bowl food_level
+    r_eat_offered = client.post(
+        "/api/v1/pets/pet_hammy_01/shelves/consume_food",
+        headers=headers,
+        json={"command_id": "cmd_consume_offered_01", "object_id": r_offer.json()["result"]["object_id"]},
+    )
+    assert r_eat_offered.status_code == 200
+    assert r_eat_offered.json()["layout"]["food_level"] < 1.0
+
+    # 4. Refill food bowl restores food_level to 1.0
+    r_refill = client.post(
+        "/api/v1/pets/pet_hammy_01/shelves/refill_food",
+        headers=headers,
+        json={"command_id": "cmd_refill_food_01", "amount_grams": 25.0},
+    )
+    assert r_refill.status_code == 200
+    assert r_refill.json()["layout"]["food_level"] == 1.0
