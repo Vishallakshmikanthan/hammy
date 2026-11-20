@@ -1164,7 +1164,7 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
             if (holdSocket) {
               const holder = new THREE.Group();
               // Seat food snugly right between both gripping rosy-pink paws under the mouth
-              holder.position.set(0, -0.006, -0.002);
+              holder.position.set(0, -0.005, 0.001);
               holdSocket.add(holder);
               heldFoodMesh = holder;
               gltfLoader.load(`/assets/items/${targetFoodId}.glb`, (gltf) => {
