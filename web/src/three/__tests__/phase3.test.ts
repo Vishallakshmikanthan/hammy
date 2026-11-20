@@ -531,6 +531,63 @@ describe("Real-Life Hamster Behavior & Articulation", () => {
       if (o.name.includes("_fur_halo_")) shellCount++;
     });
     expect(shellCount).toBe(18);
+
+    // Reference-crafted anatomical forelimbs (4-fingered hands) & hind legs (5-toed feet) are mounted cleanly
+    expect(root.getObjectByName("ham_hand_root_L")).toBeDefined();
+    expect(root.getObjectByName("ham_hand_root_R")).toBeDefined();
+    expect(root.getObjectByName("ham_hind_foot_root_L")).toBeDefined();
+    expect(root.getObjectByName("ham_hind_foot_root_R")).toBeDefined();
+
+    // Verify finger articulation updates cleanly when holding food vs grounded
+    visuals.updateLimbs({
+      rootPosition: [0, 0.165, 0],
+      rootQuaternion: [0, 0, 0, 1],
+      velocity: [0, 0, 0],
+      angularVelocity: [0, 0, 0],
+      footContacts: { fl: false, fr: false, bl: true, br: true },
+      gaitPhase: 0,
+      posture: {
+        rearAmount: 0.66,
+        crouchAmount: 0,
+        curlAmount: 0,
+        headPitch: 0.14,
+        headYaw: 0,
+        headRoll: 0,
+        groomAmount: 0,
+        groomPhase: 0,
+        digAmount: 0,
+        digPhase: 0,
+        chewAmount: 0.95,
+        chewPhase: 1.2,
+        eatHoldAmount: 1.0,
+      },
+    });
+    const poseLayer = new PoseApplicationLayer(asset);
+    const restShoulderZ = bones.get("shoulder_L")!.position.z;
+    poseLayer.applyPhysicsPose({
+      rootPosition: [0, 0.165, 0],
+      rootQuaternion: [0, 0, 0, 1],
+      velocity: [0, 0, 0],
+      angularVelocity: [0, 0, 0],
+      footContacts: { fl: false, fr: false, bl: true, br: true },
+      gaitPhase: 0,
+      posture: {
+        rearAmount: 0.66,
+        crouchAmount: 0,
+        curlAmount: 0,
+        headPitch: 0.14,
+        headYaw: 0,
+        headRoll: 0,
+        groomAmount: 0,
+        groomPhase: 0,
+        digAmount: 0,
+        digPhase: 0,
+        chewAmount: 0.95,
+        chewPhase: 1.2,
+        eatHoldAmount: 1.0,
+      },
+    });
+    expect(bones.get("shoulder_L")!.position.z).toBeGreaterThan(restShoulderZ);
     visuals.dispose();
   });
 });
