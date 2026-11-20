@@ -1,8 +1,10 @@
 import * as THREE from "three";
-import type { LoadedHamsterAsset } from "../rig/types";
+import type { LoadedHamsterAsset, PhysicsPoseInput } from "../rig/types";
+import { buildAnatomicalLimbs } from "./hamsterLimbs";
 
 export interface EnhancedHamsterVisuals {
   syncLodVisibility: () => void;
+  updateLimbs: (pose: PhysicsPoseInput) => void;
   dispose: () => void;
 }
 
@@ -255,6 +257,9 @@ export function enhanceHamsterVisuals(
     shellBindings.push({ parentMesh: bodyMesh, shells });
   }
 
+  // Build reference-accurate Syrian hamster forelimbs (4-fingered pink hands + claws) & hind legs (5-toed feet + claws)
+  const anatomicalLimbs = buildAnatomicalLimbs(asset);
+
   const headBone = asset.bones.get("head");
   const whiskers = buildWhiskersGroup();
   if (headBone) {
@@ -271,7 +276,12 @@ export function enhanceHamsterVisuals(
     }
   };
 
+  const updateLimbs = (pose: PhysicsPoseInput) => {
+    anatomicalLimbs.update(pose);
+  };
+
   const dispose = () => {
+    anatomicalLimbs.dispose();
     for (const binding of shellBindings) {
       for (const s of binding.shells) {
         s.parent?.remove(s);
@@ -288,5 +298,5 @@ export function enhanceHamsterVisuals(
     }
   };
 
-  return { syncLodVisibility, dispose };
+  return { syncLodVisibility, updateLimbs, dispose };
 }
