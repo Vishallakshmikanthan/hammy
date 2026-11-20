@@ -38,6 +38,7 @@ export interface AssetShelfDrawerProps {
   onUpdatePlacementDraft: (draft: PlacementDraft | null) => void;
   onConfirmPlacement: () => void;
   onOfferFood: (itemId: string, quantity: number) => void;
+  onRefillFood?: (amountGrams: number) => void;
   onRefillWater: (amountMl: number) => void;
   onEquipCostume: (itemId: string) => void;
   onUnequipCostume: (slot: CostumeSlot | "all") => void;
@@ -99,6 +100,7 @@ export const AssetShelfDrawer: React.FC<AssetShelfDrawerProps> = ({
   onUpdatePlacementDraft,
   onConfirmPlacement,
   onOfferFood,
+  onRefillFood,
   onRefillWater,
   onEquipCostume,
   onUnequipCostume,
@@ -117,6 +119,7 @@ export const AssetShelfDrawer: React.FC<AssetShelfDrawerProps> = ({
   const offeredFoods = layout?.offered_foods ?? [];
   const waterSources = layout?.water_sources ?? [];
   const placedItems = layout?.placed_items ?? [];
+  const foodLevel = layout?.food_level ?? 1.0;
   const waterLevel = layout?.water_level ?? 0.75;
   const cheekPouchFill = layout?.cheek_pouch_fill ?? 0.0;
 
@@ -178,11 +181,14 @@ export const AssetShelfDrawer: React.FC<AssetShelfDrawerProps> = ({
         </p>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          <Badge variant="outline" className="text-[10px] border-amber-400/40 text-amber-200 font-mono">
-            Cheek Pouches: {Math.round(cheekPouchFill * 100)}%
+          <Badge variant="outline" className="text-[10px] border-emerald-400/40 text-emerald-200 font-mono">
+            Food Bowl: {Math.round(foodLevel * 100)}%
           </Badge>
           <Badge variant="outline" className="text-[10px] border-sky-400/40 text-sky-200 font-mono">
             Water Level: {Math.round(waterLevel * 100)}%
+          </Badge>
+          <Badge variant="outline" className="text-[10px] border-amber-400/40 text-amber-200 font-mono">
+            Cheek Pouches: {Math.round(cheekPouchFill * 100)}%
           </Badge>
         </div>
       </div>
@@ -400,6 +406,21 @@ export const AssetShelfDrawer: React.FC<AssetShelfDrawerProps> = ({
               </div>
 
               {/* Category-Specific Controls */}
+              {openShelf === "food" && onRefillFood && (
+                <Button
+                  type="button"
+                  variant="coral"
+                  size="sm"
+                  disabled={busy}
+                  data-testid="btn-refill-food"
+                  onClick={() => onRefillFood(25)}
+                  className="w-full text-xs gap-1.5 h-8"
+                >
+                  <Apple className="w-3.5 h-3.5" />
+                  Refill Food Bowl (100%)
+                </Button>
+              )}
+
               {openShelf === "water" && (
                 <Button
                   type="button"
