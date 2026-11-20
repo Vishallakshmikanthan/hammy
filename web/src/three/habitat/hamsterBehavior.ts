@@ -432,20 +432,22 @@ export class HamsterBehaviorController {
     const candidates: Array<{ x: number; z: number }> = [
       { x: -0.36, z: 0.16 },
       { x: -0.26, z: 0.16 },
-      { x: -0.14, z: 0.175 },
-      { x: -0.02, z: 0.195 },
-      { x: 0.12, z: 0.195 },
+      { x: -0.16, z: 0.18 },
+      { x: -0.04, z: 0.210 },
+      { x: 0.06, z: 0.210 },
+      { x: 0.15, z: 0.210 },
       { x: 0.20, z: 0.14 },
       { x: 0.20, z: 0.02 },
       { x: 0.14, z: -0.06 },
-      { x: 0.11, z: -0.175 },
-      { x: -0.04, z: -0.185 },
-      { x: -0.18, z: -0.175 },
-      { x: -0.28, z: 0.02 },
+      { x: 0.12, z: -0.165 },
+      { x: -0.04, z: -0.175 },
+      { x: -0.11, z: -0.15 },
+      { x: -0.28, z: 0.04 },
+      { x: -0.28, z: 0.12 },
       { x: 0.36, z: 0.04 },
     ];
     for (let gx = -0.36; gx <= 0.37; gx += 0.12) {
-      for (let gz = -0.17; gz <= 0.19; gz += 0.09) {
+      for (let gz = -0.17; gz <= 0.21; gz += 0.09) {
         candidates.push({ x: Number(gx.toFixed(3)), z: Number(gz.toFixed(3)) });
       }
     }
@@ -489,8 +491,6 @@ export class HamsterBehaviorController {
       for (let v = 1; v < n; v++) {
         if (settled[v]) continue;
         const stepLen = Math.hypot(nodes[v].x - nodes[u].x, nodes[v].z - nodes[u].z);
-        // Only test reasonably local hops (or direct to goal) to keep graph fast & smooth
-        if (v !== goalIdx && u !== startIdx && stepLen > 0.34) continue;
         if (distArr[u] + stepLen >= distArr[v]) continue;
         if (this.segmentIsClear(nodes[u].x, nodes[u].z, nodes[v].x, nodes[v].z, anchors)) {
           distArr[v] = distArr[u] + stepLen;
@@ -662,20 +662,21 @@ export class HamsterBehaviorController {
       this.setGoalTargetWithTunnelCorridor(this.getWheelEntryPos(anchors), anchors);
       return;
     }
-    if ((anchors.hasHideout ?? true) && (energy < 0.32 || (this.goal !== "hideout" && r < 0.14))) {
+    const hasFunctionalLog = Boolean((anchors.hasTunnel ?? true) && anchors.tunnelSpine);
+    if ((anchors.hasHideout ?? true) && (energy < 0.32 || (this.goal !== "hideout" && r < 0.12))) {
       this.goal = "hideout";
       this.goalStage = "approach";
       this.setGoalTargetWithTunnelCorridor(this.getHideoutDoorPos(anchors), anchors);
       return;
     }
-    if ((anchors.hasWheel ?? true) && this.goal !== "wheel" && r < 0.34) {
+    if ((anchors.hasWheel ?? true) && this.goal !== "wheel" && r < (hasFunctionalLog ? 0.34 : 0.46)) {
       this.goal = "wheel";
       this.goalStage = "approach";
       this.goalCyclesLeft = 2 + Math.floor(this.nextRand() * 2);
       this.setGoalTargetWithTunnelCorridor(this.getWheelEntryPos(anchors), anchors);
       return;
     }
-    if ((anchors.hasTunnel ?? true) && anchors.tunnelSpine && this.goal !== "tunnel_through" && r < 0.50) {
+    if (hasFunctionalLog && anchors.tunnelSpine && this.goal !== "tunnel_through" && r < 0.50) {
       this.goal = "tunnel_through";
       this.goalStage = "approach";
       const dA = Math.hypot(
@@ -693,13 +694,13 @@ export class HamsterBehaviorController {
       this.setGoalTargetWithTunnelCorridor(entry, anchors);
       return;
     }
-    if ((anchors.hasTunnel ?? true) && anchors.tunnelSpine && this.goal !== "log_climb" && r < 0.62) {
+    if (hasFunctionalLog && anchors.tunnelSpine && this.goal !== "log_climb" && r < 0.64) {
       this.goal = "log_climb";
       this.goalStage = "approach";
       this.setGoalTargetWithTunnelCorridor(anchors.tunnelSpine.climbEntryPos, anchors);
       return;
     }
-    if (this.goal !== "water" && r < 0.72 + thirst * 0.08) {
+    if (this.goal !== "water" && r < (hasFunctionalLog ? 0.74 : 0.58) + thirst * 0.08) {
       this.goal = "water";
       this.goalStage = "approach";
       this.faceTargetPos = anchors.spoutPos.clone();
@@ -709,7 +710,7 @@ export class HamsterBehaviorController {
       );
       return;
     }
-    if ((anchors.hasBowl ?? true) && this.goal !== "bowl" && r < 0.84 + hunger * 0.08) {
+    if ((anchors.hasBowl ?? true) && this.goal !== "bowl" && r < (hasFunctionalLog ? 0.85 : 0.74) + hunger * 0.08) {
       this.goal = "bowl";
       this.goalStage = "approach";
       this.faceTargetPos = anchors.bowlPos.clone();
@@ -719,7 +720,7 @@ export class HamsterBehaviorController {
       );
       return;
     }
-    if ((anchors.hasChew ?? true) && this.goal !== "chew" && r < 0.90) {
+    if ((anchors.hasChew ?? true) && this.goal !== "chew" && r < 0.88) {
       this.goal = "chew";
       this.goalStage = "approach";
       this.faceTargetPos = anchors.chewPos.clone();
