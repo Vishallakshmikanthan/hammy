@@ -10,6 +10,8 @@ import {
   fetchPetState,
   pauseSimulation,
   resumeSimulation,
+  setSimulationTimeScale,
+  triggerBrainTick,
 } from "../api";
 import { ConnectionStatus, Pet, PetState, WorldEvent } from "../types";
 
@@ -88,13 +90,28 @@ export function usePetObservatory(
                   ...prev,
                   version: data.version ?? prev.version,
                   sim_time_sec: data.sim_time_sec ?? prev.sim_time_sec,
+                  simulated_age_days: data.simulated_age_days ?? prev.simulated_age_days,
+                  real_time_scale: data.real_time_scale ?? prev.real_time_scale,
                   drives: data.drives ?? prev.drives,
                   position_xyz: data.position_xyz ?? prev.position_xyz,
+                  yaw_rad: data.yaw_rad ?? prev.yaw_rad,
+                  inside_hideout: data.inside_hideout ?? prev.inside_hideout,
+                  inside_tunnel: data.inside_tunnel ?? prev.inside_tunnel,
+                  on_wheel: data.on_wheel ?? prev.on_wheel,
+                  cheek_pouch_fill: data.cheek_pouch_fill ?? prev.cheek_pouch_fill,
+                  active_skill: data.active_skill ?? prev.active_skill,
                   is_paused: data.is_paused ?? prev.is_paused,
+                  last_simulated_at: data.last_simulated_at ?? prev.last_simulated_at,
+                  policy_version: data.policy_version ?? prev.policy_version,
+                  motor_policy_version: data.motor_policy_version ?? prev.motor_policy_version,
+                  brain_telemetry: data.brain_telemetry ?? prev.brain_telemetry,
                 };
               });
             } else if (data.type === "event" && data.event) {
-              setEvents((prev) => [data.event, ...prev.slice(0, 49)]);
+              setEvents((prev) => {
+                if (prev.some((e) => e.event_id === data.event.event_id)) return prev;
+                return [data.event, ...prev.slice(0, 49)];
+              });
             }
           } catch (e) {
             console.error("Error parsing WebSocket message:", e);
@@ -142,6 +159,25 @@ export function usePetObservatory(
     await refresh();
   };
 
+  const handleSetTimeScale = async (scale: number) => {
+    try {
+      setState((prev) => (prev ? { ...prev, real_time_scale: scale } : prev));
+      await setSimulationTimeScale(petId, scale, token);
+      await refresh();
+    } catch (err: any) {
+      setError(err?.message || "Failed to update time scale");
+    }
+  };
+
+  const handleTriggerTick = async () => {
+    try {
+      await triggerBrainTick(petId, token);
+      await refresh();
+    } catch (err: any) {
+      setError(err?.message || "Failed to step brain");
+    }
+  };
+
   return {
     pet,
     state,
@@ -151,6 +187,8 @@ export function usePetObservatory(
     connectionStatus,
     pause: handlePause,
     resume: handleResume,
+    setTimeScale: handleSetTimeScale,
+    triggerTick: handleTriggerTick,
     refresh,
   };
 }

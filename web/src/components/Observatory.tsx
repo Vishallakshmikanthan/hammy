@@ -41,6 +41,7 @@ export const Observatory: React.FC<ObservatoryProps> = ({
     connectionStatus,
     pause,
     resume,
+    setTimeScale,
     refresh,
   } = usePetObservatory(petId, token);
 
@@ -127,15 +128,34 @@ export const Observatory: React.FC<ObservatoryProps> = ({
               {connectionStatus.toUpperCase()}
             </Badge>
 
-            <span
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#F4EDE0]/15 bg-[#14213D]/65 px-2.5 py-0.5 text-[11px] text-[#F4EDE0]/75"
+            <div
+              className="inline-flex items-center gap-1 rounded-full border border-[#F4EDE0]/15 bg-[#14213D]/65 px-2 py-0.5 text-[11px] text-[#F4EDE0]/75"
               data-testid="time-scale"
             >
               <Gauge className="h-3 w-3 text-[#FF6B5B]" />
-              <strong className="text-[#F4EDE0] font-mono">
+              <strong className="text-[#F4EDE0] font-mono mr-1">
                 {timeScale.toFixed(1)}x
               </strong>
-            </span>
+              {[1, 10, 60, 300].map((mult) => {
+                const active = Math.abs(timeScale - mult) < 0.5;
+                return (
+                  <button
+                    key={mult}
+                    type="button"
+                    data-testid={`timescale-${mult}x`}
+                    onClick={() => setTimeScale(mult)}
+                    className={`px-1.5 py-0.5 rounded-full font-mono text-[10px] transition ${
+                      active
+                        ? "bg-[#FF6B5B] text-[#0B1325] font-bold"
+                        : "text-[#F4EDE0]/70 hover:bg-[#F4EDE0]/15 hover:text-[#F4EDE0]"
+                    }`}
+                    title={mult === 1 ? "Real-time (1x)" : `Fast-forward (${mult}x)`}
+                  >
+                    {mult}x
+                  </button>
+                );
+              })}
+            </div>
 
             {error && (
               <div

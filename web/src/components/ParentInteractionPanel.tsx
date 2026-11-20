@@ -26,6 +26,9 @@ interface InteractionState {
   lastRationale: string;
   activeClip: MujocoClipMeta | null;
   sourceMode: "backend" | "local_manifest";
+  brainMode: "learned" | "scripted" | "rule";
+  policyVersion: string;
+  motorVersion: string;
 }
 
 export const ParentInteractionPanel: React.FC = () => {
@@ -38,6 +41,9 @@ export const ParentInteractionPanel: React.FC = () => {
     lastRationale: "Offer treats patiently to build familiarity before gentle petting.",
     activeClip: null,
     sourceMode: "local_manifest",
+    brainMode: "rule",
+    policyVersion: "scripted_homeostatic_v1",
+    motorVersion: "ll_ppo_stage3b_v1.0.0",
   });
 
   useEffect(() => {
@@ -54,6 +60,9 @@ export const ParentInteractionPanel: React.FC = () => {
             familiarity: data.drives?.familiarity ?? prev.familiarity,
             stress: data.drives?.stress ?? prev.stress,
             sourceMode: "backend",
+            brainMode: data.cognitive_brain?.behaviour_mode ?? prev.brainMode,
+            policyVersion: data.cognitive_brain?.policy_version ?? prev.policyVersion,
+            motorVersion: data.cognitive_brain?.motor_policy_version ?? prev.motorVersion,
           }));
           return;
         }
@@ -86,14 +95,17 @@ export const ParentInteractionPanel: React.FC = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setState({
-          familiarity: data.drives?.familiarity ?? state.familiarity,
-          stress: data.drives?.stress ?? state.stress,
+        setState((prev) => ({
+          ...prev,
+          familiarity: data.drives?.familiarity ?? prev.familiarity,
+          stress: data.drives?.stress ?? prev.stress,
           lastResponse: data.outcome?.hamster_response ?? null,
           lastRationale: data.outcome?.rationale ?? "",
           activeClip: data.clip ?? null,
           sourceMode: "backend",
-        });
+          brainMode: data.behaviour_mode ?? prev.brainMode,
+          policyVersion: data.policy_version ?? prev.policyVersion,
+        }));
         setBusy(false);
         return;
       }
@@ -130,14 +142,15 @@ export const ParentInteractionPanel: React.FC = () => {
     const targetSkill = resp === "avoid_and_retreat" ? "retreat_to_hideout" : resp;
     const matched = clips.find((c) => c.skill_id === targetSkill) ?? null;
 
-    setState({
+    setState((prev) => ({
+      ...prev,
       familiarity: nextFam,
       stress: nextStress,
       lastResponse: resp,
       lastRationale: rationale,
       activeClip: matched,
       sourceMode: "local_manifest",
-    });
+    }));
     setBusy(false);
   };
 
@@ -155,10 +168,17 @@ export const ParentInteractionPanel: React.FC = () => {
           </h3>
           <Badge variant="outline" className="text-[11px] border-emerald-400/40 text-emerald-300">
             <Cpu className="h-3 w-3 mr-1" />
-            LEARNED ONNX (1M-step Mixed)
+            MOTOR: {state.motorVersion === "ll_amp_ppo_v2.0.0" ? "LEARNED AMP-PPO v2" : "LEARNED ONNX"}
           </Badge>
-          <Badge variant="outline" className="text-[11px] border-amber-400/40 text-amber-200">
-            TAMING: RULE-BASED
+          <Badge
+            variant="outline"
+            className={`text-[11px] ${
+              state.brainMode === "learned"
+                ? "border-emerald-400/40 text-emerald-300"
+                : "border-amber-400/40 text-amber-200"
+            }`}
+          >
+            TAMING: {state.brainMode === "learned" ? `LEARNED (${state.policyVersion})` : "RULE-BASED"}
           </Badge>
         </div>
         <span className="text-[11px] text-[#F4EDE0]/60 font-mono">

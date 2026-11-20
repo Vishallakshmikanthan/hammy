@@ -45,6 +45,8 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({
     connectionStatus,
     pause,
     resume,
+    setTimeScale,
+    triggerTick,
     refresh,
   } = usePetObservatory(petId, token);
 
@@ -116,16 +118,34 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({
                 <Radio className="h-3 w-3" />
                 {connectionStatus.toUpperCase()}
               </Badge>
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#F4EDE0]/15 bg-[#14213D]/65 px-2.5 py-0.5 text-[11px] text-[#F4EDE0]/75"
+              <div
+                className="inline-flex items-center gap-1 rounded-full border border-[#F4EDE0]/15 bg-[#14213D]/65 px-2.5 py-0.5 text-[11px] text-[#F4EDE0]/75"
                 data-testid="time-scale"
               >
                 <Gauge className="h-3 w-3 text-[#FF6B5B]" />
-                Time Scale:{" "}
-                <strong className="text-[#F4EDE0] font-mono">
+                <span>Time Scale:</span>
+                <strong className="text-[#F4EDE0] font-mono mr-1">
                   {timeScale.toFixed(1)}x
                 </strong>
-              </span>
+                {[1, 10, 60, 300].map((mult) => {
+                  const active = Math.abs(timeScale - mult) < 0.5;
+                  return (
+                    <button
+                      key={mult}
+                      type="button"
+                      data-testid={`telemetry-timescale-${mult}x`}
+                      onClick={() => setTimeScale(mult)}
+                      className={`px-1.5 py-0.5 rounded-full font-mono text-[10px] transition ${
+                        active
+                          ? "bg-[#FF6B5B] text-[#0B1325] font-bold"
+                          : "text-[#F4EDE0]/70 hover:bg-[#F4EDE0]/15 hover:text-[#F4EDE0]"
+                      }`}
+                    >
+                      {mult}x
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="flex flex-wrap items-baseline gap-3">
@@ -186,6 +206,18 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({
                 Pause
               </Button>
             )}
+            <Button
+              type="button"
+              variant="glass"
+              size="sm"
+              onClick={triggerTick}
+              data-testid="step-brain-btn"
+              title="Run one immediate RL brain decision tick"
+              className="h-8 px-3 text-xs gap-1.5 border-emerald-400/35 text-emerald-200 hover:bg-emerald-400/15"
+            >
+              <Brain className="h-3.5 w-3.5" />
+              Step Brain
+            </Button>
             <Button
               type="button"
               variant="glass"

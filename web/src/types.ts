@@ -27,6 +27,22 @@ export interface Pet {
   created_at: string | null;
 }
 
+export interface BrainTelemetry {
+  policy_version: string;
+  behaviour_mode: "learned" | "scripted" | "rule";
+  motor_policy_version: string;
+  familiarity: number;
+  nest_hoard_level: number;
+  startle_level: number;
+  rnd_novelty: number;
+  entropy: number;
+  value_ext: number;
+  value_int: number;
+  top_skills: Array<{ skill: string; prob: number }>;
+  spatial_familiarity: number[];
+  target_xy?: [number, number] | null;
+}
+
 export interface PetState {
   pet_id: string;
   version: number;
@@ -47,6 +63,9 @@ export interface PetState {
   on_wheel: boolean;
   cheek_pouch_fill: number;
   active_skill: string | null;
+  policy_version?: string;
+  motor_policy_version?: string;
+  brain_telemetry?: BrainTelemetry;
   updated_at: string | null;
 }
 

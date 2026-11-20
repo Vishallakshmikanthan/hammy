@@ -38,9 +38,15 @@ export const DrivesPanel: React.FC<DrivesPanelProps> = ({ drives }) => {
     );
   }
 
-  const phaseRad = drives.circadian_phase ?? 0;
-  const phaseHours = ((phaseRad / (2 * Math.PI)) * 24) % 24;
-  const isHamsterNight = phaseHours >= 18 || phaseHours < 6;
+  const rawPhase = drives.circadian_phase ?? 0;
+  // Backend stores circadian_phase normalized in [0, 1); tolerate legacy radian mocks (> 1.0)
+  const normalizedPhase =
+    rawPhase > 1.0
+      ? (((rawPhase / (2 * Math.PI)) % 1) + 1) % 1
+      : ((rawPhase % 1) + 1) % 1;
+  const phaseHours = normalizedPhase * 24;
+  const phaseRad = normalizedPhase * 2 * Math.PI;
+  const isHamsterNight = normalizedPhase < 0.29 || normalizedPhase > 0.79;
 
   const getBarColorClass = (value: number, inverted?: boolean) => {
     if (inverted) {

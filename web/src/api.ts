@@ -66,6 +66,28 @@ export async function resumeSimulation(petId: string, token?: string): Promise<v
   if (!res.ok) throw new Error(`Failed to resume simulation: ${res.statusText}`);
 }
 
+export async function setSimulationTimeScale(
+  petId: string,
+  realTimeScale: number,
+  token?: string
+): Promise<void> {
+  const commandId = `cmd_web_timescale_${realTimeScale}_${Date.now()}`;
+  const res = await fetch(`${API_BASE}/pets/${petId}/simulation/time_scale`, {
+    method: "POST",
+    headers: getHeaders(token),
+    body: JSON.stringify({ command_id: commandId, real_time_scale: realTimeScale }),
+  });
+  if (!res.ok) throw new Error(`Failed to update time scale: ${res.statusText}`);
+}
+
+export async function triggerBrainTick(petId: string, token?: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/pets/${petId}/simulation/tick`, {
+    method: "POST",
+    headers: getHeaders(token),
+  });
+  if (!res.ok) throw new Error(`Failed to trigger brain tick: ${res.statusText}`);
+}
+
 export async function fetchAssetManifest(): Promise<AssetManifest> {
   try {
     const res = await fetch(`${API_BASE}/assets/manifest`);
