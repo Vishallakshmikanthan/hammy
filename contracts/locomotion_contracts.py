@@ -78,6 +78,17 @@ DEFAULT_STAND_JOINTS = np.array(
 OBS_DIM = 16 + 16 + 4 + 3 + 4 + 3 + 16 + 2  # 64
 ACTION_DIM = NUM_ACTUATED_JOINTS  # 16
 
+# Phase C v2 Multi-Skill AMP Motor Contract (72 dims: v1 64-dim core + 8-dim posture/mode cmd)
+OBS_V2_CONTRACT_VERSION = "locomotion_obs_v2.0.0"
+MOTOR_MODES_V2: tuple[str, ...] = (
+    "locomote",
+    "rear_periscope",
+    "crouch_tunnel",
+    "wheel_run",
+    "rest_settle",
+)
+OBS_V2_DIM = OBS_DIM + 3 + len(MOTOR_MODES_V2)  # 64 + 3 (target_z, target_pitch, head_yaw) + 5 = 72
+
 
 def _check_finite_list(values: Sequence[float], expected_len: int, name: str) -> list[float]:
     arr = [float(v) for v in values]
