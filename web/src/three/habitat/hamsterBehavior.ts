@@ -597,14 +597,38 @@ export class HamsterBehaviorController {
       this.setGoalTargetWithTunnelCorridor(this.getHideoutDoorPos(anchors), anchors);
       return;
     }
-    if ((anchors.hasWheel ?? true) && this.goal !== "wheel" && r < 0.48) {
+    if ((anchors.hasWheel ?? true) && this.goal !== "wheel" && r < 0.34) {
       this.goal = "wheel";
       this.goalStage = "approach";
       this.goalCyclesLeft = 2 + Math.floor(this.nextRand() * 2);
       this.setGoalTargetWithTunnelCorridor(this.getWheelEntryPos(anchors), anchors);
       return;
     }
-    if (this.goal !== "water" && r < 0.56 + thirst * 0.1) {
+    if ((anchors.hasTunnel ?? true) && anchors.tunnelSpine && this.goal !== "tunnel_through" && r < 0.50) {
+      this.goal = "tunnel_through";
+      this.goalStage = "approach";
+      const dA = Math.hypot(
+        this.pos.x - anchors.tunnelSpine.mouthAApproach.x,
+        this.pos.z - anchors.tunnelSpine.mouthAApproach.z
+      );
+      const dB = Math.hypot(
+        this.pos.x - anchors.tunnelSpine.mouthBApproach.x,
+        this.pos.z - anchors.tunnelSpine.mouthBApproach.z
+      );
+      this.tunnelDirectionForward = dA <= dB;
+      const entry = this.tunnelDirectionForward
+        ? anchors.tunnelSpine.mouthAApproach
+        : anchors.tunnelSpine.mouthBApproach;
+      this.setGoalTargetWithTunnelCorridor(entry, anchors);
+      return;
+    }
+    if ((anchors.hasTunnel ?? true) && anchors.tunnelSpine && this.goal !== "log_climb" && r < 0.62) {
+      this.goal = "log_climb";
+      this.goalStage = "approach";
+      this.setGoalTargetWithTunnelCorridor(anchors.tunnelSpine.climbEntryPos, anchors);
+      return;
+    }
+    if (this.goal !== "water" && r < 0.72 + thirst * 0.08) {
       this.goal = "water";
       this.goalStage = "approach";
       this.faceTargetPos = anchors.spoutPos.clone();
@@ -614,7 +638,7 @@ export class HamsterBehaviorController {
       );
       return;
     }
-    if ((anchors.hasBowl ?? true) && this.goal !== "bowl" && r < 0.72 + hunger * 0.1) {
+    if ((anchors.hasBowl ?? true) && this.goal !== "bowl" && r < 0.84 + hunger * 0.08) {
       this.goal = "bowl";
       this.goalStage = "approach";
       this.faceTargetPos = anchors.bowlPos.clone();
@@ -624,7 +648,7 @@ export class HamsterBehaviorController {
       );
       return;
     }
-    if ((anchors.hasChew ?? true) && this.goal !== "chew" && r < 0.82) {
+    if ((anchors.hasChew ?? true) && this.goal !== "chew" && r < 0.90) {
       this.goal = "chew";
       this.goalStage = "approach";
       this.faceTargetPos = anchors.chewPos.clone();
@@ -645,7 +669,7 @@ export class HamsterBehaviorController {
       const cx = THREE.MathUtils.clamp(rx, -0.39, 0.39);
       const cz = THREE.MathUtils.clamp(rz, -0.16, 0.16);
       if (!this.isInsideAnyObstacle(cx, cz, anchors)) {
-        this.targetPos.set(cx, this.sampleGroundY(cx, cz, anchors), cz);
+        this.setGoalTargetWithTunnelCorridor(new THREE.Vector3(cx, this.sampleGroundY(cx, cz, anchors), cz), anchors);
         return;
       }
     }
@@ -969,7 +993,7 @@ export class HamsterBehaviorController {
             this.enterPhase("scurry", 14.0);
           } else {
           const arrived = distToTarget < 0.055;
-          // Handle multi-stage prop transitions (wheel & hideout)
+          // Handle multi-stage prop transitions (wheel, hideout, hollow middle log, & log top climb)
           if (this.goal === "wheel" && this.goalStage === "approach") {
             if (arrived) {
               this.goalStage = "active";
@@ -994,6 +1018,80 @@ export class HamsterBehaviorController {
             } else {
               this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
               this.enterPhase("scurry", 16.0);
+            }
+          } else if (this.goal === "tunnel_through" && anchors.tunnelSpine) {
+            if (this.goalStage === "approach") {
+              if (arrived) {
+                this.goalStage = "active";
+                const spinePts = this.tunnelDirectionForward
+                  ? [...anchors.tunnelSpine.centerline, anchors.tunnelSpine.mouthBApproach]
+                  : [...anchors.tunnelSpine.centerline.slice().reverse(), anchors.tunnelSpine.mouthAApproach];
+                this.logActivePath = spinePts.map((pt) => pt.clone());
+                this.logPathIndex = 0;
+                this.targetPos.copy(this.logActivePath[0]);
+                this.enterPhase("scurry", 12.0);
+                activityLabel = "Entering Hollow Log";
+              } else {
+                this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
+                this.enterPhase("scurry", 16.0);
+              }
+            } else if (this.goalStage === "active") {
+              if (this.logPathIndex + 1 < this.logActivePath.length) {
+                this.logPathIndex++;
+                this.targetPos.copy(this.logActivePath[this.logPathIndex]);
+                this.enterPhase("scurry", 8.0);
+                activityLabel =
+                  this.logPathIndex === this.logActivePath.length - 1
+                    ? "Exiting Hollow Log"
+                    : "Crawling Through Hollow Log";
+              } else {
+                this.goalStage = "exit";
+                this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
+                this.enterPhase("scurry", 14.0);
+              }
+            } else {
+              this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
+              this.enterPhase("scurry", 14.0);
+            }
+          } else if (this.goal === "log_climb" && anchors.tunnelSpine) {
+            if (this.goalStage === "approach") {
+              if (arrived) {
+                this.goalStage = "active";
+                this.logHasPerched = false;
+                this.logActivePath = [
+                  ...anchors.tunnelSpine.topPath.map((pt) => pt.clone()),
+                  anchors.tunnelSpine.climbExitPos.clone(),
+                ];
+                this.logPathIndex = 0;
+                this.targetPos.copy(this.logActivePath[0]);
+                this.enterPhase("scurry", 8.0);
+                activityLabel = "Climbing onto Log";
+              } else {
+                this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
+                this.enterPhase("scurry", 16.0);
+              }
+            } else if (this.goalStage === "active") {
+              const perchIdx = Math.floor(anchors.tunnelSpine.topPath.length / 2);
+              if (!this.logHasPerched && this.logPathIndex === perchIdx) {
+                this.logHasPerched = true;
+                this.enterPhase("log_perch", 2.4 + this.nextRand() * 1.4);
+                activityLabel = "Periscoping on Top of Log";
+              } else if (this.logPathIndex + 1 < this.logActivePath.length) {
+                this.logPathIndex++;
+                this.targetPos.copy(this.logActivePath[this.logPathIndex]);
+                this.enterPhase("scurry", 8.0);
+                activityLabel =
+                  this.logPathIndex === this.logActivePath.length - 1
+                    ? "Climbing Down from Log"
+                    : "Walking on Top of Log";
+              } else {
+                this.goalStage = "exit";
+                this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
+                this.enterPhase("scurry", 14.0);
+              }
+            } else {
+              this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
+              this.enterPhase("scurry", 14.0);
             }
           } else if (this.goalStage === "exit") {
             this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
@@ -1028,9 +1126,16 @@ export class HamsterBehaviorController {
           this.targetHeadPitch = 0.12;
           this.targetHeadRoll = THREE.MathUtils.clamp(-dYaw * 0.14, -0.12, 0.12);
 
+          const isTraversingLog =
+            (this.goal === "tunnel_through" || this.goal === "log_climb") && this.goalStage === "active";
+
           // Calibrated to real-video measured flat-ground hamster speed (0.08–0.12 m/s)
           const alignScale = Math.max(0.25, Math.cos(Math.min(Math.abs(dYaw), Math.PI * 0.5)));
-          const maxMoveSpeed = (petState?.inside_tunnel ? 0.075 : 0.085 + curiosity * 0.030) * alignScale;
+          const maxMoveSpeed =
+            (petState?.inside_tunnel || isTraversingLog ? 0.078 : 0.085 + curiosity * 0.030) * alignScale;
+          if (this.goal === "tunnel_through" && this.goalStage === "active") {
+            targetCrouch = 0.34;
+          }
           targetSpeed = maxMoveSpeed;
           const stepDist = Math.min(distToTarget, this.currentSpeed * clampedDt);
           const prevX = this.pos.x;
@@ -1039,48 +1144,65 @@ export class HamsterBehaviorController {
             this.pos.x += (dx / distToTarget) * stepDist;
             this.pos.z += (dz / distToTarget) * stepDist;
           }
-          this.pushOutOfProps(this.pos, anchors, petState);
-          // If blocked head-on by an obstacle, slide tangentially around it
-          const moved = Math.hypot(this.pos.x - prevX, this.pos.z - prevZ);
-          if (stepDist > 1e-4 && moved < stepDist * 0.35 && distToTarget > 1e-4) {
-            const perpX = -dz / distToTarget;
-            const perpZ = dx / distToTarget;
-            this.pos.x += perpX * stepDist * 0.85;
-            this.pos.z += perpZ * stepDist * 0.85;
+          if (!isTraversingLog) {
             this.pushOutOfProps(this.pos, anchors, petState);
+            // Smooth gentle tangential slide if grazing an obstacle (no erratic sideways shoves)
+            const moved = Math.hypot(this.pos.x - prevX, this.pos.z - prevZ);
+            if (stepDist > 1e-4 && moved < stepDist * 0.35 && distToTarget > 1e-4) {
+              const perpX = -dz / distToTarget;
+              const perpZ = dx / distToTarget;
+              this.pos.x += perpX * stepDist * 0.45;
+              this.pos.z += perpZ * stepDist * 0.45;
+              this.pushOutOfProps(this.pos, anchors, petState);
+            }
           }
 
           if (this.goalStage !== "active") {
             this.pos.x = THREE.MathUtils.clamp(this.pos.x, -0.43, 0.43);
             this.pos.z = THREE.MathUtils.clamp(this.pos.z, -0.215, 0.215);
           }
-          // Re-verify obstacle clearance after wall clamping and tangential slide
-          this.pushOutOfProps(this.pos, anchors, petState);
+          if (!isTraversingLog) {
+            this.pushOutOfProps(this.pos, anchors, petState);
+          }
 
-          // Anti-jiggle stuck detector: allow 1.4s for calm turning before picking a new goal
+          // Calm stuck recovery: re-route cleanly around obstacles if blocked > 1.2s
           this.stuckTimer += clampedDt;
-          if (this.stuckTimer >= 1.4) {
+          if (this.stuckTimer >= 1.2) {
             const netMoved = Math.hypot(this.pos.x - this.stuckCheckPos.x, this.pos.z - this.stuckCheckPos.z);
             this.stuckCheckPos.copy(this.pos);
             this.stuckTimer = 0;
-            if (netMoved < 0.008 && this.goalStage === "approach") {
+            if (netMoved < 0.01 && this.goalStage === "approach") {
               this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
               this.enterPhase("scurry", 16.0);
             }
           }
 
-          // Smoothly track Y: elevated when hopping onto wheel, otherwise bedding height
+          // Smoothly track Y: elevated on wheel / top of log / inside hollow log, otherwise bedding height
           const groundY =
             this.goal === "wheel" && this.goalStage === "active"
               ? this.getWheelTrackPos(anchors).y
+              : isTraversingLog
+              ? this.targetPos.y
               : this.sampleGroundY(this.pos.x, this.pos.z, anchors);
-          this.pos.y = THREE.MathUtils.lerp(this.pos.y, groundY, Math.min(1, clampedDt * 14));
+          this.pos.y = THREE.MathUtils.lerp(this.pos.y, groundY, Math.min(1, clampedDt * 12));
 
           // Lock gait cadence to physical ground speed (real stride length ~0.055 m -> ~1.6-2.0 Hz)
           const strideLenM = 0.055;
           this.gaitPhase += clampedDt * (this.currentSpeed / strideLenM) * Math.PI * 2;
           activityLabel = petState?.inside_tunnel
             ? "Exploring Tunnel"
+            : this.goal === "tunnel_through"
+            ? this.goalStage === "active"
+              ? this.logPathIndex === this.logActivePath.length - 1
+                ? "Exiting Hollow Log"
+                : "Crawling Through Hollow Log"
+              : "Heading to Hollow Log"
+            : this.goal === "log_climb"
+            ? this.goalStage === "active"
+              ? this.logPathIndex === this.logActivePath.length - 1
+                ? "Climbing Down from Log"
+                : "Climbing on Top of Log"
+              : "Heading to Climb Log"
             : this.goal === "wheel"
             ? "Heading to Wheel"
             : this.goal === "water"
@@ -1096,12 +1218,15 @@ export class HamsterBehaviorController {
             : "Scurrying";
         }
       } else {
-        // Stationary / micro-behavior phases — stay flush with local bedding
-        const groundY = this.sampleGroundY(this.pos.x, this.pos.z, anchors);
+        // Stationary / micro-behavior phases — stay flush with log top when perched, else local bedding
+        const groundY =
+          this.phase === "log_perch"
+            ? this.targetPos.y
+            : this.sampleGroundY(this.pos.x, this.pos.z, anchors);
         this.pos.y = THREE.MathUtils.lerp(this.pos.y, groundY, Math.min(1, clampedDt * 14));
         targetSpeed = 0;
 
-        // Smoothly turn to face prop when drinking / eating / gnawing
+        // Smoothly turn to face prop when drinking / eating / gnawing / inspecting
         if (this.faceTargetPos) {
           const fdx = this.faceTargetPos.x - this.pos.x;
           const fdz = this.faceTargetPos.z - this.pos.z;
@@ -1115,11 +1240,25 @@ export class HamsterBehaviorController {
         }
 
         if (this.phaseTimer <= 0) {
-          this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
-          this.enterPhase("scurry", 16.0);
-          activityLabel = "Exploring";
+          if (this.phase === "log_perch" && this.goal === "log_climb" && this.logPathIndex + 1 < this.logActivePath.length) {
+            // Continue climbing down off the log after periscoping on top
+            this.logPathIndex++;
+            this.targetPos.copy(this.logActivePath[this.logPathIndex]);
+            this.enterPhase("scurry", 8.0);
+            activityLabel = "Climbing Down from Log";
+          } else {
+            this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
+            this.enterPhase("scurry", 16.0);
+            activityLabel = "Exploring";
+          }
         } else {
           switch (this.phase) {
+            case "log_perch": {
+              targetRear = 0.72;
+              this.updateHeadSaccade(clampedDt, 0.58, -0.14, 0.14, 0.14);
+              activityLabel = "Periscoping on Top of Log";
+              break;
+            }
             case "rear_up": {
               targetRear = 0.88;
               this.updateHeadSaccade(clampedDt, 0.55, -0.18, 0.14, 0.16);
