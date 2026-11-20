@@ -133,6 +133,8 @@ class CommandHandler:
             res = self._handle_pause(session, user_id, pet_id, command_id, curr_time)
         elif command_type == "resume":
             res = self._handle_resume(session, user_id, pet_id, command_id, curr_time)
+        elif command_type == "set_time_scale":
+            res = self._handle_set_time_scale(session, user_id, pet_id, command_id, parameters, curr_time)
         elif command_type == "move_object":
             res = self._handle_move_object(session, user_id, pet_id, command_id, parameters, curr_time)
         elif command_type == "offer_food":
@@ -1603,5 +1605,51 @@ class CommandHandler:
             status="completed",
             message="Reset cage to default habitat (home, logs, food bowl, water tank, wheel) with extra custom props cleared.",
             result={"default_objects": default_ids},
+            idempotent_replay=False,
+        )
+
+    def _handle_set_time_scale(
+        self,
+        session: Session,
+        user_id: str,
+        pet_id: str,
+        command_id: str,
+        params: Dict[str, Any],
+        now: datetime.datetime,
+    ) -> CommandResult:
+        raw_scale = float(params.get("real_time_scale", 1.0))
+        if not math.isfinite(raw_scale) or raw_scale < 0.5 or raw_scale > 600.0:
+            raise CommandValidationError("real_time_scale must be between 0.5 and 600.0.")
+
+        pet_state = session.get(PetState, pet_id)
+        if not pet_state:
+            raise CommandValidationError(f"PetState for '{pet_id}' not found.")
+
+        old_scale = float(pet_state.real_time_scale or 1.0)
+        pet_state.real_time_scale = round(raw_scale, 2)
+        pet_state.version = int(pet_state.version or 0) + 1
+        pet_state.updated_at = now
+
+        tick = self._next_world_tick(session, pet_id)
+        evt = WorldEvent(
+            event_id=f"evt_{pet_id}_{tick}_timescale_{command_id[:12]}",
+            pet_id=pet_id,
+            world_tick=tick,
+            sim_time_sec=pet_state.sim_time_sec,
+            event_type="time_scale_changed",
+            skill_name=None,
+            origin=EventOrigin.RULE.value,
+            behaviour_type=BehaviourType.RULE.value,
+            seed=0,
+            payload={"old_real_time_scale": old_scale, "real_time_scale": pet_state.real_time_scale},
+            created_at=now,
+        )
+        session.add(evt)
+
+        return CommandResult(
+            command_id=command_id,
+            status="completed",
+            message=f"Simulation time scale set to {pet_state.real_time_scale}x.",
+            result={"real_time_scale": pet_state.real_time_scale},
             idempotent_replay=False,
         )

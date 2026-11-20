@@ -22,6 +22,7 @@ from contracts.schemas import (
     ObservationV1,
 )
 from infrastructure.database.models import Pet, PetState, WorldEvent
+from ai.cognition.cognitive_brain import CognitiveBrainONNX, CognitiveObservationInput
 from ai.policies.skills import ScriptedHomeostaticBaselinePolicy
 from ai.cognition.skill_outcome_model import SkillOutcome, sample_skill_outcome
 
@@ -63,6 +64,14 @@ class CatchUpSimulator:
         self.max_steps_per_run = max_steps_per_run
         self.min_step_elapsed_sec = min_step_elapsed_sec
         self.policy = ScriptedHomeostaticBaselinePolicy()
+        self.learned_brain: Optional[CognitiveBrainONNX] = None
+        try:
+            from pathlib import Path
+            onnx_p = Path("training/runs/brain_v2/high_level_brain_v2.onnx")
+            if onnx_p.exists():
+                self.learned_brain = CognitiveBrainONNX(policy_onnx_path=onnx_p)
+        except Exception:
+            self.learned_brain = None
 
     def simulate_catchup(
         self,
@@ -159,8 +168,48 @@ class CatchUpSimulator:
                 nearby_objects=[],
             )
 
-            # High-level policy selects next skill
-            skill_name = self.policy.select_skill(obs)
+            # High-level policy selects next skill (uses LEARNED GRU-PPO ONNX when available!)
+            step_seed = int((seed_base + tick * 1009) % (2**31 - 1))
+            rng = np.random.default_rng(step_seed)
+            used_learned = False
+            if self.learned_brain is not None:
+                obs_v3 = CognitiveObservationInput(
+                    hunger=drives.hunger,
+                    thirst=drives.thirst,
+                    energy=drives.energy,
+                    comfort=drives.comfort,
+                    stress=drives.stress,
+                    curiosity=drives.curiosity,
+                    circadian_phase=drives.circadian_phase,
+                    cheek_pouch_fill=cheek_pouch_fill,
+                    pos_xy=(float(pos[0]), float(pos[1])),
+                    yaw_rad=float(pet_state.yaw_rad),
+                    inside_hideout=inside_hideout,
+                    inside_tunnel=inside_tunnel,
+                    on_wheel=on_wheel,
+                )
+                dec = self.learned_brain.decide(pet_state.pet_id, obs_v3, rng=rng, deterministic=False)
+                # Map expanded 16-skill ethogram into the empirical surrogate model's 8 base outcome categories
+                surrogate_map = {
+                    "approach_food": "approach_food",
+                    "eat": "eat",
+                    "cheek_stuffing": "eat",
+                    "unload_hoard": "rest",
+                    "drink": "drink",
+                    "explore_area": "explore_area",
+                    "enter_tunnel": "enter_tunnel",
+                    "run_on_wheel": "run_on_wheel",
+                    "digging": "explore_area",
+                    "hind_leg_standing": "explore_area",
+                    "grooming": "hide",
+                    "nesting": "rest",
+                    "rest": "rest",
+                    "hide": "hide",
+                }
+                skill_name = surrogate_map.get(dec.skill_name, "explore_area")
+                used_learned = True
+            else:
+                skill_name = self.policy.select_skill(obs)
 
             # Step context for empirical model
             ctx = {
@@ -170,11 +219,10 @@ class CatchUpSimulator:
                 "cheek_pouch_fill": cheek_pouch_fill,
             }
 
-            step_seed = int((seed_base + tick * 1009) % (2**31 - 1))
-            rng = np.random.default_rng(step_seed)
-
             # Sample skill outcome (Rule 2: origin enforcement)
             outcome: SkillOutcome = sample_skill_outcome(skill_name, ctx, rng=rng)
+            if used_learned:
+                outcome.behaviour_type = BehaviourType.LEARNED
 
             # Deterministic Event ID (P2.2 Criterion 2)
             event_id = generate_deterministic_event_id(

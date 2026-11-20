@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from infrastructure.database.models import Memory, Pet, PetState, User, WorldEvent
 from services.api.auth import get_db, verify_pet_access
 from services.api.rate_limit import rate_limit_dependency
+from services.runtime.live_brain_engine import live_brain_engine
 
 router = APIRouter(dependencies=[Depends(rate_limit_dependency)])
 
@@ -43,6 +44,7 @@ def get_pet_state(
     if not state:
         return {"pet_id": pet.id, "state": None}
 
+    brain_telemetry = live_brain_engine.get_brain_telemetry(session, pet.id)
     return {
         "pet_id": state.pet_id,
         "version": state.version,
@@ -63,6 +65,9 @@ def get_pet_state(
         "on_wheel": state.on_wheel,
         "cheek_pouch_fill": state.cheek_pouch_fill,
         "active_skill": state.active_skill,
+        "policy_version": live_brain_engine.policy_version,
+        "motor_policy_version": live_brain_engine.motor_policy_version,
+        "brain_telemetry": brain_telemetry,
         "updated_at": state.updated_at.isoformat() if state.updated_at else None,
     }
 

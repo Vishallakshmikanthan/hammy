@@ -11,18 +11,31 @@ Blueprint Endpoints:
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from services.api.routes import care, clips, habitat, mujoco_bridge, notifications, pets, shelves, simulation, system, ws
+from services.runtime.live_brain_engine import live_brain_engine
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await live_brain_engine.start_background_loop(interval_sec=1.5)
+    try:
+        yield
+    finally:
+        await live_brain_engine.stop_background_loop()
+
 
 app = FastAPI(
     title="HAMMY Parent API",
     description="Backend API and real-time WebSocket service for HAMMY — Virtual Syrian Hamster Simulation.",
-    version="1.0.0",
+    version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
+    lifespan=lifespan,
 )
 
 # CORS configuration for local development and Observatory web clients
@@ -51,7 +64,9 @@ app.include_router(shelves.router, prefix="/api/v1", tags=["Shelves & Opt-In Ass
 def root():
     return {
         "service": "HAMMY Parent API",
-        "version": "1.0.0",
+        "version": "2.0.0",
+        "policy_version": live_brain_engine.policy_version,
+        "motor_policy_version": live_brain_engine.motor_policy_version,
         "docs": "/docs",
         "health": "/api/v1/system/health",
     }

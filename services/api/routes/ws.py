@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from infrastructure.database.models import Pet, PetState, User
 from services.api.auth import JWT_ALGORITHM, JWT_SECRET, get_db, is_auth_required
 from services.api.websocket import ws_manager
+from services.runtime.live_brain_engine import live_brain_engine
 import jwt
 
 router = APIRouter()
@@ -72,9 +73,20 @@ async def pet_websocket_endpoint(
                 "pet_id": pet_id,
                 "version": state.version,
                 "sim_time_sec": state.sim_time_sec,
+                "simulated_age_days": state.simulated_age_days,
+                "real_time_scale": state.real_time_scale,
                 "drives": state.drives,
                 "position_xyz": state.position_xyz,
+                "yaw_rad": state.yaw_rad,
+                "inside_hideout": state.inside_hideout,
+                "inside_tunnel": state.inside_tunnel,
+                "on_wheel": state.on_wheel,
+                "cheek_pouch_fill": state.cheek_pouch_fill,
+                "active_skill": state.active_skill,
                 "is_paused": state.is_paused,
+                "policy_version": live_brain_engine.policy_version,
+                "motor_policy_version": live_brain_engine.motor_policy_version,
+                "brain_telemetry": live_brain_engine.get_brain_telemetry(session, pet_id),
             }
         )
 
