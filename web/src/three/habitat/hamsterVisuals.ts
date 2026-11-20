@@ -9,24 +9,70 @@ export interface EnhancedHamsterVisuals {
 const SOFT_SHELL_VERT_PARS = /* glsl */ `
   uniform float uShellFrac;
   uniform float uFurLength;
+  varying vec3 vFurLocalPos;
 `;
 
-const SOFT_SHELL_VERT_BEGIN = /* glsl */ `
-  transformed += normalize(normal) * (uShellFrac * uFurLength);
-  transformed.y -= uShellFrac * uShellFrac * uFurLength * 0.25;
+const SOFT_SHELL_VERT_AFTER_MORPH = /* glsl */ `
+  vFurLocalPos = transformed;
+  vec3 furNrm = normalize(objectNormal);
+  // Extrude cleanly along post-morph smoothed surface normal (no bind-pose Y skew)
+  transformed += furNrm * (uShellFrac * uFurLength);
+`;
+
+const SOFT_SHELL_FRAG_PARS = /* glsl */ `
+  uniform float uShellFrac;
+  varying vec3 vFurLocalPos;
+
+  float furHash31(vec3 p) {
+    p = fract(p * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return fract((p.x + p.y) * p.z);
+  }
+
+  float furValueNoise(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float n000 = furHash31(i + vec3(0.0, 0.0, 0.0));
+    float n100 = furHash31(i + vec3(1.0, 0.0, 0.0));
+    float n010 = furHash31(i + vec3(0.0, 1.0, 0.0));
+    float n110 = furHash31(i + vec3(1.0, 1.0, 0.0));
+    float n001 = furHash31(i + vec3(0.0, 0.0, 1.0));
+    float n101 = furHash31(i + vec3(1.0, 0.0, 1.0));
+    float n011 = furHash31(i + vec3(0.0, 1.0, 1.0));
+    float n111 = furHash31(i + vec3(1.0, 1.0, 1.0));
+    float nx00 = mix(n000, n100, f.x);
+    float nx10 = mix(n010, n110, f.x);
+    float nx01 = mix(n001, n101, f.x);
+    float nx11 = mix(n011, n111, f.x);
+    return mix(mix(nx00, nx10, f.y), mix(nx01, nx11, f.y), f.z);
+  }
+`;
+
+const SOFT_SHELL_FRAG_ALPHA = /* glsl */ `
+  // Smooth plush 3D coat density + view-angle feathering so every angle & distance is velvety
+  float coatFine = furValueNoise(vFurLocalPos * 210.0);
+  float coatClump = furValueNoise(vFurLocalPos * 72.0);
+  float strandMask = smoothstep(0.18 + uShellFrac * 0.34, 0.78 + uShellFrac * 0.16, coatFine * 0.65 + coatClump * 0.35);
+  float ndotv = clamp(abs(dot(normalize(normal), normalize(vViewPosition))), 0.0, 1.0);
+  // Gently feather extreme grazing silhouettes on outer shells to prevent hard stepped shell edges
+  float rimSoften = mix(1.0, smoothstep(0.06, 0.42, ndotv), uShellFrac * 0.65);
+  // Subtle warm sheen lift toward hair tips
+  diffuseColor.rgb *= mix(0.92, 1.08, uShellFrac);
+  diffuseColor.a *= mix(0.55, 1.0, strandMask) * rimSoften;
 `;
 
 function createSoftHaloShellMaterial(shellFrac: number, furLength: number, hasVertexColors: boolean): THREE.MeshPhysicalMaterial {
   const mat = new THREE.MeshPhysicalMaterial({
     color: hasVertexColors ? "#ffffff" : "#c8894c",
     vertexColors: hasVertexColors,
-    roughness: 0.92,
+    roughness: 0.90,
     metalness: 0.0,
     sheen: 1.0,
-    sheenRoughness: 0.55,
-    sheenColor: new THREE.Color("#fff0d8"),
+    sheenRoughness: 0.52,
+    sheenColor: new THREE.Color("#fff2dc"),
     transparent: true,
-    opacity: Math.max(0.04, 0.22 * (1.0 - shellFrac * 0.72)),
+    opacity: Math.max(0.045, 0.24 * Math.pow(1.0 - shellFrac * 0.76, 1.15)),
     depthWrite: false,
   });
 
@@ -36,9 +82,13 @@ function createSoftHaloShellMaterial(shellFrac: number, furLength: number, hasVe
 
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>\n${SOFT_SHELL_VERT_PARS}`)
-      .replace("#include <begin_vertex>", `#include <begin_vertex>\n${SOFT_SHELL_VERT_BEGIN}`);
+      .replace("#include <morphtarget_vertex>", `#include <morphtarget_vertex>\n${SOFT_SHELL_VERT_AFTER_MORPH}`);
+
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", `#include <common>\n${SOFT_SHELL_FRAG_PARS}`)
+      .replace("#include <normal_fragment_begin>", `#include <normal_fragment_begin>\n${SOFT_SHELL_FRAG_ALPHA}`);
   };
-  mat.customProgramCacheKey = () => `hammy_soft_halo_v2_${shellFrac.toFixed(3)}_${hasVertexColors}`;
+  mat.customProgramCacheKey = () => `hammy_soft_halo_v3_${shellFrac.toFixed(3)}_${hasVertexColors}`;
   return mat;
 }
 
@@ -165,9 +215,9 @@ export function enhanceHamsterVisuals(
     }
   });
 
-  // 4 subtle soft halo shells for plush silhouette without sponge artifacts
-  const haloCount = 4;
-  const furLength = 0.0024;
+  // 6 finely graded soft halo shells for consistent plush coat across all angles and distances
+  const haloCount = 6;
+  const furLength = 0.0028;
   for (const bodyMesh of bodyTargets) {
     const shells: THREE.Mesh[] = [];
     const parent = bodyMesh.parent || asset.root;
