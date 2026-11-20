@@ -518,6 +518,68 @@ export class HamsterBehaviorController {
     this.targetPos.copy(dest);
   }
 
+  private findPropApproachPoint(prop: PlacedPropAnchor, anchors: HabitatPropAnchors): THREE.Vector3 {
+    const standoff = Math.max(0.068, prop.radius + 0.048);
+    let best: THREE.Vector3 | null = null;
+    let bestDist = Infinity;
+    for (let i = 0; i < 12; i++) {
+      const ang = (i / 12) * Math.PI * 2;
+      const cx = prop.pos.x + Math.cos(ang) * standoff;
+      const cz = prop.pos.z + Math.sin(ang) * standoff;
+      if (cx < -0.41 || cx > 0.41 || cz < -0.195 || cz > 0.195) continue;
+      if (this.isInsideAnyObstacle(cx, cz, anchors)) continue;
+      const d = Math.hypot(cx - this.pos.x, cz - this.pos.z);
+      if (d < bestDist) {
+        bestDist = d;
+        best = new THREE.Vector3(cx, this.sampleGroundY(cx, cz, anchors), cz);
+      }
+    }
+    if (best) return best;
+    const dx = this.pos.x - prop.pos.x;
+    const dz = this.pos.z - prop.pos.z;
+    const len = Math.hypot(dx, dz) || 1;
+    return this.clampFloor(
+      new THREE.Vector3(prop.pos.x + (dx / len) * standoff, anchors.beddingY, prop.pos.z + (dz / len) * standoff),
+      anchors
+    );
+  }
+
+  private syncPlacedPropSensing(anchors: HabitatPropAnchors): void {
+    const props = anchors.placedProps ?? [];
+    const currentIds = new Set<string>();
+    for (const p of props) {
+      currentIds.add(p.objectId);
+      const sig = `${p.pos.x.toFixed(2)},${p.pos.z.toFixed(2)},${p.rotationY.toFixed(2)}`;
+      const prevSig = this.knownPropSignatures.get(p.objectId);
+      if (this.hasInitializedProps && prevSig !== sig) {
+        if (!this.pendingInspectQueue.includes(p.objectId)) {
+          this.pendingInspectQueue.push(p.objectId);
+        }
+      }
+      this.knownPropSignatures.set(p.objectId, sig);
+    }
+    for (const id of Array.from(this.knownPropSignatures.keys())) {
+      if (!currentIds.has(id)) {
+        this.knownPropSignatures.delete(id);
+      }
+    }
+    this.pendingInspectQueue = this.pendingInspectQueue.filter((id) => currentIds.has(id));
+    if (this.activeInspectProp && !currentIds.has(this.activeInspectProp.objectId)) {
+      this.activeInspectProp = null;
+    }
+    this.hasInitializedProps = true;
+  }
+
+  private startInspectPropGoal(prop: PlacedPropAnchor, isNew: boolean, anchors: HabitatPropAnchors): void {
+    this.goal = "inspect_prop";
+    this.goalStage = "approach";
+    this.activeInspectProp = prop;
+    this.activeInspectIsNew = isNew;
+    this.faceTargetPos = prop.pos.clone();
+    const approach = this.findPropApproachPoint(prop, anchors);
+    this.setGoalTargetWithTunnelCorridor(approach, anchors);
+  }
+
   private chooseNextGoalAndTarget(
     anchors: HabitatPropAnchors,
     latestSkill: string | null,
@@ -545,6 +607,15 @@ export class HamsterBehaviorController {
         anchors
       );
       return;
+    }
+
+    if (this.pendingInspectQueue.length > 0 && anchors.placedProps?.length) {
+      const nextId = this.pendingInspectQueue.shift()!;
+      const prop = anchors.placedProps.find((p) => p.objectId === nextId);
+      if (prop) {
+        this.startInspectPropGoal(prop, true, anchors);
+        return;
+      }
     }
 
     if ((anchors.hasBowl ?? true) && (latestSkill === "eat" || latestSkill === "hoard")) {
@@ -659,6 +730,14 @@ export class HamsterBehaviorController {
       return;
     }
 
+    if (anchors.placedProps && anchors.placedProps.length > 0 && this.goal !== "inspect_prop" && r > 0.86) {
+      const pick = anchors.placedProps[Math.floor(this.nextRand() * anchors.placedProps.length)];
+      if (pick) {
+        this.startInspectPropGoal(pick, false, anchors);
+        return;
+      }
+    }
+
     // Open-bedding exploration (avoiding all tunnel pipes & props)
     this.goal = "wander";
     this.goalStage = "approach";
@@ -730,6 +809,19 @@ export class HamsterBehaviorController {
       this.enterPhase("drink", 3.2 + this.nextRand() * 2.5);
       return;
     }
+    if (this.goal === "inspect_prop" && this.activeInspectProp) {
+      const distToProp = Math.hypot(
+        this.pos.x - this.activeInspectProp.pos.x,
+        this.pos.z - this.activeInspectProp.pos.z
+      );
+      if (distToProp < this.activeInspectProp.radius + 0.16) {
+        this.goalStage = "active";
+        this.faceTargetPos = this.activeInspectProp.pos.clone();
+        this.enterPhase("inspect_prop", 3.6 + this.nextRand() * 1.8);
+        return;
+      }
+    }
+
     if ((this.goal === "chew" || latestSkill === "gnaw") && this.pos.distanceTo(anchors.chewPos) < 0.13) {
       this.goalStage = "active";
       this.faceTargetPos = anchors.chewPos.clone();
@@ -798,6 +890,23 @@ export class HamsterBehaviorController {
         wheelSpinDelta: 0,
         activityLabel: "Paused",
       };
+    }
+
+    // Sense newly dropped or moved physical props in the cage and queue curious inspection
+    this.syncPlacedPropSensing(anchors);
+    const busyWithPriorityAction =
+      Boolean(anchors.offeredFoodTarget) ||
+      this.phase === "forage_eat" ||
+      this.phase === "drink" ||
+      ((this.goal === "tunnel_through" || this.goal === "log_climb" || this.goal === "wheel") &&
+        this.goalStage === "active");
+    if (this.pendingInspectQueue.length > 0 && !busyWithPriorityAction && anchors.placedProps?.length) {
+      const nextId = this.pendingInspectQueue.shift()!;
+      const prop = anchors.placedProps.find((p) => p.objectId === nextId);
+      if (prop) {
+        this.startInspectPropGoal(prop, true, anchors);
+        this.enterPhase("scurry", 16.0);
+      }
     }
 
     // Immediately redirect when new offeredFoodTarget appears in the cage
@@ -1203,6 +1312,10 @@ export class HamsterBehaviorController {
                 ? "Climbing Down from Log"
                 : "Climbing on Top of Log"
               : "Heading to Climb Log"
+            : this.goal === "inspect_prop" && this.activeInspectProp
+            ? this.activeInspectIsNew
+              ? `Approaching New ${this.activeInspectProp.name}`
+              : `Heading to ${this.activeInspectProp.name}`
             : this.goal === "wheel"
             ? "Heading to Wheel"
             : this.goal === "water"
@@ -1257,6 +1370,33 @@ export class HamsterBehaviorController {
               targetRear = 0.72;
               this.updateHeadSaccade(clampedDt, 0.58, -0.14, 0.14, 0.14);
               activityLabel = "Periscoping on Top of Log";
+              break;
+            }
+            case "inspect_prop": {
+              const prop = this.activeInspectProp;
+              const isChewLike = Boolean(prop && (prop.itemId.includes("chew") || prop.itemId.includes("ball")));
+              if (isChewLike) {
+                targetCrouch = 0.38;
+                targetChew = 0.72;
+                this.posture.chewPhase += clampedDt * 10.0;
+                this.targetHeadYaw = Math.sin(this.posture.chewPhase * 0.25) * 0.14;
+                this.targetHeadPitch = 0.16 + Math.sin(this.posture.chewPhase * 0.4) * 0.08;
+                this.targetHeadRoll = 0.08;
+                activityLabel = prop
+                  ? `Sniffing & Nibbling ${prop.name}`
+                  : "Sniffing New Prop";
+              } else {
+                // Curious mammal inspection: lower nose to sniff, then briefly rear up to size it up
+                const periscopeMoment = this.phaseTimer > 1.3 && this.phaseTimer < 2.6;
+                targetRear = periscopeMoment ? 0.56 : 0.08;
+                targetCrouch = periscopeMoment ? 0 : 0.22;
+                this.updateHeadSaccade(clampedDt, 0.36, periscopeMoment ? -0.10 : 0.18, 0.12, 0.12);
+                activityLabel = prop
+                  ? this.activeInspectIsNew
+                    ? `Curiously Inspecting New ${prop.name}`
+                    : `Inspecting ${prop.name}`
+                  : "Curiously Inspecting Prop";
+              }
               break;
             }
             case "rear_up": {
