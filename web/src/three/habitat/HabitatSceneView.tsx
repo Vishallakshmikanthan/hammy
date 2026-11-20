@@ -10,6 +10,7 @@ import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { Sparkles, Sun, Moon, Camera, Sliders, Activity, Eye, Layers } from "lucide-react";
 import { loadHamsterAsset } from "../rig/hamsterAssetLoader";
+import { applyCostumeSocketTransform } from "../rig/costumeSockets";
 import { applyLodVisibility, QUALITY_PRESETS, selectLodByDistance, type LodLevel } from "../rig/lodAndQuality";
 import { PoseApplicationLayer } from "../rig/poseApplication";
 import { ProceduralRigLayer } from "../rig/proceduralRig";
@@ -704,6 +705,7 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
             if (targetBone) {
               const holder = new THREE.Group();
               holder.name = `equipped_${slot}_${eq.item_id}`;
+              applyCostumeSocketTransform(eq.item_id, holder);
               targetBone.add(holder);
               loadedCostumeMeshes.set(slot, { itemId: eq.item_id, obj: holder });
 
@@ -713,6 +715,7 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
                   disposeObject3D(gltf.scene);
                   return;
                 }
+                applyCostumeSocketTransform(eq.item_id, holder, gltf.scene);
                 holder.add(gltf.scene);
               });
             }
