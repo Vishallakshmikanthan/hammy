@@ -299,14 +299,18 @@ export function buildAnatomicalLimbs(asset: LoadedHamsterAsset): AnatomicalLimbs
       }
     }
 
-    // 2. Animate 5 toes on each hind foot (curl on step lift, splay flat on stance / sitting tripod)
+    // 2. Animate 5 toes on each hind foot:
+    //    - Active push-off traction during stance locomotion
+    //    - Subtle curl during aerial swing phase
+    //    - Wide grounded splay for solid tripod balance when sitting, eating, or rearing
     for (const foot of hindFeet) {
       const inAir = foot.side === "L" ? !pose.footContacts.bl : !pose.footContacts.br;
-      const flex = inAir ? 0.26 : 0.0;
-      const braceSplay = 1.0 + Math.max(rear, eatHold) * 0.12;
+      const flex = inAir ? 0.24 : 0.0;
+      const pushToe = !inAir ? Math.max(0, Math.sin(pose.gaitPhase + (foot.side === "L" ? Math.PI : 0))) * 0.16 * (1 - Math.max(rear, eatHold)) : 0;
+      const braceSplay = 1.0 + Math.max(rear, eatHold) * 0.18;
       for (const t of foot.toes) {
-        t.proximal.rotation.x = t.basePitch + flex;
-        t.distal.rotation.x = flex * 1.15;
+        t.proximal.rotation.x = t.basePitch + flex - pushToe;
+        t.distal.rotation.x = flex * 1.15 - pushToe * 0.5;
         t.proximal.rotation.y = t.splayYaw * braceSplay;
       }
     }
