@@ -120,6 +120,15 @@ export async function offerFoodCommand(
   return postShelfCommand(petId, "offer_food", { command_id: commandId, item_id: itemId, quantity }, token);
 }
 
+export async function refillFoodCommand(
+  petId: string,
+  amountGrams: number = 25,
+  commandId: string = `cmd_refill_food_${Date.now()}`,
+  token?: string
+) {
+  return postShelfCommand(petId, "refill_food", { command_id: commandId, amount_grams: amountGrams }, token);
+}
+
 export async function refillWaterCommand(
   petId: string,
   amountMl: number = 150,
