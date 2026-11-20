@@ -137,6 +137,8 @@ class CommandHandler:
             res = self._handle_move_object(session, user_id, pet_id, command_id, parameters, curr_time)
         elif command_type == "offer_food":
             res = self._handle_offer_food(session, user_id, pet_id, command_id, parameters, curr_time)
+        elif command_type == "refill_food":
+            res = self._handle_refill_food(session, user_id, pet_id, command_id, parameters, curr_time)
         elif command_type == "refill_water":
             res = self._handle_refill_water(session, user_id, pet_id, command_id, parameters, curr_time)
         elif command_type == "equip_costume":
@@ -613,22 +615,70 @@ class CommandHandler:
 
         habitat = self._get_or_create_habitat(session, pet_id, now)
 
-        # If a food bowl is placed in the cage, place food at the bowl; otherwise place at offered spot
+        # Always place offered food directly inside the habitat food bowl (creating core bowl if missing)
         bowl = (
             session.query(HabitatObject)
             .filter(
                 HabitatObject.habitat_id == habitat.id,
-                HabitatObject.object_type.in_(["food_bowl", "prop_food_bowl"]),
+                HabitatObject.id == "prop_bowl_main",
             )
             .first()
         )
+        if not bowl:
+            bowl = (
+                session.query(HabitatObject)
+                .filter(
+                    HabitatObject.habitat_id == habitat.id,
+                    HabitatObject.object_type.in_(["food_bowl", "prop_food_bowl"]),
+                )
+                .first()
+            )
+        if not bowl:
+            bowl = HabitatObject(
+                id="prop_bowl_main",
+                habitat_id=habitat.id,
+                object_type="food_bowl",
+                blender_name="prop_bowl",
+                pose_xyz_m=[0.28, -0.11, 0.165],
+                interaction_radius_m=0.055,
+                affordances=["eat", "hoard"],
+                resource_state={"food_level": 0.5, "capacity_grams": 25.0},
+                updated_at=now,
+            )
+            session.add(bowl)
+            session.flush()
+
+        # Count existing offered foods in bowl to fan items neatly inside the ceramic rim (radius <= 0.014m)
+        existing_food_count = (
+            session.query(HabitatObject)
+            .filter(
+                HabitatObject.habitat_id == habitat.id,
+                HabitatObject.object_type == "offered_food",
+            )
+            .count()
+        )
+        bowl_x = float(bowl.pose_xyz_m[0]) if bowl.pose_xyz_m else 0.28
+        bowl_y = float(bowl.pose_xyz_m[1]) if bowl.pose_xyz_m else -0.11
+        if existing_food_count == 0:
+            off_x, off_y = 0.0, 0.0
+        else:
+            ang = existing_food_count * 2.3999632297  # golden angle inside bowl
+            rad = min(0.014, 0.006 + 0.003 * (existing_food_count % 3))
+            off_x = math.cos(ang) * rad
+            off_y = math.sin(ang) * rad
+
         raw_pose = params.get("pose_xyz_m")
         if raw_pose and len(raw_pose) == 3:
-            pose = [round(float(v), 4) for v in raw_pose]
-        elif bowl:
-            pose = [round(float(bowl.pose_xyz_m[0]), 4), round(float(bowl.pose_xyz_m[1]), 4), 0.168]
+            # Clamp any custom offer pose within the food bowl rim so dropped food always lands in the bowl
+            dx = float(raw_pose[0]) - bowl_x
+            dy = float(raw_pose[1]) - bowl_y
+            d = math.hypot(dx, dy)
+            if d > 0.018:
+                dx = (dx / d) * 0.014
+                dy = (dy / d) * 0.014
+            pose = [round(bowl_x + dx, 4), round(bowl_y + dy, 4), 0.168]
         else:
-            pose = [0.18, -0.06, 0.165]
+            pose = [round(bowl_x + off_x, 4), round(bowl_y + off_y, 4), 0.168]
 
         bounds = habitat.floor_bounds or {"x_min": -0.44, "x_max": 0.44, "y_min": -0.19, "y_max": 0.19}
         if not (float(bounds.get("x_min", -0.46)) <= pose[0] <= float(bounds.get("x_max", 0.46)) and
@@ -706,6 +756,84 @@ class CommandHandler:
                 "pose_xyz_m": pose,
                 "spoils_at_sim_sec": sim_time + spoil_after_sec,
             },
+            idempotent_replay=False,
+        )
+
+    def _handle_refill_food(
+        self,
+        session: Session,
+        user_id: str,
+        pet_id: str,
+        command_id: str,
+        params: Dict[str, Any],
+        now: datetime.datetime,
+    ) -> CommandResult:
+        """Refills the habitat food bowl(s) up to 100% capacity."""
+        amount_grams = float(params.get("amount_grams", 25.0))
+        if amount_grams <= 0.0 or amount_grams > 50.0:
+            raise CommandValidationError("amount_grams must be in (0.0, 50.0].")
+
+        habitat = self._get_or_create_habitat(session, pet_id, now)
+        bowls = (
+            session.query(HabitatObject)
+            .filter(
+                HabitatObject.habitat_id == habitat.id,
+                HabitatObject.object_type.in_(["food_bowl", "prop_food_bowl"]),
+            )
+            .all()
+        )
+        if not bowls:
+            default_bowl = HabitatObject(
+                id="prop_bowl_main",
+                habitat_id=habitat.id,
+                object_type="food_bowl",
+                blender_name="prop_bowl",
+                pose_xyz_m=[0.28, -0.11, 0.165],
+                interaction_radius_m=0.055,
+                affordances=["eat", "hoard"],
+                resource_state={"food_level": 0.0, "capacity_grams": 25.0},
+                updated_at=now,
+            )
+            session.add(default_bowl)
+            session.flush()
+            bowls = [default_bowl]
+
+        new_levels: Dict[str, float] = {}
+        for b in bowls:
+            res_state = dict(b.resource_state or {})
+            cap = float(res_state.get("capacity_grams", 25.0))
+            curr = float(res_state.get("food_level", 0.0)) * cap
+            new_lvl = round(min(cap, curr + amount_grams) / cap, 4)
+            res_state["food_level"] = new_lvl
+            b.resource_state = res_state
+            b.updated_at = now
+            new_levels[b.id] = new_lvl
+
+        primary_level = new_levels.get("prop_bowl_main", list(new_levels.values())[0])
+        tick = self._next_world_tick(session, pet_id)
+        pet_state = session.get(PetState, pet_id)
+        sim_time = pet_state.sim_time_sec if pet_state else 0.0
+
+        evt = WorldEvent(
+            event_id=f"evt_{pet_id}_{tick}_refill_food_{command_id[:12]}",
+            pet_id=pet_id,
+            world_tick=tick,
+            sim_time_sec=sim_time,
+            event_type="food_refilled",
+            skill_name="eat",
+            origin=EventOrigin.RULE.value,
+            behaviour_type=BehaviourType.RULE.value,
+            seed=0,
+            payload={"amount_grams": amount_grams, "new_food_level": primary_level, "bowls": new_levels},
+            created_at=now,
+        )
+        session.add(evt)
+
+        return CommandResult(
+            command_id=command_id,
+            status="completed",
+            message=f"Refilled food bowl to {primary_level * 100:.0f}%.",
+            result={"amount_grams": amount_grams, "new_food_level": primary_level, "bowls": new_levels},
             idempotent_replay=False,
         )
 
@@ -1148,11 +1276,31 @@ class CommandHandler:
         params: Dict[str, Any],
         now: datetime.datetime,
     ) -> CommandResult:
-        """Server-authoritative eating interaction: decreases offered food quantity, lowers hunger, and fills cheek pouches."""
+        """Server-authoritative eating interaction: decreases offered food & bowl food_level, lowers hunger, fills cheeks."""
         object_id = params.get("object_id")
         habitat = self._get_or_create_habitat(session, pet_id, now)
 
+        bowl = (
+            session.query(HabitatObject)
+            .filter(
+                HabitatObject.habitat_id == habitat.id,
+                HabitatObject.id == "prop_bowl_main",
+            )
+            .first()
+        )
+        if not bowl:
+            bowl = (
+                session.query(HabitatObject)
+                .filter(
+                    HabitatObject.habitat_id == habitat.id,
+                    HabitatObject.object_type.in_(["food_bowl", "prop_food_bowl"]),
+                )
+                .first()
+            )
+
         food_obj = session.get(HabitatObject, object_id) if object_id else None
+        if food_obj and food_obj.object_type != "offered_food":
+            food_obj = None
         if not food_obj:
             food_obj = (
                 session.query(HabitatObject)
@@ -1162,21 +1310,37 @@ class CommandHandler:
                 )
                 .first()
             )
-        if not food_obj:
-            raise CommandValidationError("No offered food available in habitat to eat.")
 
-        res_state = dict(food_obj.resource_state or {})
-        item_id = res_state.get("asset_id", food_obj.blender_name)
-        item_name = res_state.get("name", item_id)
-        qty = int(res_state.get("quantity", 1))
-        remaining = max(0, qty - 1)
+        bowl_level = float((bowl.resource_state or {}).get("food_level", 0.0)) if bowl else 0.0
+        if not food_obj and (not bowl or bowl_level <= 0.005):
+            raise CommandValidationError("No food available in food bowl or cage to eat.")
 
-        if remaining == 0:
-            session.delete(food_obj)
+        consumed_obj_id = food_obj.id if food_obj else (bowl.id if bowl else "prop_bowl_main")
+        if food_obj:
+            res_state = dict(food_obj.resource_state or {})
+            item_id = res_state.get("asset_id", food_obj.blender_name)
+            item_name = res_state.get("name", item_id)
+            qty = int(res_state.get("quantity", 1))
+            remaining = max(0, qty - 1)
+            if remaining == 0:
+                session.delete(food_obj)
+            else:
+                res_state["quantity"] = remaining
+                food_obj.resource_state = res_state
+                food_obj.updated_at = now
         else:
-            res_state["quantity"] = remaining
-            food_obj.resource_state = res_state
-            food_obj.updated_at = now
+            item_id = "food_seed_mix"
+            item_name = "Food Bowl Seed Mix"
+            remaining = 0
+
+        new_food_level = bowl_level
+        if bowl:
+            b_res = dict(bowl.resource_state or {})
+            drop = 0.12 if food_obj else 0.15
+            new_food_level = round(max(0.0, float(b_res.get("food_level", 1.0)) - drop), 4)
+            b_res["food_level"] = new_food_level
+            bowl.resource_state = b_res
+            bowl.updated_at = now
 
         pet_state = session.get(PetState, pet_id)
         new_pouch = 0.65
@@ -1188,7 +1352,7 @@ class CommandHandler:
             new_hunger = round(max(0.0, float(drives.get("hunger", 0.35)) - 0.18), 4)
             drives["hunger"] = new_hunger
             pet_state.drives = drives
-            new_pouch = round(min(1.0, float(pet_state.cheek_pouch_fill or 0.0) + 0.35), 4)
+            new_pouch = round(min(1.0, float(pet_state.cheek_pouch_fill or 0.0) + 0.30), 4)
             pet_state.cheek_pouch_fill = new_pouch
             pet_state.active_skill = "eat"
             pet_state.version += 1
@@ -1206,10 +1370,11 @@ class CommandHandler:
             behaviour_type=BehaviourType.SCRIPTED.value,  # ANIMATION-DRIVEN clip triggered by policy
             seed=0,
             payload={
-                "object_id": food_obj.id,
+                "object_id": consumed_obj_id,
                 "item_id": item_id,
                 "name": item_name,
                 "remaining_quantity": remaining,
+                "new_food_level": new_food_level,
                 "cheek_pouch_fill": new_pouch,
                 "hunger": new_hunger,
                 "honesty_label": "ANIMATION-DRIVEN",
@@ -1221,11 +1386,12 @@ class CommandHandler:
         return CommandResult(
             command_id=command_id,
             status="completed",
-            message=f"Hammy ate {item_name} with both front paws (remaining={remaining}, cheek_pouch_fill={new_pouch:.2f}).",
+            message=f"Hammy ate {item_name} with both front paws (bowl={new_food_level * 100:.0f}%, remaining={remaining}).",
             result={
-                "object_id": food_obj.id,
+                "object_id": consumed_obj_id,
                 "item_id": item_id,
                 "remaining_quantity": remaining,
+                "new_food_level": new_food_level,
                 "cheek_pouch_fill": new_pouch,
                 "hunger": new_hunger,
             },
@@ -1243,20 +1409,21 @@ class CommandHandler:
     ) -> CommandResult:
         """Server-authoritative drinking interaction: decreases water level and lowers thirst."""
         habitat = self._get_or_create_habitat(session, pet_id, now)
-        wobj = (
+        water_objs = (
             session.query(HabitatObject)
             .filter(
                 HabitatObject.habitat_id == habitat.id,
                 HabitatObject.object_type.in_(["water_bottle", "water_bowl"]),
             )
-            .first()
+            .all()
         )
-        if not wobj:
+        if not water_objs:
             raise CommandValidationError("No water source in habitat.")
 
+        wobj = next((w for w in water_objs if w.id == "prop_bottle_main"), water_objs[0])
         res_state = dict(wobj.resource_state or {})
         curr_lvl = float(res_state.get("water_level", 1.0))
-        new_lvl = round(max(0.0, curr_lvl - 0.08), 4)
+        new_lvl = round(max(0.0, curr_lvl - 0.10), 4)
         res_state["water_level"] = new_lvl
         wobj.resource_state = res_state
         wobj.updated_at = now
