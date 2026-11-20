@@ -279,13 +279,13 @@ describe("Real-Life Hamster Behavior & Articulation", () => {
     expect(step.activityLabel).toBe("Curled Up in Hideout");
     expect(step.pose.posture!.curlAmount).toBeGreaterThan(0.6);
 
-    // 2. Wheel sprint & coasting pause
+    // 2. Wheel sprint & coasting pause (walks cleanly out of hideout doorway & across cage to wheel without wall clipping)
     const wheelState = makePetState({
       on_wheel: true,
       position_xyz: [anchors.wheelPos.x, -anchors.wheelPos.z, anchors.wheelPos.y],
     });
     const wheelLabels = new Set<string>();
-    for (let i = 0; i < 160; i++) {
+    for (let i = 0; i < 240; i++) {
       step = controller.update(0.05, wheelState, null, anchors);
       wheelLabels.add(step.activityLabel);
     }
@@ -503,6 +503,74 @@ describe("Real-Life Hamster Behavior & Articulation", () => {
     }
     expect(emptyFoodEats).toBe(0);
     expect(emptyWaterDrinks).toBe(0);
+  });
+
+  it("never phases through hideout side walls or bowl/bottle during server-driven skill transitions", () => {
+    const anchors: HabitatPropAnchors = {
+      ...makeAnchors(),
+      hideoutBox: new THREE.Box3(new THREE.Vector3(0.185, 0.186, -0.195), new THREE.Vector3(0.375, 0.291, -0.025)),
+      hideoutYaw: -0.27925,
+      hideoutHalfExtents: { hx: 0.084, hz: 0.068 },
+      wheelBox: new THREE.Box3(new THREE.Vector3(-0.44, 0.175, -0.175), new THREE.Vector3(-0.16, 0.455, -0.085)),
+      wheelTrackY: 0.187,
+      bottlePos: new THREE.Vector3(0.455, 0.165, 0.02),
+    };
+    const controller = new HamsterBehaviorController();
+    // Seed initial state outside on the left side near wheel
+    const startState = makePetState({ active_skill: "explore_area", position_xyz: [-0.20, 0.02, 0.165] });
+    for (let i = 0; i < 40; i++) controller.update(0.05, startState, null, anchors);
+
+    // Server abruptly commands hideout rest (`inside_hideout: true`) -> must walk around to +Z doorway, NOT clip left wall!
+    const hideState = makePetState({
+      active_skill: "rest",
+      inside_hideout: true,
+      position_xyz: [0.28, 0.11, 0.165],
+    });
+    let reachedHideout = false;
+    for (let i = 0; i < 220; i++) {
+      const step = controller.update(0.05, hideState, null, anchors);
+      const [x, , z] = step.pose.rootPosition;
+      // Never overlap ceramic food bowl interior (radius 0.042m + clearance)
+      const bowlDist = Math.hypot(x - anchors.bowlPos.x, z - anchors.bowlPos.z);
+      expect(bowlDist, `step=${i} clipped bowl`).toBeGreaterThanOrEqual(0.068);
+      // Never clip left wooden wall of hideout while approaching from the left!
+      const dx = x - anchors.hideoutPos.x;
+      const dz = z - anchors.hideoutPos.z;
+      const c = Math.cos(-0.27925);
+      const s = Math.sin(-0.27925);
+      const lx = dx * c - dz * s;
+      const lz = dx * s + dz * c;
+      if (Math.abs(lz) < 0.065) {
+        // Inside the front/back band of hideout: either well outside left/right walls OR entered cleanly through doorway (|lx| < 0.05)
+        expect(Math.abs(lx) > 0.115 || Math.abs(lx) < 0.055, `step=${i} clipped hideout side wall lx=${lx.toFixed(3)} lz=${lz.toFixed(3)}`).toBe(true);
+      }
+      if (step.activityLabel === "Curled Up in Hideout") reachedHideout = true;
+    }
+    expect(reachedHideout).toBe(true);
+
+    // Now server commands wheel run (`on_wheel: true`) -> must exit through +Z hideout doorway, NEVER through left wood wall!
+    const wheelState = makePetState({
+      active_skill: "run_on_wheel",
+      inside_hideout: false,
+      on_wheel: true,
+      position_xyz: [-0.30, 0.13, 0.165],
+    });
+    let reachedWheel = false;
+    for (let i = 0; i < 240; i++) {
+      const step = controller.update(0.05, wheelState, null, anchors);
+      const [x, , z] = step.pose.rootPosition;
+      const dx = x - anchors.hideoutPos.x;
+      const dz = z - anchors.hideoutPos.z;
+      const c = Math.cos(-0.27925);
+      const s = Math.sin(-0.27925);
+      const lx = dx * c - dz * s;
+      const lz = dx * s + dz * c;
+      if (Math.abs(lz) < 0.060) {
+        expect(Math.abs(lx) > 0.115 || Math.abs(lx) < 0.055, `exit step=${i} clipped hideout side wall lx=${lx.toFixed(3)} lz=${lz.toFixed(3)}`).toBe(true);
+      }
+      if (step.activityLabel === "Sprinting on Wheel") reachedWheel = true;
+    }
+    expect(reachedWheel).toBe(true);
   });
 
   it("applies calibrated costume socket transforms and unifies smooth LOD0/LOD1/LOD2 fur shells", () => {

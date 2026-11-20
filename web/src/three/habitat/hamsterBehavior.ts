@@ -12,6 +12,8 @@ export interface TunnelSegment {
   b: THREE.Vector3;
   radius: number;
   topY: number;
+  isOpenA?: boolean;
+  isOpenB?: boolean;
 }
 
 export interface TunnelSpineConfig {
@@ -53,8 +55,11 @@ export interface HabitatPropAnchors {
   tunnelBoxes?: THREE.Box3[];
   tunnelSpine?: TunnelSpineConfig;
   hideoutBox?: THREE.Box3;
+  hideoutYaw?: number;
+  hideoutHalfExtents?: { hx: number; hz: number };
   wheelBox?: THREE.Box3;
   wheelTrackY?: number;
+  bottlePos?: THREE.Vector3;
   sampleBeddingY?: (x: number, z: number) => number;
   /** Optional opt-in flags & dynamic obstacles from the Shelf Layout (defaults to true when undefined so legacy unit tests pass unchanged) */
   hasBowl?: boolean;
@@ -95,6 +100,7 @@ type MicroPhase =
 
 type HabitatGoal =
   | "wander"
+  | "corner_sit"
   | "wheel"
   | "water"
   | "hideout"
@@ -127,6 +133,11 @@ export class HamsterBehaviorController {
   private currentSpeed = 0;
   private targetPos = new THREE.Vector3(-0.08, 0.165, 0.12);
   private lastServerPosKey = "";
+  private hasSyncedServerOnce = false;
+  private serverSkillConsumed = false;
+  private exitingHideout = false;
+  private exitingWheel = false;
+  private recentGoals: HabitatGoal[] = [];
 
   private phase: MicroPhase = "sniff";
   private prevPhase: MicroPhase = "sniff";
@@ -218,6 +229,73 @@ export class HamsterBehaviorController {
     }
   }
 
+  private pushOutOfOBB2D(
+    v: THREE.Vector3,
+    cx: number,
+    cz: number,
+    hx: number,
+    hz: number,
+    yaw: number,
+    margin: number
+  ): void {
+    const dx = v.x - cx;
+    const dz = v.z - cz;
+    const c = Math.cos(yaw);
+    const s = Math.sin(yaw);
+    // Inverse of Three.js Y-up rotation (wx = lx*c + lz*s, wz = -lx*s + lz*c)
+    let lx = dx * c - dz * s;
+    let lz = dx * s + dz * c;
+    const ex = hx + margin;
+    const ez = hz + margin;
+    if (Math.abs(lx) < ex && Math.abs(lz) < ez) {
+      const penX = ex - Math.abs(lx);
+      const penZ = ez - Math.abs(lz);
+      if (penX < penZ) {
+        lx = lx >= 0 ? ex : -ex;
+      } else {
+        lz = lz >= 0 ? ez : -ez;
+      }
+      v.x = cx + lx * c + lz * s;
+      v.z = cz - lx * s + lz * c;
+    }
+  }
+
+  private isPhysicallyInsideHideout(anchors: HabitatPropAnchors): boolean {
+    if (!(anchors.hasHideout ?? true)) return false;
+    if (anchors.hideoutHalfExtents) {
+      const yaw = anchors.hideoutYaw ?? -0.27925;
+      const dx = this.pos.x - anchors.hideoutPos.x;
+      const dz = this.pos.z - anchors.hideoutPos.z;
+      const c = Math.cos(yaw);
+      const s = Math.sin(yaw);
+      const lx = dx * c - dz * s;
+      const lz = dx * s + dz * c;
+      return Math.abs(lx) < anchors.hideoutHalfExtents.hx + 0.045 && Math.abs(lz) < anchors.hideoutHalfExtents.hz + 0.045;
+    }
+    if (anchors.hideoutBox) {
+      return (
+        this.pos.x > anchors.hideoutBox.min.x - 0.04 &&
+        this.pos.x < anchors.hideoutBox.max.x + 0.04 &&
+        this.pos.z > anchors.hideoutBox.min.z - 0.04 &&
+        this.pos.z < anchors.hideoutBox.max.z + 0.04
+      );
+    }
+    return Math.hypot(this.pos.x - anchors.hideoutPos.x, this.pos.z - anchors.hideoutPos.z) < 0.13;
+  }
+
+  private isPhysicallyOnWheel(anchors: HabitatPropAnchors): boolean {
+    if (!(anchors.hasWheel ?? true)) return false;
+    if (anchors.wheelBox) {
+      return (
+        this.pos.x > anchors.wheelBox.min.x - 0.04 &&
+        this.pos.x < anchors.wheelBox.max.x + 0.04 &&
+        this.pos.z > anchors.wheelBox.min.z - 0.04 &&
+        this.pos.z < anchors.wheelBox.max.z + 0.04
+      );
+    }
+    return Math.hypot(this.pos.x - anchors.wheelPos.x, this.pos.z - anchors.wheelPos.z) < 0.13;
+  }
+
   private pushOutOfTunnelBoxes(v: THREE.Vector3, boxes: THREE.Box3[], margin: number): void {
     for (let pass = 0; pass < 3; pass++) {
       for (const box of boxes) {
@@ -259,12 +337,21 @@ export class HamsterBehaviorController {
     v: THREE.Vector3,
     a: THREE.Vector3,
     b: THREE.Vector3,
-    totalRadius: number
+    totalRadius: number,
+    isOpenA = false,
+    isOpenB = false
   ): void {
     const abx = b.x - a.x;
     const abz = b.z - a.z;
     const lenSq = abx * abx + abz * abz;
-    const t = lenSq > 1e-8 ? THREE.MathUtils.clamp(((v.x - a.x) * abx + (v.z - a.z) * abz) / lenSq, 0, 1) : 0;
+    if (lenSq < 1e-8) return;
+    const rawT = ((v.x - a.x) * abx + (v.z - a.z) * abz) / lenSq;
+
+    // Open mouth openings do not have solid blocking hemisphere endcaps
+    if (isOpenB && rawT > 1.0) return;
+    if (isOpenA && rawT < 0.0) return;
+
+    const t = THREE.MathUtils.clamp(rawT, 0, 1);
     const cx = a.x + abx * t;
     const cz = a.z + abz * t;
     const dx = v.x - cx;
@@ -281,39 +368,46 @@ export class HamsterBehaviorController {
   private pushOutOfProps(
     v: THREE.Vector3,
     anchors: HabitatPropAnchors,
-    petState?: PetState | null
+    _petState?: PetState | null
   ): THREE.Vector3 {
-    const bodyRadius = 0.032;
+    const bodyRadius = 0.048;
     const obstacles: Array<{ pos: THREE.Vector3; radius: number }> = [];
     if (anchors.hasBowl ?? true) {
-      obstacles.push({ pos: anchors.bowlPos, radius: 0.064 });
+      // Ceramic bowl radius 0.042m + 0.030m side clearance keeps hamster outside rim while leaving an open aisle to water/hideout
+      obstacles.push({ pos: anchors.bowlPos, radius: 0.072 });
     }
     if (anchors.hasChew ?? true) {
-      obstacles.push({ pos: anchors.chewPos, radius: 0.038 });
+      obstacles.push({ pos: anchors.chewPos, radius: 0.040 });
     }
+    // Keep hamster cleanly clear of the right-wall water bottle cylinder & spout stem
+    const bottleCenter =
+      anchors.bottlePos ??
+      new THREE.Vector3(anchors.spoutPos.x + 0.022, anchors.beddingY, anchors.spoutPos.z);
+    obstacles.push({ pos: bottleCenter, radius: 0.066 });
+
     if (anchors.dynamicObstacles) {
       for (const dyn of anchors.dynamicObstacles) {
         obstacles.push({ pos: dyn.pos, radius: dyn.radius + bodyRadius });
       }
     }
 
+    // NEVER disable prop collision just because server booleans flipped across the cage!
+    // Only allow entry/exit when physically walking through the doorway or wheel opening.
     const allowHideout =
-      Boolean(petState?.inside_hideout) ||
-      (this.goal === "hideout" && this.goalStage !== "approach");
-    if ((anchors.hasHideout ?? true) && !allowHideout && !anchors.hideoutBox) {
-      obstacles.push({ pos: anchors.hideoutPos, radius: 0.115 });
+      (this.goal === "hideout" && this.goalStage !== "approach") || this.exitingHideout;
+    if ((anchors.hasHideout ?? true) && !allowHideout && !anchors.hideoutBox && !anchors.hideoutHalfExtents) {
+      obstacles.push({ pos: anchors.hideoutPos, radius: 0.125 });
     }
 
     const allowWheel =
-      Boolean(petState?.on_wheel) ||
-      (this.goal === "wheel" && this.goalStage !== "approach");
+      (this.goal === "wheel" && this.goalStage !== "approach") || this.exitingWheel;
     if ((anchors.hasWheel ?? true) && !allowWheel && !anchors.wheelBox) {
-      obstacles.push({ pos: anchors.wheelPos, radius: 0.15 });
+      obstacles.push({ pos: anchors.wheelPos, radius: 0.148 });
     }
 
     const allowTunnelTraversal =
-      Boolean(petState?.inside_tunnel) ||
-      ((this.goal === "tunnel_through" || this.goal === "log_climb") && this.goalStage !== "approach");
+      (this.goal === "tunnel_through" || this.goal === "log_climb") &&
+      (this.goalStage === "active" || this.goalStage === "exit");
 
     if (
       (anchors.hasTunnel ?? true) &&
@@ -322,10 +416,10 @@ export class HamsterBehaviorController {
       !anchors.tunnelBoxes?.length &&
       !anchors.tunnelBox
     ) {
-      obstacles.push({ pos: anchors.tunnelPos, radius: 0.115 });
+      obstacles.push({ pos: anchors.tunnelPos, radius: 0.12 });
     }
 
-    for (let pass = 0; pass < 2; pass++) {
+    for (let pass = 0; pass < 3; pass++) {
       for (const obs of obstacles) {
         const dx = v.x - obs.pos.x;
         const dz = v.z - obs.pos.z;
@@ -338,22 +432,46 @@ export class HamsterBehaviorController {
         }
       }
 
-      if (!allowHideout && anchors.hideoutBox) {
-        this.pushOutOfBox2D(v, anchors.hideoutBox, 0.034);
+      if (!allowHideout && (anchors.hasHideout ?? true)) {
+        if (anchors.hideoutHalfExtents) {
+          this.pushOutOfOBB2D(
+            v,
+            anchors.hideoutPos.x,
+            anchors.hideoutPos.z,
+            anchors.hideoutHalfExtents.hx,
+            anchors.hideoutHalfExtents.hz,
+            anchors.hideoutYaw ?? -0.27925,
+            0.042
+          );
+        } else if (anchors.hideoutBox) {
+          this.pushOutOfBox2D(v, anchors.hideoutBox, 0.038);
+        }
       }
-      if (!allowWheel && anchors.wheelBox) {
-        this.pushOutOfBox2D(v, anchors.wheelBox, 0.032);
+      if (!allowWheel && (anchors.hasWheel ?? true) && anchors.wheelBox) {
+        this.pushOutOfBox2D(v, anchors.wheelBox, 0.040);
       }
       if (!allowTunnelTraversal) {
         if (anchors.tunnelSpine && anchors.tunnelSpine.segments.length > 0) {
-          // Precise oriented capsule clearance around the curved/angled bark log (no bloated corner traps!)
+          const tunnelMargin = 0.050;
           for (const seg of anchors.tunnelSpine.segments) {
-            this.pushOutOfCapsule2D(v, seg.a, seg.b, seg.radius + 0.024);
+            const isOpenA = Boolean(
+              seg.isOpenA ||
+              (anchors.tunnelSpine.centerline.length > 0 &&
+                (seg.a.distanceTo(anchors.tunnelSpine.centerline[0]) < 0.045 ||
+                  seg.a.distanceTo(anchors.tunnelSpine.centerline[anchors.tunnelSpine.centerline.length - 1]) < 0.045))
+            );
+            const isOpenB = Boolean(
+              seg.isOpenB ||
+              (anchors.tunnelSpine.centerline.length > 0 &&
+                (seg.b.distanceTo(anchors.tunnelSpine.centerline[0]) < 0.045 ||
+                  seg.b.distanceTo(anchors.tunnelSpine.centerline[anchors.tunnelSpine.centerline.length - 1]) < 0.045))
+            );
+            this.pushOutOfCapsule2D(v, seg.a, seg.b, seg.radius + tunnelMargin, isOpenA, isOpenB);
           }
         } else if (anchors.tunnelBoxes && anchors.tunnelBoxes.length > 0) {
-          this.pushOutOfTunnelBoxes(v, anchors.tunnelBoxes, bodyRadius);
+          this.pushOutOfTunnelBoxes(v, anchors.tunnelBoxes, 0.036);
         } else if (anchors.tunnelBox) {
-          this.pushOutOfBox2D(v, anchors.tunnelBox, bodyRadius);
+          this.pushOutOfBox2D(v, anchors.tunnelBox, 0.036);
         }
       }
     }
@@ -366,8 +484,8 @@ export class HamsterBehaviorController {
     petState?: PetState | null
   ): THREE.Vector3 {
     this.pushOutOfProps(v, anchors, petState);
-    v.x = THREE.MathUtils.clamp(v.x, -0.43, 0.43);
-    v.z = THREE.MathUtils.clamp(v.z, -0.215, 0.215);
+    v.x = THREE.MathUtils.clamp(v.x, -0.415, 0.415);
+    v.z = THREE.MathUtils.clamp(v.z, -0.195, 0.216);
     v.y = this.sampleGroundY(v.x, v.z, anchors);
     return v;
   }
@@ -380,32 +498,85 @@ export class HamsterBehaviorController {
   }
 
   private getWheelEntryPos(anchors: HabitatPropAnchors): THREE.Vector3 {
-    // Upright wheel is open on its +Z front face (around z = -0.085); approach directly in front of it
-    const zEntry = anchors.wheelBox ? anchors.wheelBox.max.z + 0.055 : anchors.wheelPos.z + 0.10;
+    // Upright wheel is open on its +Z front face (z = -0.085); stand cleanly outside wheelBox + margin
+    const zEntry = anchors.wheelBox ? anchors.wheelBox.max.z + 0.055 : anchors.wheelPos.z + 0.11;
     return this.clampFloor(
-      new THREE.Vector3(anchors.wheelPos.x, anchors.beddingY, Math.min(0.16, zEntry)),
+      new THREE.Vector3(anchors.wheelPos.x, anchors.beddingY, Math.min(0.15, zEntry)),
       anchors
     );
   }
 
   private getHideoutDoorPos(anchors: HabitatPropAnchors): THREE.Vector3 {
-    const zDoor = anchors.hideoutBox ? anchors.hideoutBox.max.z + 0.065 : anchors.hideoutPos.z + 0.12;
+    // Follow the exact rotated +Z arched doorway normal of prop_hideout (-16 deg in cage.glb)
+    if (anchors.hideoutHalfExtents) {
+      const yaw = anchors.hideoutYaw ?? -0.27925;
+      const distOut = anchors.hideoutHalfExtents.hz + 0.058;
+      const dx = Math.sin(yaw) * distOut;
+      const dz = Math.cos(yaw) * distOut;
+      const tx = anchors.hideoutPos.x + dx;
+      const tz = anchors.hideoutPos.z + dz;
+      return new THREE.Vector3(tx, this.sampleGroundY(tx, tz, anchors), tz);
+    }
+    const zDoor = anchors.hideoutBox ? anchors.hideoutBox.max.z + 0.048 : anchors.hideoutPos.z + 0.132;
     return this.clampFloor(
-      new THREE.Vector3(anchors.hideoutPos.x, anchors.beddingY, zDoor),
+      new THREE.Vector3(anchors.hideoutPos.x - 0.025, anchors.beddingY, zDoor),
       anchors
     );
   }
 
+  private getBowlApproachPos(anchors: HabitatPropAnchors): THREE.Vector3 {
+    return this.clampFloor(
+      new THREE.Vector3(anchors.bowlPos.x - 0.088, anchors.beddingY, anchors.bowlPos.z + 0.005),
+      anchors
+    );
+  }
+
+  private getWaterApproachPos(anchors: HabitatPropAnchors): THREE.Vector3 {
+    return this.clampFloor(
+      new THREE.Vector3(anchors.spoutPos.x - 0.068, anchors.beddingY, anchors.spoutPos.z + 0.012),
+      anchors
+    );
+  }
+
+  private getCozyCornerPos(anchors: HabitatPropAnchors): THREE.Vector3 {
+    const corners: Array<[number, number]> = [
+      [-0.36, 0.145],  // Front-left cozy corner (in front of wheel)
+      [-0.04, -0.172], // Back-middle cozy nook (behind the bigger bark log, between wheel & house)
+      [-0.16, 0.148],  // Front-center viewing nook
+      [0.37, 0.160],   // Front-right corner beside food bowl
+    ];
+    // Prefer a corner distinct from current position
+    const shuffled = corners.slice().sort(() => this.nextRand() - 0.5);
+    for (const [cx, cz] of shuffled) {
+      if (Math.hypot(cx - this.pos.x, cz - this.pos.z) > 0.10 && !this.isInsideAnyObstacle(cx, cz, anchors)) {
+        return new THREE.Vector3(cx, this.sampleGroundY(cx, cz, anchors), cz);
+      }
+    }
+    return this.clampFloor(new THREE.Vector3(-0.36, anchors.beddingY, 0.135), anchors);
+  }
+
   private getWheelTrackPos(anchors: HabitatPropAnchors): THREE.Vector3 {
     const trackY = anchors.wheelTrackY ?? anchors.beddingY + 0.018;
-    return new THREE.Vector3(anchors.wheelPos.x, trackY, anchors.wheelPos.z);
+    return new THREE.Vector3(anchors.wheelPos.x, trackY, anchors.wheelPos.z + 0.006);
   }
 
   private isInsideAnyObstacle(x: number, z: number, anchors: HabitatPropAnchors): boolean {
+    const prevExitH = this.exitingHideout;
+    const prevExitW = this.exitingWheel;
+    const prevGoal = this.goal;
+    const prevStage = this.goalStage;
+    this.exitingHideout = false;
+    this.exitingWheel = false;
+    this.goal = "wander";
+    this.goalStage = "approach";
     const probe = new THREE.Vector3(x, anchors.beddingY, z);
     const beforeX = probe.x;
     const beforeZ = probe.z;
     this.pushOutOfProps(probe, anchors, null);
+    this.exitingHideout = prevExitH;
+    this.exitingWheel = prevExitW;
+    this.goal = prevGoal;
+    this.goalStage = prevStage;
     return Math.hypot(probe.x - beforeX, probe.z - beforeZ) > 0.005;
   }
 
@@ -421,34 +592,50 @@ export class HamsterBehaviorController {
     return true;
   }
 
-  private setGoalTargetWithTunnelCorridor(dest: THREE.Vector3, anchors: HabitatPropAnchors): void {
-    this.waypointQueue = [];
-    if (this.segmentIsClear(this.pos.x, this.pos.z, dest.x, dest.z, anchors)) {
-      this.targetPos.copy(dest);
-      return;
+  private computeDijkstraPath(
+    startX: number,
+    startZ: number,
+    dest: THREE.Vector3,
+    anchors: HabitatPropAnchors
+  ): THREE.Vector3[] {
+    if (this.segmentIsClear(startX, startZ, dest.x, dest.z, anchors)) {
+      return [dest.clone()];
     }
 
-    // Distance-weighted Dijkstra over a cage-wide open lattice + key corridors so the middle log
-    // or dropped props NEVER block exploration between any two sections of the cage.
+    // Distance-weighted Dijkstra over a cage-wide open lattice + key back/front/side corridors
+    // so the middle log, hideout, wheel, bowl, or dropped props NEVER block or clip movement.
     const candidates: Array<{ x: number; z: number }> = [
-      { x: -0.36, z: 0.16 },
-      { x: -0.26, z: 0.16 },
-      { x: -0.16, z: 0.18 },
-      { x: -0.04, z: 0.210 },
-      { x: 0.06, z: 0.210 },
-      { x: 0.15, z: 0.210 },
-      { x: 0.20, z: 0.14 },
-      { x: 0.20, z: 0.02 },
-      { x: 0.14, z: -0.06 },
-      { x: 0.12, z: -0.165 },
-      { x: -0.04, z: -0.175 },
-      { x: -0.11, z: -0.15 },
-      { x: -0.28, z: 0.04 },
-      { x: -0.28, z: 0.12 },
-      { x: 0.36, z: 0.04 },
+      { x: -0.36, z: 0.150 },
+      { x: -0.26, z: 0.150 },
+      { x: -0.15, z: 0.150 },
+      { x: -0.055, z: 0.195 },
+      { x: -0.050, z: 0.215 },
+      { x: 0.050, z: 0.215 },
+      { x: 0.162, z: 0.215 },
+      { x: 0.168, z: 0.155 },
+      { x: 0.18, z: 0.095 },
+      { x: 0.16, z: 0.022 },
+      { x: 0.135, z: -0.055 },
+      { x: 0.125, z: -0.154 },
+      { x: 0.120, z: -0.178 },
+      { x: 0.04, z: -0.178 },
+      { x: -0.04, z: -0.178 },
+      { x: -0.105, z: -0.178 },
+      { x: 0.04, z: -0.154 },
+      { x: -0.04, z: -0.154 },
+      { x: -0.105, z: -0.154 },
+      { x: -0.115, z: -0.115 },
+      { x: -0.24, z: -0.025 },
+      { x: -0.26, z: 0.055 },
+      { x: -0.26, z: 0.110 },
+      { x: 0.24, z: 0.022 },
+      { x: 0.27, z: 0.022 },
+      { x: 0.31, z: 0.028 },
+      { x: 0.355, z: 0.032 },
+      { x: 0.37, z: 0.155 },
     ];
-    for (let gx = -0.36; gx <= 0.37; gx += 0.12) {
-      for (let gz = -0.17; gz <= 0.21; gz += 0.09) {
+    for (let gx = -0.36; gx <= 0.37; gx += 0.11) {
+      for (let gz = -0.156; gz <= 0.156; gz += 0.075) {
         candidates.push({ x: Number(gx.toFixed(3)), z: Number(gz.toFixed(3)) });
       }
     }
@@ -461,7 +648,7 @@ export class HamsterBehaviorController {
       );
     }
 
-    const nodes: Array<{ x: number; z: number }> = [{ x: this.pos.x, z: this.pos.z }];
+    const nodes: Array<{ x: number; z: number }> = [{ x: startX, z: startZ }];
     for (const c of candidates) {
       if (!this.isInsideAnyObstacle(c.x, c.z, anchors)) {
         nodes.push(c);
@@ -509,14 +696,80 @@ export class HamsterBehaviorController {
         cur = parent[cur];
       }
       path.reverse();
-      if (path.length > 0) {
-        this.targetPos.copy(path[0]);
-        this.waypointQueue = path.slice(1);
-        return;
-      }
+      if (path.length > 0) return path;
     }
 
-    this.targetPos.copy(dest);
+    return [dest.clone()];
+  }
+
+  private setGoalTargetWithTunnelCorridor(dest: THREE.Vector3, anchors: HabitatPropAnchors): void {
+    this.waypointQueue = [];
+    this.exitingHideout = false;
+    this.exitingWheel = false;
+
+    // If currently inside hideout and heading elsewhere, ALWAYS step straight out the open +Z doorway FIRST!
+    if (this.goal !== "hideout" && this.isPhysicallyInsideHideout(anchors)) {
+      const doorPos = this.getHideoutDoorPos(anchors);
+      const restPath = this.computeDijkstraPath(doorPos.x, doorPos.z, dest, anchors);
+      this.exitingHideout = true;
+      this.targetPos.copy(doorPos);
+      this.waypointQueue = restPath;
+      return;
+    }
+
+    // If currently on the wheel and heading elsewhere, ALWAYS hop straight out the open +Z face FIRST!
+    if (this.goal !== "wheel" && this.isPhysicallyOnWheel(anchors)) {
+      const entryPos = this.getWheelEntryPos(anchors);
+      const restPath = this.computeDijkstraPath(entryPos.x, entryPos.z, dest, anchors);
+      this.exitingWheel = true;
+      this.targetPos.copy(entryPos);
+      this.waypointQueue = restPath;
+      return;
+    }
+
+    const path = this.computeDijkstraPath(this.pos.x, this.pos.z, dest, anchors);
+    this.targetPos.copy(path[0]);
+    this.waypointQueue = path.slice(1);
+  }
+
+  public startTunnelTraversal(anchors: HabitatPropAnchors, preferredForward?: boolean | null): void {
+    if (!anchors.tunnelSpine) return;
+    this.goal = "tunnel_through";
+    this.waypointQueue = [];
+
+    if (preferredForward === undefined || preferredForward === null) {
+      const dA = Math.hypot(
+        this.pos.x - anchors.tunnelSpine.mouthAApproach.x,
+        this.pos.z - anchors.tunnelSpine.mouthAApproach.z
+      );
+      const dB = Math.hypot(
+        this.pos.x - anchors.tunnelSpine.mouthBApproach.x,
+        this.pos.z - anchors.tunnelSpine.mouthBApproach.z
+      );
+      this.tunnelDirectionForward = dA <= dB;
+    } else {
+      this.tunnelDirectionForward = preferredForward;
+    }
+
+    const entryApproach = this.tunnelDirectionForward
+      ? anchors.tunnelSpine.mouthAApproach
+      : anchors.tunnelSpine.mouthBApproach;
+
+    const distToEntry = Math.hypot(this.pos.x - entryApproach.x, this.pos.z - entryApproach.z);
+    if (distToEntry < 0.08) {
+      this.goalStage = "active";
+      const spinePts = this.tunnelDirectionForward
+        ? [...anchors.tunnelSpine.centerline, anchors.tunnelSpine.mouthBApproach]
+        : [...anchors.tunnelSpine.centerline.slice().reverse(), anchors.tunnelSpine.mouthAApproach];
+      this.logActivePath = spinePts.map((pt) => pt.clone());
+      this.logPathIndex = 0;
+      this.targetPos.copy(this.logActivePath[0]);
+      this.enterPhase("scurry", 12.0);
+    } else {
+      this.goalStage = "approach";
+      this.setGoalTargetWithTunnelCorridor(entryApproach, anchors);
+      this.enterPhase("scurry", 14.0);
+    }
   }
 
   private findPropApproachPoint(prop: PlacedPropAnchor, anchors: HabitatPropAnchors): THREE.Vector3 {
@@ -595,18 +848,7 @@ export class HamsterBehaviorController {
       this.activeFoodObjectId = anchors.offeredFoodTarget.objectId;
       this.heldFoodItemId = anchors.offeredFoodTarget.itemId;
       this.faceTargetPos = anchors.offeredFoodTarget.pos.clone();
-      this.setGoalTargetWithTunnelCorridor(
-        this.clampFloor(
-          new THREE.Vector3(
-            0.20,
-            anchors.beddingY,
-            0.135
-          ),
-          anchors,
-          petState
-        ),
-        anchors
-      );
+      this.setGoalTargetWithTunnelCorridor(this.getBowlApproachPos(anchors), anchors);
       return;
     }
 
@@ -619,109 +861,67 @@ export class HamsterBehaviorController {
       }
     }
 
-    if ((anchors.hasBowl ?? true) && (latestSkill === "eat" || latestSkill === "hoard")) {
+    const activeSkill = this.serverSkillConsumed ? null : latestSkill;
+
+    if (
+      (anchors.hasBowl ?? true) &&
+      (activeSkill === "eat" ||
+        activeSkill === "approach_food" ||
+        activeSkill === "cheek_stuffing" ||
+        activeSkill === "hoard")
+    ) {
       this.goal = "bowl";
       this.goalStage = "approach";
       this.faceTargetPos = anchors.bowlPos.clone();
-      this.setGoalTargetWithTunnelCorridor(
-        this.clampFloor(new THREE.Vector3(anchors.bowlPos.x - 0.095, anchors.beddingY, anchors.bowlPos.z), anchors, petState),
-        anchors
-      );
+      this.setGoalTargetWithTunnelCorridor(this.getBowlApproachPos(anchors), anchors);
       return;
     }
-    if (latestSkill === "drink") {
+    if (activeSkill === "drink") {
       this.goal = "water";
       this.goalStage = "approach";
       this.faceTargetPos = anchors.spoutPos.clone();
-      this.setGoalTargetWithTunnelCorridor(
-        this.clampFloor(new THREE.Vector3(anchors.spoutPos.x - 0.045, anchors.beddingY, anchors.spoutPos.z + 0.025), anchors, petState),
-        anchors
-      );
+      this.setGoalTargetWithTunnelCorridor(this.getWaterApproachPos(anchors), anchors);
       return;
     }
-    if ((anchors.hasChew ?? true) && latestSkill === "gnaw") {
-      this.goal = "chew";
+    if (
+      (anchors.hasHideout ?? true) &&
+      (activeSkill === "nesting" ||
+        activeSkill === "hide" ||
+        activeSkill === "unload_hoard" ||
+        activeSkill === "avoid_and_retreat" ||
+        (activeSkill === "rest" && (petState?.inside_hideout ?? true)))
+    ) {
+      this.goal = "hideout";
       this.goalStage = "approach";
-      this.faceTargetPos = anchors.chewPos.clone();
-      this.setGoalTargetWithTunnelCorridor(
-        this.clampFloor(new THREE.Vector3(anchors.chewPos.x - 0.058, anchors.beddingY, anchors.chewPos.z + 0.015), anchors, petState),
-        anchors
-      );
+      this.setGoalTargetWithTunnelCorridor(this.getHideoutDoorPos(anchors), anchors);
       return;
     }
-
-    // Autonomous habitat goal selection (works offline / between server updates)
-    const energy = petState?.drives.energy ?? 0.7;
-    const hunger = petState?.drives.hunger ?? 0.35;
-    const thirst = petState?.drives.thirst ?? 0.3;
-
-    const r = this.nextRand();
-    if ((anchors.hasWheel ?? true) && latestSkill === "wheel_run" && this.goal !== "wheel") {
+    if (activeSkill === "rest" && petState && !petState.inside_hideout) {
+      this.goal = "corner_sit";
+      this.goalStage = "approach";
+      this.setGoalTargetWithTunnelCorridor(this.mapServerPos(petState, anchors), anchors);
+      return;
+    }
+    if (
+      (anchors.hasWheel ?? true) &&
+      (activeSkill === "run_on_wheel" || activeSkill === "wheel_run") &&
+      this.goal !== "wheel"
+    ) {
       this.goal = "wheel";
       this.goalStage = "approach";
       this.goalCyclesLeft = 2;
       this.setGoalTargetWithTunnelCorridor(this.getWheelEntryPos(anchors), anchors);
       return;
     }
-    const hasFunctionalLog = Boolean((anchors.hasTunnel ?? true) && anchors.tunnelSpine);
-    if ((anchors.hasHideout ?? true) && (energy < 0.32 || (this.goal !== "hideout" && r < 0.12))) {
-      this.goal = "hideout";
+    if (activeSkill === "cautious_sniff" || activeSkill === "accept_petting") {
+      this.goal = "wander";
       this.goalStage = "approach";
-      this.setGoalTargetWithTunnelCorridor(this.getHideoutDoorPos(anchors), anchors);
+      const frontTarget = this.clampFloor(new THREE.Vector3(0.0, anchors.beddingY, 0.145), anchors, petState);
+      this.faceTargetPos = new THREE.Vector3(0.0, anchors.beddingY + 0.04, 0.24);
+      this.setGoalTargetWithTunnelCorridor(frontTarget, anchors);
       return;
     }
-    if ((anchors.hasWheel ?? true) && this.goal !== "wheel" && r < (hasFunctionalLog ? 0.34 : 0.46)) {
-      this.goal = "wheel";
-      this.goalStage = "approach";
-      this.goalCyclesLeft = 2 + Math.floor(this.nextRand() * 2);
-      this.setGoalTargetWithTunnelCorridor(this.getWheelEntryPos(anchors), anchors);
-      return;
-    }
-    if (hasFunctionalLog && anchors.tunnelSpine && this.goal !== "tunnel_through" && r < 0.50) {
-      this.goal = "tunnel_through";
-      this.goalStage = "approach";
-      const dA = Math.hypot(
-        this.pos.x - anchors.tunnelSpine.mouthAApproach.x,
-        this.pos.z - anchors.tunnelSpine.mouthAApproach.z
-      );
-      const dB = Math.hypot(
-        this.pos.x - anchors.tunnelSpine.mouthBApproach.x,
-        this.pos.z - anchors.tunnelSpine.mouthBApproach.z
-      );
-      this.tunnelDirectionForward = dA <= dB;
-      const entry = this.tunnelDirectionForward
-        ? anchors.tunnelSpine.mouthAApproach
-        : anchors.tunnelSpine.mouthBApproach;
-      this.setGoalTargetWithTunnelCorridor(entry, anchors);
-      return;
-    }
-    if (hasFunctionalLog && anchors.tunnelSpine && this.goal !== "log_climb" && r < 0.64) {
-      this.goal = "log_climb";
-      this.goalStage = "approach";
-      this.setGoalTargetWithTunnelCorridor(anchors.tunnelSpine.climbEntryPos, anchors);
-      return;
-    }
-    if (this.goal !== "water" && r < (hasFunctionalLog ? 0.74 : 0.58) + thirst * 0.08) {
-      this.goal = "water";
-      this.goalStage = "approach";
-      this.faceTargetPos = anchors.spoutPos.clone();
-      this.setGoalTargetWithTunnelCorridor(
-        this.clampFloor(new THREE.Vector3(anchors.spoutPos.x - 0.045, anchors.beddingY, anchors.spoutPos.z + 0.025), anchors, petState),
-        anchors
-      );
-      return;
-    }
-    if ((anchors.hasBowl ?? true) && this.goal !== "bowl" && r < (hasFunctionalLog ? 0.85 : 0.74) + hunger * 0.08) {
-      this.goal = "bowl";
-      this.goalStage = "approach";
-      this.faceTargetPos = anchors.bowlPos.clone();
-      this.setGoalTargetWithTunnelCorridor(
-        this.clampFloor(new THREE.Vector3(anchors.bowlPos.x - 0.095, anchors.beddingY, anchors.bowlPos.z), anchors, petState),
-        anchors
-      );
-      return;
-    }
-    if ((anchors.hasChew ?? true) && this.goal !== "chew" && r < 0.88) {
+    if ((anchors.hasChew ?? true) && activeSkill === "gnaw") {
       this.goal = "chew";
       this.goalStage = "approach";
       this.faceTargetPos = anchors.chewPos.clone();
@@ -731,8 +931,121 @@ export class HamsterBehaviorController {
       );
       return;
     }
+    if (activeSkill === "digging" || activeSkill === "hind_leg_standing" || activeSkill === "grooming") {
+      this.goal = "corner_sit";
+      this.goalStage = "approach";
+      const targetPt = petState ? this.mapServerPos(petState, anchors) : this.getCozyCornerPos(anchors);
+      this.setGoalTargetWithTunnelCorridor(targetPt, anchors);
+      return;
+    }
 
-    if (anchors.placedProps && anchors.placedProps.length > 0 && this.goal !== "inspect_prop" && r > 0.86) {
+    // Autonomous habitat goal selection (works offline / between server updates)
+    // Uses biological novelty/satiation weighting so Hammy naturally cycles across ALL cage enrichments!
+    const energy = petState?.drives.energy ?? 0.7;
+    const hunger = petState?.drives.hunger ?? 0.35;
+    const thirst = petState?.drives.thirst ?? 0.3;
+    const hasFunctionalLog = Boolean((anchors.hasTunnel ?? true) && anchors.tunnelSpine);
+
+    if (hasFunctionalLog && anchors.tunnelSpine && activeSkill === "enter_tunnel") {
+      this.startTunnelTraversal(anchors, null);
+      return;
+    }
+
+    const candidates: Array<{ goal: HabitatGoal; weight: number }> = [
+      { goal: "water", weight: 0.48 + thirst * 0.28 },
+      { goal: "corner_sit", weight: 0.46 },
+      { goal: "wander", weight: 0.34 },
+    ];
+    if (anchors.hasHideout ?? true) {
+      candidates.push({ goal: "hideout", weight: energy < 0.35 ? 1.25 : 0.45 });
+    }
+    if (anchors.hasWheel ?? true) {
+      candidates.push({ goal: "wheel", weight: 0.62 });
+    }
+    if (anchors.hasBowl ?? true) {
+      candidates.push({ goal: "bowl", weight: 0.50 + hunger * 0.28 });
+    }
+    if (hasFunctionalLog) {
+      candidates.push({ goal: "tunnel_through", weight: 0.56 });
+      candidates.push({ goal: "log_climb", weight: 0.52 });
+    }
+    if (anchors.hasChew ?? true) {
+      candidates.push({ goal: "chew", weight: 0.30 });
+    }
+    if (anchors.placedProps && anchors.placedProps.length > 0) {
+      candidates.push({ goal: "inspect_prop", weight: 0.42 });
+    }
+
+    let pickedGoal: HabitatGoal = "wander";
+    let bestScore = -Infinity;
+    for (const c of candidates) {
+      if (c.goal === this.goal) continue;
+      const lastIdx = this.recentGoals.lastIndexOf(c.goal);
+      // Unvisited goals get strong natural curiosity/novelty pull; recently visited ones cool down
+      const recencyPenalty = lastIdx === -1 ? 0.58 : (this.recentGoals.length - 1 - lastIdx) * 0.09;
+      const score = c.weight + recencyPenalty + this.nextRand() * 0.42;
+      if (score > bestScore) {
+        bestScore = score;
+        pickedGoal = c.goal;
+      }
+    }
+    this.recentGoals.push(pickedGoal);
+    if (this.recentGoals.length > 7) this.recentGoals.shift();
+
+    if (pickedGoal === "hideout") {
+      this.goal = "hideout";
+      this.goalStage = "approach";
+      this.setGoalTargetWithTunnelCorridor(this.getHideoutDoorPos(anchors), anchors);
+      return;
+    }
+    if (pickedGoal === "wheel") {
+      this.goal = "wheel";
+      this.goalStage = "approach";
+      this.goalCyclesLeft = 2 + Math.floor(this.nextRand() * 2);
+      this.setGoalTargetWithTunnelCorridor(this.getWheelEntryPos(anchors), anchors);
+      return;
+    }
+    if (pickedGoal === "tunnel_through" && anchors.tunnelSpine) {
+      this.startTunnelTraversal(anchors, null);
+      return;
+    }
+    if (pickedGoal === "log_climb" && anchors.tunnelSpine) {
+      this.goal = "log_climb";
+      this.goalStage = "approach";
+      this.setGoalTargetWithTunnelCorridor(anchors.tunnelSpine.climbEntryPos, anchors);
+      return;
+    }
+    if (pickedGoal === "bowl") {
+      this.goal = "bowl";
+      this.goalStage = "approach";
+      this.faceTargetPos = anchors.bowlPos.clone();
+      this.setGoalTargetWithTunnelCorridor(this.getBowlApproachPos(anchors), anchors);
+      return;
+    }
+    if (pickedGoal === "water") {
+      this.goal = "water";
+      this.goalStage = "approach";
+      this.faceTargetPos = anchors.spoutPos.clone();
+      this.setGoalTargetWithTunnelCorridor(this.getWaterApproachPos(anchors), anchors);
+      return;
+    }
+    if (pickedGoal === "corner_sit") {
+      this.goal = "corner_sit";
+      this.goalStage = "approach";
+      this.setGoalTargetWithTunnelCorridor(this.getCozyCornerPos(anchors), anchors);
+      return;
+    }
+    if (pickedGoal === "chew") {
+      this.goal = "chew";
+      this.goalStage = "approach";
+      this.faceTargetPos = anchors.chewPos.clone();
+      this.setGoalTargetWithTunnelCorridor(
+        this.clampFloor(new THREE.Vector3(anchors.chewPos.x - 0.058, anchors.beddingY, anchors.chewPos.z + 0.015), anchors, petState),
+        anchors
+      );
+      return;
+    }
+    if (pickedGoal === "inspect_prop" && anchors.placedProps && anchors.placedProps.length > 0) {
       const pick = anchors.placedProps[Math.floor(this.nextRand() * anchors.placedProps.length)];
       if (pick) {
         this.startInspectPropGoal(pick, false, anchors);
@@ -747,8 +1060,8 @@ export class HamsterBehaviorController {
     for (let attempt = 0; attempt < 10; attempt++) {
       const rx = attempt < 5 ? base.x + (this.nextRand() * 2 - 1) * 0.22 : (this.nextRand() * 2 - 1) * 0.36;
       const rz = attempt < 5 ? base.z + (this.nextRand() * 2 - 1) * 0.14 : (this.nextRand() * 2 - 1) * 0.15;
-      const cx = THREE.MathUtils.clamp(rx, -0.39, 0.39);
-      const cz = THREE.MathUtils.clamp(rz, -0.16, 0.16);
+      const cx = THREE.MathUtils.clamp(rx, -0.38, 0.38);
+      const cz = THREE.MathUtils.clamp(rz, -0.155, 0.155);
       if (!this.isInsideAnyObstacle(cx, cz, anchors)) {
         this.setGoalTargetWithTunnelCorridor(new THREE.Vector3(cx, this.sampleGroundY(cx, cz, anchors), cz), anchors);
         return;
@@ -794,7 +1107,8 @@ export class HamsterBehaviorController {
       }
     }
 
-    if ((anchors.hasBowl ?? true) && (this.goal === "bowl" || latestSkill === "eat" || latestSkill === "hoard") && this.pos.distanceTo(anchors.bowlPos) < 0.15) {
+    const distToBowl2D = Math.hypot(this.pos.x - anchors.bowlPos.x, this.pos.z - anchors.bowlPos.z);
+    if ((anchors.hasBowl ?? true) && (this.goal === "bowl" || latestSkill === "eat" || latestSkill === "cheek_stuffing" || latestSkill === "hoard") && distToBowl2D < 0.16) {
       this.goalStage = "active";
       this.faceTargetPos = anchors.bowlPos.clone();
       const bowlFoodLevel = anchors.foodLevel ?? 1.0;
@@ -811,7 +1125,7 @@ export class HamsterBehaviorController {
     }
     if (
       (this.goal === "water" || latestSkill === "drink") &&
-      Math.hypot(this.pos.x - anchors.spoutPos.x, this.pos.z - anchors.spoutPos.z) < 0.14
+      Math.hypot(this.pos.x - anchors.spoutPos.x, this.pos.z - anchors.spoutPos.z) < 0.15
     ) {
       this.goalStage = "active";
       this.faceTargetPos = anchors.spoutPos.clone();
@@ -841,6 +1155,49 @@ export class HamsterBehaviorController {
       this.goalStage = "active";
       this.faceTargetPos = anchors.chewPos.clone();
       this.enterPhase("gnaw", 3.2 + this.nextRand() * 2.6);
+      return;
+    }
+
+    // Direct mapping for learned cognitive skills arriving at target pause phase
+    if (this.goal === "corner_sit") {
+      // Face comfortably into the open cage while sitting in a cozy corner
+      this.faceTargetPos = new THREE.Vector3(0.0, anchors.beddingY, 0.02);
+      if (latestSkill === "rest") {
+        this.enterPhase("rest", 4.5 + this.nextRand() * 2.5);
+        return;
+      }
+      if (latestSkill === "hind_leg_standing") {
+        this.enterPhase("rear_up", 2.8 + this.nextRand() * 1.8);
+        return;
+      }
+      if (latestSkill === "grooming") {
+        this.enterPhase("groom", 3.6 + this.nextRand() * 2.2);
+        return;
+      }
+      if (latestSkill === "digging") {
+        this.enterPhase("dig", 2.8 + this.nextRand() * 1.8);
+        return;
+      }
+      const rc = this.nextRand();
+      if (rc < 0.38) this.enterPhase("rest", 3.6 + this.nextRand() * 2.4);
+      else if (rc < 0.70) this.enterPhase("groom", 3.2 + this.nextRand() * 2.0);
+      else this.enterPhase("rear_up", 2.4 + this.nextRand() * 1.6);
+      return;
+    }
+    if (latestSkill === "hind_leg_standing") {
+      this.enterPhase("rear_up", 2.8 + this.nextRand() * 1.8);
+      return;
+    }
+    if (latestSkill === "grooming") {
+      this.enterPhase("groom", 3.6 + this.nextRand() * 2.4);
+      return;
+    }
+    if (latestSkill === "digging") {
+      this.enterPhase("dig", 2.8 + this.nextRand() * 2.0);
+      return;
+    }
+    if (latestSkill === "cautious_sniff" || latestSkill === "accept_petting") {
+      this.enterPhase("sniff", 3.2 + this.nextRand() * 2.0);
       return;
     }
 
@@ -932,55 +1289,119 @@ export class HamsterBehaviorController {
       this.goal = "bowl";
       this.goalStage = "approach";
       this.faceTargetPos = anchors.offeredFoodTarget.pos.clone();
-      this.setGoalTargetWithTunnelCorridor(
-        this.clampFloor(
-          new THREE.Vector3(
-            0.20,
-            anchors.beddingY,
-            0.135
-          ),
-          anchors,
-          petState
-        ),
-        anchors
-      );
+      this.setGoalTargetWithTunnelCorridor(this.getBowlApproachPos(anchors), anchors);
       this.enterPhase("scurry", 14.0);
     } else if (!anchors.offeredFoodTarget) {
       this.lastTrackedFoodObjectId = null;
     }
     if (petState) {
-      const posKey = `${petState.position_xyz[0]?.toFixed(3)},${petState.position_xyz[1]?.toFixed(3)},${petState.on_wheel},${petState.inside_hideout},${petState.inside_tunnel}`;
+      const posKey = `${petState.position_xyz[0]?.toFixed(2)},${petState.position_xyz[1]?.toFixed(2)},${petState.on_wheel},${petState.inside_hideout},${petState.inside_tunnel},${petState.active_skill ?? ""}`;
       if (posKey !== this.lastServerPosKey) {
+        const isFirstSync = !this.hasSyncedServerOnce;
+        this.hasSyncedServerOnce = true;
         this.lastServerPosKey = posKey;
-        this.faceTargetPos = null;
-        if (petState.on_wheel) {
-          this.goal = "wheel";
-          this.goalStage = "active";
-          this.targetPos.copy(this.getWheelTrackPos(anchors));
-        } else if (petState.inside_hideout) {
-          this.goal = "hideout";
-          this.goalStage = "active";
-          this.targetPos.set(
-            anchors.hideoutPos.x,
-            this.sampleGroundY(anchors.hideoutPos.x, anchors.hideoutPos.z, anchors) - 0.004,
-            anchors.hideoutPos.z
-          );
-        } else if (petState.inside_tunnel) {
-          this.goal = "wander";
-          this.goalStage = "approach";
-          this.targetPos.set(
-            anchors.tunnelPos.x,
-            this.sampleGroundY(anchors.tunnelPos.x, anchors.tunnelPos.z, anchors),
-            anchors.tunnelPos.z
-          );
-        } else {
-          this.goal = "wander";
-          this.goalStage = "approach";
-          this.targetPos.copy(this.mapServerPos(petState, anchors));
-        }
+        this.serverSkillConsumed = false;
 
-        if (this.pos.distanceTo(this.targetPos) > 0.025) {
-          this.enterPhase("scurry", 12.0);
+        // Never abruptly interrupt an active crawl inside the hollow bark log!
+        const currentlyMidLog =
+          (this.goal === "tunnel_through" || this.goal === "log_climb") && this.goalStage === "active";
+        if (!currentlyMidLog) {
+          this.faceTargetPos = null;
+          if (petState.on_wheel || petState.active_skill === "run_on_wheel") {
+            this.goal = "wheel";
+            this.goalCyclesLeft = 2;
+            if (isFirstSync && petState.on_wheel) {
+              // Already on the wheel at initial load
+              this.pos.copy(this.getWheelTrackPos(anchors));
+              this.goalStage = "active";
+              this.targetPos.copy(this.getWheelTrackPos(anchors));
+            } else if (this.isPhysicallyOnWheel(anchors)) {
+              this.goalStage = "active";
+              this.targetPos.copy(this.getWheelTrackPos(anchors));
+            } else {
+              // ALWAYS walk cleanly to the open +Z wheel front via Dijkstra before hopping on!
+              this.goalStage = "approach";
+              this.setGoalTargetWithTunnelCorridor(this.getWheelEntryPos(anchors), anchors);
+            }
+          } else if (
+            petState.inside_hideout ||
+            petState.active_skill === "hide" ||
+            petState.active_skill === "nesting" ||
+            petState.active_skill === "unload_hoard"
+          ) {
+            this.goal = "hideout";
+            const hideoutFloorY = this.sampleGroundY(anchors.hideoutPos.x, anchors.hideoutPos.z, anchors) - 0.004;
+            if (isFirstSync && petState.inside_hideout) {
+              // Already curled inside hideout at initial page load (no wall clipping!)
+              this.pos.set(anchors.hideoutPos.x, hideoutFloorY, anchors.hideoutPos.z);
+              this.yaw = Math.PI * 0.5 + (anchors.hideoutYaw ?? -0.27925);
+              this.goalStage = "active";
+              this.targetPos.set(anchors.hideoutPos.x, hideoutFloorY, anchors.hideoutPos.z);
+            } else if (this.isPhysicallyInsideHideout(anchors)) {
+              this.goalStage = "active";
+              this.targetPos.set(anchors.hideoutPos.x, hideoutFloorY, anchors.hideoutPos.z);
+            } else {
+              // ALWAYS route via Dijkstra to the arched +Z doorway FIRST before walking inside!
+              this.goalStage = "approach";
+              this.setGoalTargetWithTunnelCorridor(this.getHideoutDoorPos(anchors), anchors);
+            }
+          } else if (petState.inside_tunnel || petState.active_skill === "enter_tunnel") {
+            if (anchors.tunnelSpine) {
+              this.startTunnelTraversal(anchors, null);
+            } else {
+              this.goal = "wander";
+              this.goalStage = "approach";
+              this.setGoalTargetWithTunnelCorridor(this.mapServerPos(petState, anchors), anchors);
+            }
+          } else if (
+            petState.active_skill === "eat" ||
+            petState.active_skill === "approach_food" ||
+            petState.active_skill === "cheek_stuffing"
+          ) {
+            this.goal = "bowl";
+            this.goalStage = "approach";
+            this.faceTargetPos = anchors.bowlPos.clone();
+            this.setGoalTargetWithTunnelCorridor(this.getBowlApproachPos(anchors), anchors);
+          } else if (petState.active_skill === "drink") {
+            this.goal = "water";
+            this.goalStage = "approach";
+            this.faceTargetPos = anchors.spoutPos.clone();
+            this.setGoalTargetWithTunnelCorridor(this.getWaterApproachPos(anchors), anchors);
+          } else if (
+            petState.active_skill === "rest" ||
+            petState.active_skill === "hind_leg_standing" ||
+            petState.active_skill === "grooming" ||
+            petState.active_skill === "digging"
+          ) {
+            this.goal = "corner_sit";
+            this.goalStage = "approach";
+            this.setGoalTargetWithTunnelCorridor(this.mapServerPos(petState, anchors), anchors);
+          } else if (petState.active_skill === "cautious_sniff" || petState.active_skill === "accept_petting") {
+            this.goal = "wander";
+            this.goalStage = "approach";
+            const frontTarget = this.clampFloor(new THREE.Vector3(0.0, anchors.beddingY, 0.145), anchors, petState);
+            this.faceTargetPos = new THREE.Vector3(0.0, anchors.beddingY + 0.04, 0.24);
+            this.setGoalTargetWithTunnelCorridor(frontTarget, anchors);
+          } else if (
+            petState.active_skill === "explore_area" &&
+            anchors.tunnelSpine &&
+            this.nextRand() < 0.22
+          ) {
+            // Occasionally climb & periscope on top of the bark log when exploring!
+            this.goal = "log_climb";
+            this.goalStage = "approach";
+            this.setGoalTargetWithTunnelCorridor(anchors.tunnelSpine.climbEntryPos, anchors);
+          } else {
+            this.goal = "wander";
+            this.goalStage = "approach";
+            this.setGoalTargetWithTunnelCorridor(this.mapServerPos(petState, anchors), anchors);
+          }
+
+          if (this.pos.distanceTo(this.targetPos) > 0.025 || this.waypointQueue.length > 0) {
+            this.enterPhase("scurry", 16.0);
+          } else if (petState.active_skill) {
+            this.choosePauseBehavior(petState.active_skill, petState, anchors);
+          }
         }
       }
     }
@@ -1004,13 +1425,16 @@ export class HamsterBehaviorController {
     let targetDig = 0;
     let targetChew = 0;
 
+    const wheelTrackPos = this.getWheelTrackPos(anchors);
+    const distToWheelTrack = Math.hypot(this.pos.x - wheelTrackPos.x, this.pos.z - wheelTrackPos.z);
+    const distToHideout = Math.hypot(this.pos.x - anchors.hideoutPos.x, this.pos.z - anchors.hideoutPos.z);
+
+    // STRICTLY require physically arriving at the wheel track / hideout interior (NEVER lerp through walls!)
     const onWheelActive =
-      Boolean(petState?.on_wheel) ||
-      (this.goal === "wheel" && this.goalStage === "active" && distToTarget < 0.06);
+      this.goal === "wheel" && this.goalStage === "active" && distToWheelTrack < 0.068;
 
     const insideHideoutActive =
-      Boolean(petState?.inside_hideout) ||
-      (this.goal === "hideout" && this.goalStage === "active" && distToTarget < 0.06);
+      this.goal === "hideout" && this.goalStage === "active" && distToHideout < 0.055;
 
     if (onWheelActive) {
       // On wheel: fast bounding sprints + sudden pauses where wheel coasts/rocks
@@ -1023,7 +1447,7 @@ export class HamsterBehaviorController {
       this.phaseTimer -= clampedDt;
       if (this.phase !== "wheel_run" && this.phase !== "wheel_pause") {
         this.wheelBurstSpeed = 0.30 + this.nextRand() * 0.14;
-        this.enterPhase("wheel_run", 2.0 + this.nextRand() * 2.2);
+        this.enterPhase("wheel_run", 1.45 + this.nextRand() * 1.0);
       } else if (this.phaseTimer <= 0) {
         if (this.phase === "wheel_run") {
           this.wheelCoastVel = 5.4;
@@ -1032,7 +1456,7 @@ export class HamsterBehaviorController {
           if (this.goalCyclesLeft > 0) {
             this.goalCyclesLeft--;
             this.wheelBurstSpeed = 0.30 + this.nextRand() * 0.14;
-            this.enterPhase("wheel_run", 1.8 + this.nextRand() * 2.2);
+            this.enterPhase("wheel_run", 1.6 + this.nextRand() * 1.3);
           } else {
             // Hop off wheel back to entry point
             this.goalStage = "exit";
@@ -1041,7 +1465,7 @@ export class HamsterBehaviorController {
           }
         } else {
           this.wheelBurstSpeed = 0.30 + this.nextRand() * 0.14;
-          this.enterPhase("wheel_run", 1.8 + this.nextRand() * 2.8);
+          this.enterPhase("wheel_run", 1.6 + this.nextRand() * 1.5);
         }
       }
 
@@ -1077,11 +1501,15 @@ export class HamsterBehaviorController {
         ),
         Math.min(1, clampedDt * 5)
       );
+      // Align curled body lengthwise along the hideout's wide 16cm X-axis so nose & rump never poke through wood walls!
+      const hideoutSleepYaw = Math.PI * 0.5 + (anchors.hideoutYaw ?? -0.27925);
+      const dSleepYaw = shortestAngleDiff(this.yaw, hideoutSleepYaw);
+      this.yaw += dSleepYaw * Math.min(1, clampedDt * 5);
       this.phase = "rest";
       targetSpeed = 0;
-      targetCurl = 0.92;
-      this.targetHeadYaw = 0.12;
-      this.targetHeadPitch = 0.25;
+      targetCurl = 0.96;
+      this.targetHeadYaw = 0.14;
+      this.targetHeadPitch = 0.28;
       this.targetHeadRoll = 0.08;
       activityLabel = "Curled Up in Hideout";
 
@@ -1090,7 +1518,7 @@ export class HamsterBehaviorController {
         if (this.phaseTimer <= 0) {
           this.goalStage = "exit";
           this.targetPos.copy(this.getHideoutDoorPos(anchors));
-          this.enterPhase("scurry", 2.5);
+          this.enterPhase("scurry", 3.5);
         }
       }
     } else {
@@ -1107,123 +1535,134 @@ export class HamsterBehaviorController {
           this.updateHeadSaccade(clampedDt, 0.45, -0.08, 0.12, 0.1);
           activityLabel = "Alert Freeze";
         } else if (
-          distToTarget < 0.025 ||
+          distToTarget <
+          (((this.goal === "tunnel_through" || this.goal === "log_climb") &&
+            (this.goalStage === "active" || this.goalStage === "exit"))
+            ? 0.045
+            : this.waypointQueue.length > 0
+              ? 0.015
+              : 0.025) ||
           (this.goal === "water" && distToSpout2D < 0.085 && this.waypointQueue.length === 0) ||
           this.phaseTimer <= 0
         ) {
-          if (this.waypointQueue.length > 0 && distToTarget < 0.05) {
+          if (this.waypointQueue.length > 0 && distToTarget < 0.018) {
+            // Once we have stepped cleanly out through the hideout door or wheel front, re-enable solid collision!
+            if (this.exitingHideout) this.exitingHideout = false;
+            if (this.exitingWheel) this.exitingWheel = false;
             this.targetPos.copy(this.waypointQueue.shift()!);
             this.stuckTimer = 0;
             this.stuckCheckPos.copy(this.pos);
             this.enterPhase("scurry", 14.0);
           } else {
-          const arrived = distToTarget < 0.055;
-          // Handle multi-stage prop transitions (wheel, hideout, hollow middle log, & log top climb)
-          if (this.goal === "wheel" && this.goalStage === "approach") {
-            if (arrived) {
-              this.goalStage = "active";
-              this.targetPos.copy(this.getWheelTrackPos(anchors));
-              this.enterPhase("scurry", 4.5);
-              activityLabel = "Hopping onto Wheel";
-            } else {
-              this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
-              this.enterPhase("scurry", 16.0);
-            }
-          } else if (this.goal === "hideout" && this.goalStage === "approach") {
-            if (arrived) {
-              this.goalStage = "active";
-              this.targetPos.set(
-                anchors.hideoutPos.x,
-                this.sampleGroundY(anchors.hideoutPos.x, anchors.hideoutPos.z, anchors) - 0.004,
-                anchors.hideoutPos.z
-              );
-              this.enterPhase("scurry", 4.5);
-              this.phaseTimer = 4.5 + this.nextRand() * 3.0;
-              activityLabel = "Entering Hideout";
-            } else {
-              this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
-              this.enterPhase("scurry", 16.0);
-            }
-          } else if (this.goal === "tunnel_through" && anchors.tunnelSpine) {
-            if (this.goalStage === "approach") {
+            if (this.exitingHideout && distToTarget < 0.055) this.exitingHideout = false;
+            if (this.exitingWheel && distToTarget < 0.055) this.exitingWheel = false;
+            const arrived = distToTarget < 0.058;
+            // Handle multi-stage prop transitions (wheel, hideout, hollow middle log, & log top climb)
+            if (this.goal === "wheel" && this.goalStage === "approach") {
               if (arrived) {
                 this.goalStage = "active";
-                const spinePts = this.tunnelDirectionForward
-                  ? [...anchors.tunnelSpine.centerline, anchors.tunnelSpine.mouthBApproach]
-                  : [...anchors.tunnelSpine.centerline.slice().reverse(), anchors.tunnelSpine.mouthAApproach];
-                this.logActivePath = spinePts.map((pt) => pt.clone());
-                this.logPathIndex = 0;
-                this.targetPos.copy(this.logActivePath[0]);
-                this.enterPhase("scurry", 12.0);
-                activityLabel = "Entering Hollow Log";
+                this.targetPos.copy(this.getWheelTrackPos(anchors));
+                this.enterPhase("scurry", 4.5);
+                activityLabel = "Hopping onto Wheel";
               } else {
                 this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
                 this.enterPhase("scurry", 16.0);
               }
-            } else if (this.goalStage === "active") {
-              if (this.logPathIndex + 1 < this.logActivePath.length) {
-                this.logPathIndex++;
-                this.targetPos.copy(this.logActivePath[this.logPathIndex]);
-                this.enterPhase("scurry", 8.0);
-                activityLabel =
-                  this.logPathIndex === this.logActivePath.length - 1
-                    ? "Exiting Hollow Log"
-                    : "Crawling Through Hollow Log";
-              } else {
-                this.goalStage = "exit";
-                this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
-                this.enterPhase("scurry", 14.0);
-              }
-            } else {
-              this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
-              this.enterPhase("scurry", 14.0);
-            }
-          } else if (this.goal === "log_climb" && anchors.tunnelSpine) {
-            if (this.goalStage === "approach") {
+            } else if (this.goal === "hideout" && this.goalStage === "approach") {
               if (arrived) {
                 this.goalStage = "active";
-                this.logHasPerched = false;
-                this.logActivePath = [
-                  ...anchors.tunnelSpine.topPath.map((pt) => pt.clone()),
-                  anchors.tunnelSpine.climbExitPos.clone(),
-                ];
-                this.logPathIndex = 0;
-                this.targetPos.copy(this.logActivePath[0]);
-                this.enterPhase("scurry", 8.0);
-                activityLabel = "Climbing onto Log";
+                this.targetPos.set(
+                  anchors.hideoutPos.x,
+                  this.sampleGroundY(anchors.hideoutPos.x, anchors.hideoutPos.z, anchors) - 0.004,
+                  anchors.hideoutPos.z
+                );
+                this.enterPhase("scurry", 4.5);
+                this.phaseTimer = 4.5 + this.nextRand() * 3.0;
+                activityLabel = "Entering Hideout";
               } else {
                 this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
                 this.enterPhase("scurry", 16.0);
               }
-            } else if (this.goalStage === "active") {
-              const perchIdx = Math.floor(anchors.tunnelSpine.topPath.length / 2);
-              if (!this.logHasPerched && this.logPathIndex === perchIdx) {
-                this.logHasPerched = true;
-                this.enterPhase("log_perch", 2.4 + this.nextRand() * 1.4);
-                activityLabel = "Periscoping on Top of Log";
-              } else if (this.logPathIndex + 1 < this.logActivePath.length) {
-                this.logPathIndex++;
-                this.targetPos.copy(this.logActivePath[this.logPathIndex]);
-                this.enterPhase("scurry", 8.0);
-                activityLabel =
-                  this.logPathIndex === this.logActivePath.length - 1
-                    ? "Climbing Down from Log"
-                    : "Walking on Top of Log";
+            } else if (this.goal === "tunnel_through" && anchors.tunnelSpine) {
+              if (this.goalStage === "approach") {
+                if (arrived) {
+                  this.goalStage = "active";
+                  const spinePts = this.tunnelDirectionForward
+                    ? [...anchors.tunnelSpine.centerline, anchors.tunnelSpine.mouthBApproach]
+                    : [...anchors.tunnelSpine.centerline.slice().reverse(), anchors.tunnelSpine.mouthAApproach];
+                  this.logActivePath = spinePts.map((pt) => pt.clone());
+                  this.logPathIndex = 0;
+                  this.targetPos.copy(this.logActivePath[0]);
+                  this.enterPhase("scurry", 12.0);
+                  activityLabel = "Entering Hollow Log";
+                } else {
+                  this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
+                  this.enterPhase("scurry", 16.0);
+                }
+              } else if (this.goalStage === "active") {
+                if (this.logPathIndex + 1 < this.logActivePath.length) {
+                  this.logPathIndex++;
+                  this.targetPos.copy(this.logActivePath[this.logPathIndex]);
+                  this.enterPhase("scurry", 8.0);
+                  activityLabel =
+                    this.logPathIndex === this.logActivePath.length - 1
+                      ? "Exiting Hollow Log"
+                      : "Crawling Through Hollow Log";
+                } else {
+                  this.goalStage = "exit";
+                  this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
+                  this.enterPhase("scurry", 14.0);
+                }
               } else {
-                this.goalStage = "exit";
                 this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
                 this.enterPhase("scurry", 14.0);
               }
-            } else {
+            } else if (this.goal === "log_climb" && anchors.tunnelSpine) {
+              if (this.goalStage === "approach") {
+                if (arrived) {
+                  this.goalStage = "active";
+                  this.logHasPerched = false;
+                  this.logActivePath = [
+                    ...anchors.tunnelSpine.topPath.map((pt) => pt.clone()),
+                    anchors.tunnelSpine.climbExitPos.clone(),
+                  ];
+                  this.logPathIndex = 0;
+                  this.targetPos.copy(this.logActivePath[0]);
+                  this.enterPhase("scurry", 8.0);
+                  activityLabel = "Climbing onto Log";
+                } else {
+                  this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
+                  this.enterPhase("scurry", 16.0);
+                }
+              } else if (this.goalStage === "active") {
+                const perchIdx = Math.floor(anchors.tunnelSpine.topPath.length / 2);
+                if (!this.logHasPerched && this.logPathIndex === perchIdx) {
+                  this.logHasPerched = true;
+                  this.enterPhase("log_perch", 2.4 + this.nextRand() * 1.4);
+                  activityLabel = "Periscoping on Top of Log";
+                } else if (this.logPathIndex + 1 < this.logActivePath.length) {
+                  this.logPathIndex++;
+                  this.targetPos.copy(this.logActivePath[this.logPathIndex]);
+                  this.enterPhase("scurry", 8.0);
+                  activityLabel =
+                    this.logPathIndex === this.logActivePath.length - 1
+                      ? "Climbing Down from Log"
+                      : "Walking on Top of Log";
+                } else {
+                  this.goalStage = "exit";
+                  this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
+                  this.enterPhase("scurry", 14.0);
+                }
+              } else {
+                this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
+                this.enterPhase("scurry", 14.0);
+              }
+            } else if (this.goalStage === "exit") {
               this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
               this.enterPhase("scurry", 14.0);
+            } else {
+              this.choosePauseBehavior(latestSkill, petState, anchors);
             }
-          } else if (this.goalStage === "exit") {
-            this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
-            this.enterPhase("scurry", 14.0);
-          } else {
-            this.choosePauseBehavior(latestSkill, petState, anchors);
-          }
           }
           targetSpeed = 0;
         } else {
@@ -1252,14 +1691,15 @@ export class HamsterBehaviorController {
           this.targetHeadRoll = THREE.MathUtils.clamp(-dYaw * 0.14, -0.12, 0.12);
 
           const isTraversingLog =
-            (this.goal === "tunnel_through" || this.goal === "log_climb") && this.goalStage === "active";
+            (this.goal === "tunnel_through" || this.goal === "log_climb") &&
+            (this.goalStage === "active" || this.goalStage === "exit");
 
-          // Calibrated to real-video measured flat-ground hamster speed (0.08–0.12 m/s)
-          const alignScale = Math.max(0.25, Math.cos(Math.min(Math.abs(dYaw), Math.PI * 0.5)));
+          // Natural lively Syrian hamster scurry speed (0.14–0.18 m/s on open bedding)
+          const alignScale = Math.max(0.35, Math.cos(Math.min(Math.abs(dYaw), Math.PI * 0.5)));
           const maxMoveSpeed =
-            (petState?.inside_tunnel || isTraversingLog ? 0.078 : 0.085 + curiosity * 0.030) * alignScale;
+            (petState?.inside_tunnel || isTraversingLog ? 0.12 : 0.145 + curiosity * 0.035) * alignScale;
           if (this.goal === "tunnel_through" && this.goalStage === "active") {
-            targetCrouch = 0.34;
+            targetCrouch = 0.85;
           }
           targetSpeed = maxMoveSpeed;
           const stepDist = Math.min(distToTarget, this.currentSpeed * clampedDt);
@@ -1271,35 +1711,41 @@ export class HamsterBehaviorController {
           }
           if (!isTraversingLog) {
             this.pushOutOfProps(this.pos, anchors, petState);
-            // Smooth gentle tangential slide if grazing an obstacle (no erratic sideways shoves)
+            // Smooth gentle tangential slide if grazing an obstacle: pick whichever tangent side gets closer to target!
             const moved = Math.hypot(this.pos.x - prevX, this.pos.z - prevZ);
             if (stepDist > 1e-4 && moved < stepDist * 0.35 && distToTarget > 1e-4) {
               const perpX = -dz / distToTarget;
               const perpZ = dx / distToTarget;
-              this.pos.x += perpX * stepDist * 0.45;
-              this.pos.z += perpZ * stepDist * 0.45;
-              this.pushOutOfProps(this.pos, anchors, petState);
+              const candA = this.pos.clone();
+              candA.x += perpX * stepDist * 0.55;
+              candA.z += perpZ * stepDist * 0.55;
+              this.pushOutOfProps(candA, anchors, petState);
+              const candB = this.pos.clone();
+              candB.x -= perpX * stepDist * 0.55;
+              candB.z -= perpZ * stepDist * 0.55;
+              this.pushOutOfProps(candB, anchors, petState);
+              const dA = Math.hypot(this.targetPos.x - candA.x, this.targetPos.z - candA.z);
+              const dB = Math.hypot(this.targetPos.x - candB.x, this.targetPos.z - candB.z);
+              this.pos.copy(dA <= dB ? candA : candB);
             }
+            this.pos.x = THREE.MathUtils.clamp(this.pos.x, -0.415, 0.415);
+            this.pos.z = THREE.MathUtils.clamp(this.pos.z, -0.195, 0.216);
           }
 
-          if (this.goalStage !== "active") {
-            this.pos.x = THREE.MathUtils.clamp(this.pos.x, -0.43, 0.43);
-            this.pos.z = THREE.MathUtils.clamp(this.pos.z, -0.215, 0.215);
-          }
+          // Calm stuck recovery: re-route cleanly around obstacles if blocked > 1.0s
           if (!isTraversingLog) {
-            this.pushOutOfProps(this.pos, anchors, petState);
-          }
-
-          // Calm stuck recovery: re-route cleanly around obstacles if blocked > 1.2s
-          this.stuckTimer += clampedDt;
-          if (this.stuckTimer >= 1.2) {
-            const netMoved = Math.hypot(this.pos.x - this.stuckCheckPos.x, this.pos.z - this.stuckCheckPos.z);
-            this.stuckCheckPos.copy(this.pos);
-            this.stuckTimer = 0;
-            if (netMoved < 0.01 && this.goalStage === "approach") {
-              this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
-              this.enterPhase("scurry", 16.0);
+            this.stuckTimer += clampedDt;
+            if (this.stuckTimer >= 1.0) {
+              const netMoved = Math.hypot(this.pos.x - this.stuckCheckPos.x, this.pos.z - this.stuckCheckPos.z);
+              this.stuckCheckPos.copy(this.pos);
+              this.stuckTimer = 0;
+              if (netMoved < 0.015 && this.goalStage === "approach") {
+                this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
+                this.enterPhase("scurry", 16.0);
+              }
             }
+          } else {
+            this.stuckTimer = 0;
           }
 
           // Smoothly track Y: elevated on wheel / top of log / inside hollow log, otherwise bedding height
@@ -1307,8 +1753,8 @@ export class HamsterBehaviorController {
             this.goal === "wheel" && this.goalStage === "active"
               ? this.getWheelTrackPos(anchors).y
               : isTraversingLog
-              ? this.targetPos.y
-              : this.sampleGroundY(this.pos.x, this.pos.z, anchors);
+                ? this.targetPos.y
+                : this.sampleGroundY(this.pos.x, this.pos.z, anchors);
           this.pos.y = THREE.MathUtils.lerp(this.pos.y, groundY, Math.min(1, clampedDt * 12));
 
           // Lock gait cadence to physical ground speed (real stride length ~0.055 m -> ~1.6-2.0 Hz)
@@ -1317,37 +1763,47 @@ export class HamsterBehaviorController {
           activityLabel = petState?.inside_tunnel
             ? "Exploring Tunnel"
             : this.goal === "tunnel_through"
-            ? this.goalStage === "active"
-              ? this.logPathIndex === this.logActivePath.length - 1
-                ? "Exiting Hollow Log"
-                : "Crawling Through Hollow Log"
-              : "Heading to Hollow Log"
-            : this.goal === "log_climb"
-            ? this.goalStage === "active"
-              ? this.logPathIndex === this.logActivePath.length - 1
-                ? "Climbing Down from Log"
-                : "Climbing on Top of Log"
-              : "Heading to Climb Log"
-            : this.goal === "inspect_prop" && this.activeInspectProp
-            ? this.activeInspectIsNew
-              ? `Approaching New ${this.activeInspectProp.name}`
-              : `Heading to ${this.activeInspectProp.name}`
-            : this.goal === "wheel"
-            ? "Heading to Wheel"
-            : this.goal === "water"
-            ? "Heading to Water"
-            : this.goal === "hideout"
-            ? "Heading to Hideout"
-            : this.goal === "bowl"
-            ? "Heading to Food Bowl"
-            : this.goal === "chew"
-            ? "Heading to Chew Block"
-            : latestSkill
-            ? `Scurrying (${latestSkill.replace(/_/g, " ")})`
-            : "Scurrying";
+              ? this.goalStage === "active"
+                ? this.logPathIndex === this.logActivePath.length - 1
+                  ? "Exiting Hollow Log"
+                  : "Crawling Through Hollow Log"
+                : "Heading to Hollow Log"
+              : this.goal === "log_climb"
+                ? this.goalStage === "active"
+                  ? this.logPathIndex === this.logActivePath.length - 1
+                    ? "Climbing Down from Log"
+                    : "Climbing on Top of Log"
+                  : "Heading to Climb Log"
+                : this.goal === "inspect_prop" && this.activeInspectProp
+                  ? this.activeInspectIsNew
+                    ? `Approaching New ${this.activeInspectProp.name}`
+                    : `Heading to ${this.activeInspectProp.name}`
+                  : this.goal === "wheel"
+                    ? "Heading to Wheel"
+                    : this.goal === "water"
+                      ? "Heading to Water"
+                      : this.goal === "hideout"
+                        ? "Heading to Hideout"
+                        : this.goal === "bowl"
+                          ? "Heading to Food Bowl"
+                          : this.goal === "corner_sit"
+                            ? "Heading to Cozy Corner"
+                            : this.goal === "chew"
+                              ? "Heading to Chew Block"
+                              : latestSkill
+                                ? `Scurrying (${latestSkill.replace(/_/g, " ")})`
+                                : "Scurrying";
         }
       } else {
         // Stationary / micro-behavior phases — stay flush with log top when perched, else local bedding
+        const isTraversingLog =
+          (this.goal === "tunnel_through" || this.goal === "log_climb") &&
+          (this.goalStage === "active" || this.goalStage === "exit");
+        if (!isTraversingLog && this.phase !== "log_perch") {
+          this.pushOutOfProps(this.pos, anchors, petState);
+          this.pos.x = THREE.MathUtils.clamp(this.pos.x, -0.415, 0.415);
+          this.pos.z = THREE.MathUtils.clamp(this.pos.z, -0.195, 0.216);
+        }
         const groundY =
           this.phase === "log_perch"
             ? this.targetPos.y
@@ -1376,7 +1832,9 @@ export class HamsterBehaviorController {
             this.enterPhase("scurry", 8.0);
             activityLabel = "Climbing Down from Log";
           } else {
-            this.chooseNextGoalAndTarget(anchors, latestSkill, petState);
+            // Mark the current server skill as completed so Hammy doesn't repeat the same action until the next brain decision
+            this.serverSkillConsumed = true;
+            this.chooseNextGoalAndTarget(anchors, null, petState);
             this.enterPhase("scurry", 16.0);
             activityLabel = "Exploring";
           }
@@ -1491,7 +1949,7 @@ export class HamsterBehaviorController {
               this.targetHeadYaw = 0.15;
               this.targetHeadPitch = 0.25;
               this.targetHeadRoll = 0.1;
-              activityLabel = "Curled Up Resting";
+              activityLabel = this.goal === "corner_sit" ? "Sitting & Resting in Cozy Corner" : "Curled Up Resting";
               break;
             }
             case "sniff":
