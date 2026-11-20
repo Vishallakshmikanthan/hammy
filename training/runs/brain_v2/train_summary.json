@@ -1,0 +1,161 @@
+{
+  "label": "prod_50M",
+  "policy_version": "hl_rppo_rnd_v2.0.0",
+  "obs_schema_version": "cognitive_obs_v3.0.0",
+  "act_schema_version": "cognitive_act_v2.0.0",
+  "enable_memory": true,
+  "enable_rnd": true,
+  "seed": 42,
+  "total_steps": 24969216,
+  "wall_sec": 198.39,
+  "train_fps": 125856.2,
+  "device": "cuda",
+  "gpu_name": "NVIDIA GeForce RTX 5070 Laptop GPU",
+  "eval": {
+    "homeostasis_time_in_range": 0.995,
+    "mean_step_reward": 0.6956,
+    "behavioural_diversity": 0.9273,
+    "routine_formation": 0.6026,
+    "unique_skills_used": 16,
+    "novel_prop_explore_rate": 0.1901,
+    "taming_low_trust_retreat_rate": 0.0,
+    "taming_mid_trust_sniff_rate": 0.9552,
+    "taming_high_trust_accept_rate": 0.9801,
+    "skill_distribution": {
+      "approach_food": 0.0546,
+      "eat": 0.0301,
+      "cheek_stuffing": 0.1264,
+      "unload_hoard": 0.1146,
+      "drink": 0.012,
+      "explore_area": 0.0813,
+      "enter_tunnel": 0.0819,
+      "run_on_wheel": 0.0337,
+      "digging": 0.0843,
+      "hind_leg_standing": 0.0632,
+      "grooming": 0.0615,
+      "nesting": 0.1218,
+      "rest": 0.0444,
+      "hide": 0.0092,
+      "cautious_sniff": 0.0074,
+      "accept_petting": 0.0736
+    }
+  },
+  "training_curve": [
+    {
+      "update": 1,
+      "steps": 65536,
+      "fps": 55904.3,
+      "mean_ext_rew": 0.3513,
+      "mean_int_rew": 0.4337,
+      "healthy_rate": 0.8302,
+      "entropy": 2.5782
+    },
+    {
+      "update": 38,
+      "steps": 2490368,
+      "fps": 119108.9,
+      "mean_ext_rew": 0.5168,
+      "mean_int_rew": 0.0128,
+      "healthy_rate": 0.9612,
+      "entropy": 2.3837
+    },
+    {
+      "update": 76,
+      "steps": 4980736,
+      "fps": 119852.7,
+      "mean_ext_rew": 0.5369,
+      "mean_int_rew": 0.0105,
+      "healthy_rate": 0.9924,
+      "entropy": 2.34
+    },
+    {
+      "update": 114,
+      "steps": 7471104,
+      "fps": 122100.8,
+      "mean_ext_rew": 0.5059,
+      "mean_int_rew": 0.0091,
+      "healthy_rate": 0.9952,
+      "entropy": 2.3917
+    },
+    {
+      "update": 152,
+      "steps": 9961472,
+      "fps": 124235.3,
+      "mean_ext_rew": 0.6034,
+      "mean_int_rew": 0.0071,
+      "healthy_rate": 0.9947,
+      "entropy": 2.3011
+    },
+    {
+      "update": 190,
+      "steps": 12451840,
+      "fps": 125586.7,
+      "mean_ext_rew": 0.6337,
+      "mean_int_rew": 0.0058,
+      "healthy_rate": 0.9992,
+      "entropy": 2.0658
+    },
+    {
+      "update": 228,
+      "steps": 14942208,
+      "fps": 125426.5,
+      "mean_ext_rew": 0.5389,
+      "mean_int_rew": 0.0059,
+      "healthy_rate": 0.9999,
+      "entropy": 2.1445
+    },
+    {
+      "update": 266,
+      "steps": 17432576,
+      "fps": 125663.7,
+      "mean_ext_rew": 0.6398,
+      "mean_int_rew": 0.0057,
+      "healthy_rate": 0.9923,
+      "entropy": 2.0708
+    },
+    {
+      "update": 304,
+      "steps": 19922944,
+      "fps": 125827.0,
+      "mean_ext_rew": 0.6791,
+      "mean_int_rew": 0.0045,
+      "healthy_rate": 0.9998,
+      "entropy": 1.8554
+    },
+    {
+      "update": 342,
+      "steps": 22413312,
+      "fps": 126326.1,
+      "mean_ext_rew": 0.6838,
+      "mean_int_rew": 0.0039,
+      "healthy_rate": 0.9998,
+      "entropy": 1.7409
+    },
+    {
+      "update": 380,
+      "steps": 24903680,
+      "fps": 125906.1,
+      "mean_ext_rew": 0.6941,
+      "mean_int_rew": 0.0036,
+      "healthy_rate": 0.9999,
+      "entropy": 1.6463
+    },
+    {
+      "update": 381,
+      "steps": 24969216,
+      "fps": 125856.4,
+      "mean_ext_rew": 0.6953,
+      "mean_int_rew": 0.0036,
+      "healthy_rate": 0.9999,
+      "entropy": 1.6379
+    }
+  ],
+  "onnx_export": {
+    "policy_onnx_path": "training/runs/brain_v2/high_level_brain_v2.onnx",
+    "rnd_onnx_path": "training/runs/brain_v2/rnd_curiosity_v2.onnx",
+    "max_abs_diff_vs_pytorch": 2.38e-06,
+    "single_step_latency_ms": 0.02515,
+    "policy_size_kb": 825.65,
+    "rnd_size_kb": 229.34
+  }
+}

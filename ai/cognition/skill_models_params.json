@@ -1,386 +1,386 @@
 {
   "approach_food": {
-    "success_rate": 0.9467,
+    "success_rate": 0.985,
     "duration": {
-      "mean": 4.96,
-      "std": 1.6,
-      "slope_dist": 8.006,
-      "dist_mean": 0.319,
-      "min": 2.0,
-      "max": 8.0
+      "mean": 19.9,
+      "std": 4.38,
+      "slope_dist": 6.0,
+      "dist_mean": 0.25,
+      "min": 12.0,
+      "max": 28.0
     },
     "energy_cost": {
-      "mean": 0.00012,
-      "std": 0.0001
+      "mean": 0.00053,
+      "std": 0.0005
     },
     "collision_rate": 0.0,
     "drive_deltas": {
       "hunger": {
-        "mean": -0.00746,
-        "std": 0.02468
+        "mean": 0.00036,
+        "std": 0.0005
       },
       "thirst": {
-        "mean": 0.0001,
-        "std": 0.0001
+        "mean": 0.00043,
+        "std": 0.0005
       },
       "energy": {
-        "mean": -0.00012,
-        "std": 0.0001
+        "mean": -0.00053,
+        "std": 0.0005
       },
       "comfort": {
-        "mean": 0.0,
-        "std": 0.0001
+        "mean": -0.00023,
+        "std": 0.0005
       },
       "stress": {
-        "mean": 1e-05,
-        "std": 0.0001
+        "mean": 3e-05,
+        "std": 0.0005
       },
       "curiosity": {
-        "mean": -0.08847,
-        "std": 0.04214
+        "mean": 0.0254,
+        "std": 0.0005
       }
     },
     "displacement": {
-      "dx_mean": 0.2427,
-      "dx_std": 0.1975,
-      "dy_mean": -0.0985,
-      "dy_std": 0.0864
+      "dx_mean": 0.0,
+      "dx_std": 0.12,
+      "dy_mean": 0.0,
+      "dy_std": 0.07
     }
   },
   "eat": {
-    "success_rate": 1.0,
+    "success_rate": 0.985,
     "duration": {
-      "mean": 10.44,
-      "std": 1.18,
-      "slope_dist": 6.471,
-      "dist_mean": 0.046,
-      "min": 10.0,
-      "max": 16.0
+      "mean": 54.17,
+      "std": 11.07,
+      "slope_dist": 6.0,
+      "dist_mean": 0.25,
+      "min": 35.0,
+      "max": 75.0
     },
     "energy_cost": {
-      "mean": 0.00027,
-      "std": 0.0001
+      "mean": 0.00144,
+      "std": 0.0005
     },
     "collision_rate": 0.0,
     "drive_deltas": {
       "hunger": {
-        "mean": -0.32928,
-        "std": 0.16325
+        "mean": -0.34805,
+        "std": 0.11465
       },
       "thirst": {
-        "mean": 0.00021,
-        "std": 0.0001
+        "mean": 0.00117,
+        "std": 0.0005
       },
       "energy": {
-        "mean": -0.00027,
-        "std": 0.0001
+        "mean": -0.00144,
+        "std": 0.0005
       },
       "comfort": {
-        "mean": -0.00011,
-        "std": 0.0001
+        "mean": -0.00063,
+        "std": 0.0005
       },
       "stress": {
-        "mean": 6e-05,
-        "std": 0.00016
+        "mean": 0.0001,
+        "std": 0.00073
       },
       "curiosity": {
-        "mean": -0.03227,
-        "std": 0.02773
+        "mean": 0.02608,
+        "std": 0.0005
       }
     },
     "displacement": {
-      "dx_mean": 0.2609,
-      "dx_std": 0.2057,
-      "dy_mean": -0.098,
-      "dy_std": 0.0946
+      "dx_mean": 0.0,
+      "dx_std": 0.12,
+      "dy_mean": 0.0,
+      "dy_std": 0.07
     }
   },
   "drink": {
-    "success_rate": 0.9667,
+    "success_rate": 0.985,
     "duration": {
-      "mean": 11.43,
-      "std": 3.03,
-      "slope_dist": 6.024,
-      "dist_mean": 0.446,
-      "min": 8.0,
-      "max": 18.0
+      "mean": 39.04,
+      "std": 8.59,
+      "slope_dist": 6.0,
+      "dist_mean": 0.25,
+      "min": 25.0,
+      "max": 55.0
     },
     "energy_cost": {
-      "mean": 0.0003,
-      "std": 0.0001
+      "mean": 0.00104,
+      "std": 0.0005
     },
     "collision_rate": 0.0,
     "drive_deltas": {
       "hunger": {
-        "mean": 0.0002,
-        "std": 0.0001
+        "mean": 0.0007,
+        "std": 0.0005
       },
       "thirst": {
-        "mean": -0.31747,
-        "std": 0.1797
+        "mean": -0.32422,
+        "std": 0.10086
       },
       "energy": {
-        "mean": -0.0003,
-        "std": 0.0001
+        "mean": -0.00104,
+        "std": 0.0005
       },
       "comfort": {
-        "mean": -9e-05,
-        "std": 0.0001
+        "mean": -0.00046,
+        "std": 0.0005
       },
       "stress": {
-        "mean": 1e-05,
-        "std": 0.00019
+        "mean": 9e-05,
+        "std": 0.00053
       },
       "curiosity": {
-        "mean": -0.11217,
-        "std": 0.04399
+        "mean": 0.02578,
+        "std": 0.0005
       }
     },
     "displacement": {
-      "dx_mean": 0.4092,
-      "dx_std": 0.1982,
-      "dy_mean": -0.0209,
-      "dy_std": 0.0804
+      "dx_mean": 0.0,
+      "dx_std": 0.12,
+      "dy_mean": 0.0,
+      "dy_std": 0.07
     }
   },
   "explore_area": {
-    "success_rate": 1.0,
+    "success_rate": 0.985,
     "duration": {
-      "mean": 270.13,
-      "std": 86.72,
-      "slope_dist": -59.754,
-      "dist_mean": 0.245,
-      "min": 20.0,
-      "max": 300.0
+      "mean": 106.3,
+      "std": 26.3,
+      "slope_dist": 6.0,
+      "dist_mean": 0.25,
+      "min": 60.0,
+      "max": 150.0
     },
     "energy_cost": {
-      "mean": 0.00722,
-      "std": 0.00247
+      "mean": 0.00283,
+      "std": 0.00075
     },
     "collision_rate": 0.0,
     "drive_deltas": {
       "hunger": {
-        "mean": 0.00427,
-        "std": 0.00747
+        "mean": 0.00192,
+        "std": 0.0005
       },
       "thirst": {
-        "mean": 0.00585,
-        "std": 0.00189
+        "mean": 0.0023,
+        "std": 0.00057
       },
       "energy": {
-        "mean": -0.00722,
-        "std": 0.00247
+        "mean": -0.00283,
+        "std": 0.00075
       },
       "comfort": {
-        "mean": -0.00311,
-        "std": 0.00102
+        "mean": -0.00124,
+        "std": 0.0005
       },
       "stress": {
-        "mean": 0.00182,
-        "std": 0.00468
+        "mean": 0.00024,
+        "std": 0.00144
       },
       "curiosity": {
-        "mean": -0.06402,
-        "std": 0.03065
+        "mean": -0.37054,
+        "std": 0.13165
       }
     },
     "displacement": {
-      "dx_mean": 0.1656,
-      "dx_std": 0.1882,
-      "dy_mean": -0.0345,
-      "dy_std": 0.0747
+      "dx_mean": 0.0,
+      "dx_std": 0.12,
+      "dy_mean": 0.0,
+      "dy_std": 0.07
     }
   },
   "rest": {
-    "success_rate": 1.0,
+    "success_rate": 0.985,
     "duration": {
-      "mean": 557.16,
-      "std": 817.05,
-      "slope_dist": 116.016,
-      "dist_mean": 0.319,
-      "min": 2.0,
-      "max": 1800.0
+      "mean": 335.69,
+      "std": 87.66,
+      "slope_dist": 6.0,
+      "dist_mean": 0.25,
+      "min": 180.0,
+      "max": 480.0
     },
     "energy_cost": {
-      "mean": 7e-05,
-      "std": 0.0001
+      "mean": 0.0,
+      "std": 0.0005
     },
     "collision_rate": 0.0,
     "drive_deltas": {
       "hunger": {
-        "mean": 0.00377,
-        "std": 0.00544
+        "mean": 0.00224,
+        "std": 0.00058
       },
       "thirst": {
-        "mean": 0.0044,
-        "std": 0.00637
+        "mean": 0.00261,
+        "std": 0.00068
       },
       "energy": {
-        "mean": 0.02488,
-        "std": 0.03726
+        "mean": 0.01517,
+        "std": 0.00426
       },
       "comfort": {
-        "mean": 0.0274,
-        "std": 0.04042
+        "mean": 0.01678,
+        "std": 0.00438
       },
       "stress": {
-        "mean": -0.02327,
-        "std": 0.03481
+        "mean": -0.01492,
+        "std": 0.0039
       },
       "curiosity": {
-        "mean": -0.08584,
-        "std": 0.04396
+        "mean": -0.0028,
+        "std": 0.00073
       }
     },
     "displacement": {
-      "dx_mean": 0.2345,
-      "dx_std": 0.2074,
-      "dy_mean": 0.0927,
-      "dy_std": 0.087
+      "dx_mean": 0.0,
+      "dx_std": 0.12,
+      "dy_mean": 0.0,
+      "dy_std": 0.07
     }
   },
   "hide": {
-    "success_rate": 1.0,
+    "success_rate": 0.985,
     "duration": {
-      "mean": 447.13,
-      "std": 35.11,
-      "slope_dist": -28.027,
-      "dist_mean": 0.206,
-      "min": 20.0,
-      "max": 450.0
+      "mean": 129.49,
+      "std": 29.23,
+      "slope_dist": 6.0,
+      "dist_mean": 0.25,
+      "min": 80.0,
+      "max": 180.0
     },
     "energy_cost": {
-      "mean": 0.01177,
-      "std": 0.00163
+      "mean": 0.00348,
+      "std": 0.00085
     },
     "collision_rate": 0.0,
     "drive_deltas": {
       "hunger": {
-        "mean": 0.00805,
-        "std": 0.00063
+        "mean": 0.00234,
+        "std": 0.00053
       },
       "thirst": {
-        "mean": 0.00971,
-        "std": 0.00077
+        "mean": 0.00281,
+        "std": 0.00063
       },
       "energy": {
-        "mean": -0.01177,
-        "std": 0.00163
+        "mean": -0.00348,
+        "std": 0.00085
       },
       "comfort": {
-        "mean": 0.02228,
-        "std": 0.00176
+        "mean": 0.00647,
+        "std": 0.00146
       },
       "stress": {
-        "mean": -0.01786,
-        "std": 0.00417
+        "mean": -0.00576,
+        "std": 0.0013
       },
       "curiosity": {
-        "mean": -0.05116,
-        "std": 0.02669
+        "mean": 0.00259,
+        "std": 0.00058
       }
     },
     "displacement": {
-      "dx_mean": -0.0577,
-      "dx_std": 0.1797,
-      "dy_mean": -0.042,
-      "dy_std": 0.0679
+      "dx_mean": 0.0,
+      "dx_std": 0.12,
+      "dy_mean": 0.0,
+      "dy_std": 0.07
     }
   },
   "enter_tunnel": {
-    "success_rate": 1.0,
+    "success_rate": 0.985,
     "duration": {
-      "mean": 16.0,
-      "std": 0.2,
-      "slope_dist": 0.0,
-      "dist_mean": 0.213,
-      "min": 16.0,
-      "max": 16.0
+      "mean": 57.92,
+      "std": 13.32,
+      "slope_dist": 6.0,
+      "dist_mean": 0.25,
+      "min": 35.0,
+      "max": 80.0
     },
     "energy_cost": {
-      "mean": 0.00045,
-      "std": 0.0001
+      "mean": 0.00153,
+      "std": 0.0005
     },
     "collision_rate": 0.0,
     "drive_deltas": {
       "hunger": {
-        "mean": 0.0003,
-        "std": 0.0001
+        "mean": 0.00105,
+        "std": 0.0005
       },
       "thirst": {
-        "mean": 0.0003,
-        "std": 0.0001
+        "mean": 0.00125,
+        "std": 0.0005
       },
       "energy": {
-        "mean": -0.00045,
-        "std": 0.0001
+        "mean": -0.00153,
+        "std": 0.0005
       },
       "comfort": {
-        "mean": 0.00072,
-        "std": 0.0001
+        "mean": 0.0029,
+        "std": 0.00067
       },
       "stress": {
-        "mean": -0.00059,
-        "std": 0.00012
+        "mean": -0.00257,
+        "std": 0.00059
       },
       "curiosity": {
-        "mean": -0.06216,
-        "std": 0.02635
+        "mean": -0.3901,
+        "std": 0.12743
       }
     },
     "displacement": {
-      "dx_mean": -0.021,
-      "dx_std": 0.191,
-      "dy_mean": -0.036,
-      "dy_std": 0.0782
+      "dx_mean": 0.0,
+      "dx_std": 0.12,
+      "dy_mean": 0.0,
+      "dy_std": 0.07
     }
   },
   "run_on_wheel": {
-    "success_rate": 1.0,
+    "success_rate": 0.985,
     "duration": {
-      "mean": 13.88,
-      "std": 7.9,
-      "slope_dist": 4.72,
-      "dist_mean": 0.355,
-      "min": 2.0,
-      "max": 24.0
+      "mean": 125.74,
+      "std": 31.39,
+      "slope_dist": 6.0,
+      "dist_mean": 0.25,
+      "min": 70.0,
+      "max": 180.0
     },
     "energy_cost": {
-      "mean": 0.02364,
-      "std": 0.01934
+      "mean": 0.31764,
+      "std": 0.07929
     },
     "collision_rate": 0.0,
     "drive_deltas": {
       "hunger": {
-        "mean": 0.00027,
-        "std": 0.00016
+        "mean": 0.00227,
+        "std": 0.00057
       },
       "thirst": {
-        "mean": 0.00028,
-        "std": 0.00017
+        "mean": 0.00272,
+        "std": 0.00068
       },
       "energy": {
-        "mean": -0.02364,
-        "std": 0.01934
+        "mean": -0.31764,
+        "std": 0.07929
       },
       "comfort": {
-        "mean": -0.00011,
-        "std": 0.00011
+        "mean": -0.00147,
+        "std": 0.0005
       },
       "stress": {
-        "mean": -0.1495,
-        "std": 0.15369
+        "mean": -0.24756,
+        "std": 0.09187
       },
       "curiosity": {
-        "mean": -0.25588,
-        "std": 0.21471
+        "mean": -0.37139,
+        "std": 0.13262
       }
     },
     "displacement": {
-      "dx_mean": -0.2707,
-      "dx_std": 0.1852,
-      "dy_mean": 0.1083,
-      "dy_std": 0.0826
+      "dx_mean": 0.0,
+      "dx_std": 0.12,
+      "dy_mean": 0.0,
+      "dy_std": 0.07
     }
   }
 }

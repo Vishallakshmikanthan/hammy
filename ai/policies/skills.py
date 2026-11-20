@@ -308,7 +308,7 @@ SKILLS_LIST: List[Skill] = [
         "prop_bowl_main",
         180.0,
         lambda obs: obs.drives.hunger > 0.15,
-        lambda obs, el: el > 60.0 or obs.drives.hunger < 0.10,
+        lambda obs, step, el: el > 60.0 or obs.drives.hunger < 0.10,
         lambda obs: _ctrl_eat(obs),
     ),
     Skill(
@@ -316,7 +316,7 @@ SKILLS_LIST: List[Skill] = [
         None,
         60.0,
         lambda obs: obs.drives.curiosity > 0.20,
-        lambda obs, el: el > 20.0,
+        lambda obs, step, el: el > 20.0,
         lambda obs: ActionV1(forward_speed_m_s=0.0, turn_rate_rad_s=0.35, interact_flag=True, behaviour_type=BehaviourType.SCRIPTED),
     ),
     Skill(
@@ -324,7 +324,7 @@ SKILLS_LIST: List[Skill] = [
         None,
         120.0,
         lambda obs: obs.drives.stress > 0.15 or obs.drives.comfort < 0.85,
-        lambda obs, el: el > 45.0,
+        lambda obs, step, el: el > 45.0,
         lambda obs: ActionV1(forward_speed_m_s=0.0, turn_rate_rad_s=0.0, interact_flag=True, behaviour_type=BehaviourType.SCRIPTED),
     ),
     Skill(
@@ -332,7 +332,7 @@ SKILLS_LIST: List[Skill] = [
         None,
         150.0,
         lambda obs: obs.drives.curiosity > 0.25 and obs.drives.energy > 0.40,
-        lambda obs, el: el > 50.0,
+        lambda obs, step, el: el > 50.0,
         lambda obs: ActionV1(forward_speed_m_s=0.04, turn_rate_rad_s=0.25, interact_flag=True, behaviour_type=BehaviourType.SCRIPTED),
     ),
     Skill(
@@ -340,7 +340,7 @@ SKILLS_LIST: List[Skill] = [
         "prop_hideout_main",
         300.0,
         lambda obs: obs.drives.comfort < 0.70 or obs.drives.energy < 0.55,
-        lambda obs, el: el > 90.0 or obs.drives.comfort > 0.85,
+        lambda obs, step, el: el > 90.0 or obs.drives.comfort > 0.85,
         lambda obs: _ctrl_rest(obs),
     ),
 ]

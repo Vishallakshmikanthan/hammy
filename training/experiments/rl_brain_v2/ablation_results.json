@@ -1,0 +1,308 @@
+{
+  "policy_version": "hl_rppo_rnd_v2.0.0",
+  "algorithm": "GPU GRU-Recurrent PPO + RND (Real Trained RL Ablation)",
+  "steps_per_run": 5000000,
+  "seeds": [
+    42,
+    101,
+    202
+  ],
+  "conditions": {
+    "mem_off_cur_off": {
+      "memory_on": false,
+      "curiosity_on": false,
+      "runs": [
+        {
+          "seed": 42,
+          "memory_on": false,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.9815,
+          "behavioural_diversity": 0.8891,
+          "routine_formation": 0.5684,
+          "adaptation_hours": 5.56,
+          "novel_prop_explore_rate": 0.0728,
+          "taming_low_trust_retreat_rate": 0.0,
+          "taming_high_trust_accept_rate": 0.8267,
+          "mean_step_reward": 0.535,
+          "unique_skills_used": 16
+        },
+        {
+          "seed": 101,
+          "memory_on": false,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.9781,
+          "behavioural_diversity": 0.8971,
+          "routine_formation": 0.5642,
+          "adaptation_hours": 5.68,
+          "novel_prop_explore_rate": 0.0538,
+          "taming_low_trust_retreat_rate": 0.0,
+          "taming_high_trust_accept_rate": 0.724,
+          "mean_step_reward": 0.5259,
+          "unique_skills_used": 16
+        },
+        {
+          "seed": 202,
+          "memory_on": false,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.9755,
+          "behavioural_diversity": 0.8471,
+          "routine_formation": 0.5572,
+          "adaptation_hours": 5.65,
+          "novel_prop_explore_rate": 0.0585,
+          "taming_low_trust_retreat_rate": 0.0,
+          "taming_high_trust_accept_rate": 0.7219,
+          "mean_step_reward": 0.5201,
+          "unique_skills_used": 16
+        }
+      ],
+      "summary": {
+        "homeostasis_time_in_range": {
+          "mean": 0.9784,
+          "ci95": 0.0034
+        },
+        "behavioural_diversity": {
+          "mean": 0.8778,
+          "ci95": 0.0304
+        },
+        "routine_formation": {
+          "mean": 0.5633,
+          "ci95": 0.0064
+        },
+        "adaptation_hours": {
+          "mean": 5.63,
+          "ci95": 0.0707
+        },
+        "novel_prop_explore_rate": {
+          "mean": 0.0617,
+          "ci95": 0.0112
+        },
+        "mean_step_reward": {
+          "mean": 0.527,
+          "ci95": 0.0085
+        }
+      }
+    },
+    "mem_on_cur_off": {
+      "memory_on": true,
+      "curiosity_on": false,
+      "runs": [
+        {
+          "seed": 42,
+          "memory_on": true,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.9725,
+          "behavioural_diversity": 0.8981,
+          "routine_formation": 0.6131,
+          "adaptation_hours": 5.91,
+          "novel_prop_explore_rate": 0.0142,
+          "taming_low_trust_retreat_rate": 0.0025,
+          "taming_high_trust_accept_rate": 0.7601,
+          "mean_step_reward": 0.5299,
+          "unique_skills_used": 16
+        },
+        {
+          "seed": 101,
+          "memory_on": true,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.976,
+          "behavioural_diversity": 0.7896,
+          "routine_formation": 0.5695,
+          "adaptation_hours": 5.86,
+          "novel_prop_explore_rate": 0.0237,
+          "taming_low_trust_retreat_rate": 0.0,
+          "taming_high_trust_accept_rate": 0.2558,
+          "mean_step_reward": 0.4974,
+          "unique_skills_used": 16
+        },
+        {
+          "seed": 202,
+          "memory_on": true,
+          "curiosity_on": false,
+          "homeostasis_time_in_range": 0.975,
+          "behavioural_diversity": 0.7815,
+          "routine_formation": 0.5672,
+          "adaptation_hours": 5.88,
+          "novel_prop_explore_rate": 0.0195,
+          "taming_low_trust_retreat_rate": 0.0,
+          "taming_high_trust_accept_rate": 0.7663,
+          "mean_step_reward": 0.5171,
+          "unique_skills_used": 16
+        }
+      ],
+      "summary": {
+        "homeostasis_time_in_range": {
+          "mean": 0.9745,
+          "ci95": 0.002
+        },
+        "behavioural_diversity": {
+          "mean": 0.8231,
+          "ci95": 0.0737
+        },
+        "routine_formation": {
+          "mean": 0.5833,
+          "ci95": 0.0293
+        },
+        "adaptation_hours": {
+          "mean": 5.8833,
+          "ci95": 0.0285
+        },
+        "novel_prop_explore_rate": {
+          "mean": 0.0191,
+          "ci95": 0.0054
+        },
+        "mean_step_reward": {
+          "mean": 0.5148,
+          "ci95": 0.0185
+        }
+      }
+    },
+    "mem_off_cur_on": {
+      "memory_on": false,
+      "curiosity_on": true,
+      "runs": [
+        {
+          "seed": 42,
+          "memory_on": false,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.9722,
+          "behavioural_diversity": 0.8644,
+          "routine_formation": 0.6335,
+          "adaptation_hours": 5.6,
+          "novel_prop_explore_rate": 0.0659,
+          "taming_low_trust_retreat_rate": 0.0,
+          "taming_high_trust_accept_rate": 0.4474,
+          "mean_step_reward": 0.5171,
+          "unique_skills_used": 16
+        },
+        {
+          "seed": 101,
+          "memory_on": false,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.9788,
+          "behavioural_diversity": 0.8864,
+          "routine_formation": 0.5964,
+          "adaptation_hours": 5.69,
+          "novel_prop_explore_rate": 0.0522,
+          "taming_low_trust_retreat_rate": 0.0,
+          "taming_high_trust_accept_rate": 0.4087,
+          "mean_step_reward": 0.5092,
+          "unique_skills_used": 16
+        },
+        {
+          "seed": 202,
+          "memory_on": false,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.9719,
+          "behavioural_diversity": 0.8875,
+          "routine_formation": 0.6097,
+          "adaptation_hours": 5.61,
+          "novel_prop_explore_rate": 0.0647,
+          "taming_low_trust_retreat_rate": 0.0,
+          "taming_high_trust_accept_rate": 0.7305,
+          "mean_step_reward": 0.529,
+          "unique_skills_used": 16
+        }
+      ],
+      "summary": {
+        "homeostasis_time_in_range": {
+          "mean": 0.9743,
+          "ci95": 0.0044
+        },
+        "behavioural_diversity": {
+          "mean": 0.8794,
+          "ci95": 0.0147
+        },
+        "routine_formation": {
+          "mean": 0.6132,
+          "ci95": 0.0213
+        },
+        "adaptation_hours": {
+          "mean": 5.6333,
+          "ci95": 0.0558
+        },
+        "novel_prop_explore_rate": {
+          "mean": 0.0609,
+          "ci95": 0.0086
+        },
+        "mean_step_reward": {
+          "mean": 0.5184,
+          "ci95": 0.0113
+        }
+      }
+    },
+    "mem_on_cur_on": {
+      "memory_on": true,
+      "curiosity_on": true,
+      "runs": [
+        {
+          "seed": 42,
+          "memory_on": true,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.9757,
+          "behavioural_diversity": 0.8282,
+          "routine_formation": 0.5851,
+          "adaptation_hours": 5.87,
+          "novel_prop_explore_rate": 0.0209,
+          "taming_low_trust_retreat_rate": 0.0,
+          "taming_high_trust_accept_rate": 0.6481,
+          "mean_step_reward": 0.5156,
+          "unique_skills_used": 16
+        },
+        {
+          "seed": 101,
+          "memory_on": true,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.9693,
+          "behavioural_diversity": 0.8738,
+          "routine_formation": 0.6,
+          "adaptation_hours": 5.89,
+          "novel_prop_explore_rate": 0.0176,
+          "taming_low_trust_retreat_rate": 0.0,
+          "taming_high_trust_accept_rate": 0.6552,
+          "mean_step_reward": 0.524,
+          "unique_skills_used": 16
+        },
+        {
+          "seed": 202,
+          "memory_on": true,
+          "curiosity_on": true,
+          "homeostasis_time_in_range": 0.9729,
+          "behavioural_diversity": 0.8455,
+          "routine_formation": 0.5788,
+          "adaptation_hours": 5.95,
+          "novel_prop_explore_rate": 0.0082,
+          "taming_low_trust_retreat_rate": 0.0,
+          "taming_high_trust_accept_rate": 0.6617,
+          "mean_step_reward": 0.5239,
+          "unique_skills_used": 16
+        }
+      ],
+      "summary": {
+        "homeostasis_time_in_range": {
+          "mean": 0.9726,
+          "ci95": 0.0036
+        },
+        "behavioural_diversity": {
+          "mean": 0.8492,
+          "ci95": 0.026
+        },
+        "routine_formation": {
+          "mean": 0.588,
+          "ci95": 0.0123
+        },
+        "adaptation_hours": {
+          "mean": 5.9033,
+          "ci95": 0.0471
+        },
+        "novel_prop_explore_rate": {
+          "mean": 0.0156,
+          "ci95": 0.0075
+        },
+        "mean_step_reward": {
+          "mean": 0.5212,
+          "ci95": 0.0055
+        }
+      }
+    }
+  }
+}
