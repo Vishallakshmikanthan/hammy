@@ -47,6 +47,11 @@ class RefillWaterRequest(BaseModel):
     amount_ml: float = Field(default=150.0, gt=0.0, le=300.0)
 
 
+class RefillFoodRequest(BaseModel):
+    command_id: str = Field(..., min_length=4)
+    amount_grams: float = Field(default=25.0, gt=0.0, le=50.0)
+
+
 class EquipCostumeRequest(BaseModel):
     command_id: str = Field(..., min_length=4)
     item_id: str = Field(..., min_length=2)
@@ -119,6 +124,7 @@ def get_shelves_layout_state(
     offered_foods: List[Dict[str, Any]] = []
     water_sources: List[Dict[str, Any]] = []
     placed_items: List[Dict[str, Any]] = []
+    primary_food_level: Optional[float] = None
 
     if habitat:
         objs = session.query(HabitatObject).filter_by(habitat_id=habitat.id).all()
@@ -153,6 +159,10 @@ def get_shelves_layout_state(
                     "water_level": float(res.get("water_level", 1.0)),
                     "capacity_ml": float(res.get("capacity_ml", 150.0)),
                 })
+            elif o.object_type == "food_bowl" and not res.get("asset_id"):
+                # Core habitat food bowl tracks server-authoritative food level (0..1)
+                if o.id == "prop_bowl_main" or primary_food_level is None:
+                    primary_food_level = float(res.get("food_level", 1.0))
             elif o.object_type in ("placed_prop", "placed_decor") or res.get("asset_id"):
                 # Opt-in placed items from Props / Decor shelves
                 placed_items.append({
@@ -166,11 +176,13 @@ def get_shelves_layout_state(
                 })
 
     primary_water_level = water_sources[0]["water_level"] if water_sources else 0.75
+    food_level = primary_food_level if primary_food_level is not None else 1.0
 
     return {
         "pet_id": pet.id,
         "sim_time_sec": sim_time,
         "cheek_pouch_fill": float(pet_state.cheek_pouch_fill) if pet_state else 0.0,
+        "food_level": food_level,
         "water_level": primary_water_level,
         "equipped_costumes": equipped_costumes,
         "offered_foods": offered_foods,
@@ -221,6 +233,21 @@ def offer_food_route(
         body.command_id,
         "offer_food",
         {"item_id": body.item_id, "quantity": body.quantity, "pose_xyz_m": body.pose_xyz_m},
+    )
+
+
+@router.post("/pets/{pet_id}/shelves/refill_food")
+def refill_food_route(
+    body: RefillFoodRequest,
+    pet_and_user: tuple[Pet, User] = Depends(verify_pet_access),
+    session: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    return _exec(
+        session,
+        pet_and_user,
+        body.command_id,
+        "refill_food",
+        {"amount_grams": body.amount_grams},
     )
 
 
