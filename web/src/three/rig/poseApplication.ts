@@ -11,6 +11,7 @@ export class PoseApplicationLayer {
   private readonly restRotations = new Map<string, THREE.Euler>();
   private readonly restPositions = new Map<string, THREE.Vector3>();
   private readonly boneAxes = new Map<string, BoneAxes>();
+  private readonly parentInvQuats = new Map<string, THREE.Quaternion>();
 
   constructor(private readonly asset: LoadedHamsterAsset) {
     // Capture rest transforms
@@ -27,6 +28,7 @@ export class PoseApplicationLayer {
     asset.root.updateMatrixWorld(true);
 
     const worldQ = new THREE.Quaternion();
+    const parentWorldQ = new THREE.Quaternion();
     for (const [name, bone] of asset.bones.entries()) {
       bone.getWorldQuaternion(worldQ);
       const invQ = worldQ.clone().invert();
@@ -35,6 +37,12 @@ export class PoseApplicationLayer {
         yaw: new THREE.Vector3(0, 1, 0).applyQuaternion(invQ).normalize(),
         roll: new THREE.Vector3(0, 0, 1).applyQuaternion(invQ).normalize(),
       });
+      if (bone.parent) {
+        bone.parent.getWorldQuaternion(parentWorldQ);
+        this.parentInvQuats.set(name, parentWorldQ.clone().invert());
+      } else {
+        this.parentInvQuats.set(name, new THREE.Quaternion());
+      }
     }
 
     asset.root.position.copy(savedPos);
@@ -49,6 +57,14 @@ export class PoseApplicationLayer {
       if (rot) bone.rotation.copy(rot);
       if (pos) bone.position.copy(pos);
     }
+  }
+
+  private translateAnatomical(name: string, dx: number, dy: number, dz: number): void {
+    const bone = this.asset.bones.get(name);
+    const invParentQ = this.parentInvQuats.get(name);
+    if (!bone || !invParentQ) return;
+    const delta = new THREE.Vector3(dx, dy, dz).applyQuaternion(invParentQ);
+    bone.position.add(delta);
   }
 
   private rotateAnatomical(name: string, pitch: number, yaw = 0, roll = 0): void {
@@ -81,6 +97,7 @@ export class PoseApplicationLayer {
     const crouch = THREE.MathUtils.clamp(p?.crouchAmount ?? 0, 0, 1);
     const curl = THREE.MathUtils.clamp(p?.curlAmount ?? 0, 0, 1);
     const groom = THREE.MathUtils.clamp(p?.groomAmount ?? 0, 0, 1);
+    const eatHold = THREE.MathUtils.clamp(p?.eatHoldAmount ?? 0, 0, 1);
     const dig = THREE.MathUtils.clamp(p?.digAmount ?? 0, 0, 1);
     const chew = THREE.MathUtils.clamp(p?.chewAmount ?? 0, 0, 1);
 
@@ -143,10 +160,10 @@ export class PoseApplicationLayer {
       this.rotateAnatomical("jaw", jawOpen, 0, 0);
     }
 
-    // Locomotion gait blended down when rearing, grooming, digging, or curled
-    const locoWeight = speedFactor * (1 - Math.max(rear * 0.85, groom * 0.95, dig * 0.95, curl));
+    // Locomotion gait blended down when rearing, eating, grooming, digging, or curled
+    const locoWeight = speedFactor * (1 - Math.max(rear * 0.85, eatHold * 0.98, groom * 0.95, dig * 0.95, curl));
 
-    // Front limbs: locomotion + rearing tuck + face-washing grooming + bedding digging
+    // Front limbs: locomotion + two-hand food holding + rearing tuck + face-washing grooming + bedding digging
     const frontSpecs: Array<{
       side: "L" | "R";
       phaseOffset: number;
@@ -159,27 +176,68 @@ export class PoseApplicationLayer {
 
     for (const f of frontSpecs) {
       const s = f.phaseOffset;
-      const swing = Math.sin(pose.gaitPhase + s) * 0.48 * locoWeight;
-      const lift = (f.contact ? 0 : Math.max(0, Math.cos(pose.gaitPhase + s)) * 0.35) * locoWeight;
+      const sideX = f.side === "L" ? -1 : 1;
+      const swing = Math.sin(pose.gaitPhase + s) * 0.56 * locoWeight;
+      const lift = (f.contact ? 0 : Math.max(0, Math.cos(pose.gaitPhase + s)) * 0.42) * locoWeight;
 
-      // Rearing paw tuck against chest & face-washing/eating hold (blended cleanly, never double-added!)
+      // Project shoulders gently forward during eating/grooming/rearing so rosy-pink hands clear the chest fur
+      const shoulderOutX = sideX * (0.003 * locoWeight + 0.005 * eatHold + 0.004 * groom);
+      const shoulderLiftY = 0.005 * eatHold + 0.004 * groom + 0.002 * rear;
+      const shoulderFwdZ = 0.014 * eatHold + 0.011 * groom + 0.007 * rear + 0.006 * dig;
+      if (Math.abs(shoulderOutX) + Math.abs(shoulderLiftY) + Math.abs(shoulderFwdZ) > 1e-5) {
+        this.translateAnatomical(`shoulder_${f.side}`, shoulderOutX, shoulderLiftY, shoulderFwdZ);
+      }
+
+      // Dedicated two-hand food cradling pose: bring both forearms forward & inward to cradle food under snout
+      const cPhase = (p?.chewPhase ?? 0) + (f.side === "R" ? Math.PI * 0.5 : 0);
+      const nibbleShift = Math.sin(cPhase * 0.5) * 0.08 * eatHold;
+      const biteLift = Math.sin(cPhase) * 0.05 * eatHold;
+
+      // Face-washing grooming strokes
       const gPhase = (p?.groomPhase ?? 0) + (f.side === "R" ? 0.85 : 0);
-      const groomScrub = Math.sin(gPhase) * 0.18 * groom;
-      const groomCircle = Math.cos(gPhase) * 0.12 * groom;
+      const groomScrub = Math.sin(gPhase) * 0.22 * groom;
+      const groomCircle = Math.cos(gPhase) * 0.14 * groom;
 
-      // Blend rearing tuck and groom/food-hold smoothly so combined rear+groom stays within anatomical joint limits
-      const upperPoseWeight = Math.max(rear, groom);
-      const groomShare = upperPoseWeight > 1e-4 ? groom / (rear + groom + 1e-4) : 0;
+      // Cleanly blend rearing-tuck, face-washing grooming, and two-hand food-holding (never double-added!)
+      const activeUpperMode = Math.max(rear, groom, eatHold);
+      const eatShare = eatHold;
+      const groomShare = groom * (1 - eatHold);
+      const rearShare = Math.max(0, activeUpperMode - Math.max(eatShare, groomShare));
+      const modeDenom = Math.max(1e-4, eatShare + groomShare + rearShare);
 
-      const blendedShoulderRoll = f.sign * THREE.MathUtils.lerp(0.14, 0.24, groomShare) * upperPoseWeight;
-      const blendedUpper = THREE.MathUtils.lerp(-0.48, -0.78 + groomScrub, groomShare) * upperPoseWeight;
-      const blendedForearm = THREE.MathUtils.lerp(-0.72, -0.92 - groomCircle * 0.45, groomShare) * upperPoseWeight;
-      const blendedPaw = THREE.MathUtils.lerp(0.36, 0.30 + groomScrub * 0.4, groomShare) * upperPoseWeight;
+      const blendedShoulderRoll =
+        (f.sign * 0.14 * rearShare + f.sign * 0.24 * groomShare + f.sign * 0.16 * eatShare) /
+        modeDenom *
+        activeUpperMode;
+      const blendedUpper =
+        (-0.46 * rearShare + (-0.78 + groomScrub) * groomShare + (-0.64 + biteLift) * eatShare) /
+        modeDenom *
+        activeUpperMode;
+      const blendedForearm =
+        (-0.68 * rearShare + (-0.90 - groomCircle * 0.45) * groomShare + (-0.54 + nibbleShift) * eatShare) /
+        modeDenom *
+        activeUpperMode;
+      const blendedForearmYaw =
+        (f.sign * 0.14 * rearShare +
+          (f.sign * 0.22 + groomCircle * f.sign * 0.32) * groomShare +
+          (f.sign * 0.34 + nibbleShift * f.sign * 0.3) * eatShare) /
+        modeDenom *
+        activeUpperMode;
+      const blendedPawPitch =
+        (0.28 * rearShare + (0.28 + groomScrub * 0.4) * groomShare + (-0.28 + biteLift * 0.6) * eatShare) /
+        modeDenom *
+        activeUpperMode;
+      // Rotate palms inward toward each other when holding food or washing face
+      const blendedPawRoll =
+        (f.sign * 0.35 * rearShare + f.sign * 0.55 * groomShare + f.sign * 0.82 * eatShare) /
+        modeDenom *
+        activeUpperMode;
+      const blendedPawYaw = (-f.sign * 0.28 * eatShare) / modeDenom * activeUpperMode;
 
       // Bedding digging: fast alternating front-paw scratching
       const dPhase = (p?.digPhase ?? 0) + (f.side === "R" ? Math.PI : 0);
-      const digSwing = Math.sin(dPhase) * 0.56 * dig;
-      const digFlex = -Math.max(0, Math.cos(dPhase)) * 0.48 * dig;
+      const digSwing = Math.sin(dPhase) * 0.58 * dig;
+      const digFlex = -Math.max(0, Math.cos(dPhase)) * 0.50 * dig;
 
       // Curl tuck
       const curlUpper = -0.32 * curl;
@@ -199,30 +257,30 @@ export class PoseApplicationLayer {
       this.rotateAnatomical(
         `shoulder_${f.side}`,
         0,
-        0,
-        THREE.MathUtils.clamp(blendedShoulderRoll, -0.32, 0.32)
+        f.sign * 0.12 * eatHold,
+        THREE.MathUtils.clamp(blendedShoulderRoll, -0.34, 0.34)
       );
       this.rotateAnatomical(
         `upper_arm_${f.side}`,
         finalUpperPitch,
-        0,
+        f.sign * 0.16 * eatHold,
         f.sign * 0.12 * crouch
       );
       this.rotateAnatomical(
         `forearm_${f.side}`,
         finalForearmPitch,
-        groomCircle * f.sign * 0.35,
+        blendedForearmYaw,
         0
       );
       this.rotateAnatomical(
         `paw_${f.side === "L" ? "fl" : "fr"}`,
-        THREE.MathUtils.clamp(lift * 0.45 + blendedPaw, -0.45, 0.65),
-        0,
-        0
+        THREE.MathUtils.clamp(lift * 0.45 + blendedPawPitch, -0.55, 0.65),
+        blendedPawYaw,
+        blendedPawRoll
       );
     }
 
-    // Hind limbs: locomotion + rearing brace + crouch/curl
+    // Hind limbs: crisp locomotion + visible forward tripod brace when sitting/eating/rearing
     const hindSpecs: Array<{
       side: "L" | "R";
       phaseOffset: number;
@@ -235,17 +293,18 @@ export class PoseApplicationLayer {
 
     for (const h of hindSpecs) {
       const s = h.phaseOffset;
-      const swing = Math.sin(pose.gaitPhase + s) * 0.44 * locoWeight;
-      const lift = (h.contact ? 0 : Math.max(0, Math.cos(pose.gaitPhase + s)) * 0.30) * locoWeight;
+      const swing = Math.sin(pose.gaitPhase + s) * 0.50 * locoWeight;
+      const lift = (h.contact ? 0 : Math.max(0, Math.cos(pose.gaitPhase + s)) * 0.36) * locoWeight;
 
-      const rearThigh = -0.28 * rear - 0.18 * curl;
-      const rearShin = 0.24 * rear + 0.35 * curl + 0.22 * crouch;
+      const sitSupport = Math.max(rear, eatHold);
+      const rearThigh = -0.34 * sitSupport - 0.18 * curl;
+      const rearShin = 0.28 * sitSupport + 0.35 * curl + 0.22 * crouch;
 
       this.rotateAnatomical(
         `thigh_${h.side}`,
         swing - lift * 0.4 + rearThigh,
-        0,
-        h.sign * (0.12 * rear + 0.14 * crouch)
+        h.sign * 0.12 * sitSupport,
+        h.sign * (0.14 * sitSupport + 0.14 * crouch)
       );
       this.rotateAnatomical(
         `shin_${h.side}`,
@@ -255,8 +314,8 @@ export class PoseApplicationLayer {
       );
       this.rotateAnatomical(
         `paw_${h.side === "L" ? "bl" : "br"}`,
-        lift * 0.4 - 0.18 * rear,
-        0,
+        lift * 0.42 - 0.22 * sitSupport,
+        h.sign * 0.14 * sitSupport,
         0
       );
     }
