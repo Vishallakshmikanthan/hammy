@@ -152,6 +152,7 @@ export interface ShelvesLayoutState {
   pet_id: string;
   sim_time_sec: number;
   cheek_pouch_fill: number;
+  food_level?: number;
   water_level: number;
   equipped_costumes: Partial<Record<CostumeSlot, EquippedCostumeEntry>>;
   offered_foods: OfferedFoodEntry[];
