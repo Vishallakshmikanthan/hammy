@@ -7,12 +7,18 @@ import {
   validateHamsterScene,
 } from "../rig/hamsterAssetLoader";
 import { applyLodVisibility, selectLodByDistance } from "../rig/lodAndQuality";
+import { applyCostumeSocketTransform } from "../rig/costumeSockets";
 import { PoseApplicationLayer } from "../rig/poseApplication";
 import { ProceduralRigLayer } from "../rig/proceduralRig";
 import { DEFAULT_PROCEDURAL_CONFIG, type LoadedHamsterAsset } from "../rig/types";
 import { BeddingDeformer } from "../habitat/beddingDeformer";
 import { computeDayNightLighting } from "../habitat/environmentEffects";
-import { HamsterBehaviorController, type HabitatPropAnchors } from "../habitat/hamsterBehavior";
+import {
+  HamsterBehaviorController,
+  type HabitatPropAnchors,
+  type TunnelSpineConfig,
+} from "../habitat/hamsterBehavior";
+import { enhanceHamsterVisuals } from "../habitat/hamsterVisuals";
 import type { PetState } from "../../types";
 
 function makeMockHamsterRoot(opts?: { omitBone?: string; omitMorph?: string; omitLod?: string }): THREE.Group {
@@ -354,6 +360,178 @@ describe("Real-Life Hamster Behavior & Articulation", () => {
     expect(visited.has("Sprinting on Wheel"), `visited: ${[...visited].join(", ")}`).toBe(true);
     expect(visited.has("Drinking Water"), `visited: ${[...visited].join(", ")}`).toBe(true);
     expect(visited.has("Curled Up in Hideout"), `visited: ${[...visited].join(", ")}`).toBe(true);
+  });
+
+  it("uses the functional middle log to crawl through, climb on top, and explore all cage sections without blocking", () => {
+    const tunnelSpine: TunnelSpineConfig = {
+      mouthAApproach: new THREE.Vector3(0.09, 0.165, 0.2),
+      mouthBApproach: new THREE.Vector3(-0.232, 0.165, 0.019),
+      centerline: [
+        new THREE.Vector3(0.072, 0.155, 0.16),
+        new THREE.Vector3(0.055, 0.155, 0.097),
+        new THREE.Vector3(0.036, 0.155, 0.028),
+        new THREE.Vector3(-0.008, 0.16, -0.016),
+        new THREE.Vector3(-0.06, 0.165, -0.027),
+        new THREE.Vector3(-0.119, 0.165, -0.012),
+        new THREE.Vector3(-0.175, 0.165, 0.004),
+      ],
+      segments: [
+        { a: new THREE.Vector3(0.037, 0.179, 0.029), b: new THREE.Vector3(0.066, 0.179, 0.136), radius: 0.04, topY: 0.218 },
+        { a: new THREE.Vector3(0.035, 0.178, 0.026), b: new THREE.Vector3(-0.058, 0.186, -0.026), radius: 0.042, topY: 0.218 },
+        { a: new THREE.Vector3(-0.061, 0.195, -0.027), b: new THREE.Vector3(-0.155, 0.195, -0.002), radius: 0.04, topY: 0.234 },
+      ],
+      climbEntryPos: new THREE.Vector3(-0.175, 0.165, 0.105),
+      climbExitPos: new THREE.Vector3(0.155, 0.165, -0.025),
+      topPath: [
+        new THREE.Vector3(-0.118, 0.232, -0.012),
+        new THREE.Vector3(-0.055, 0.224, -0.026),
+        new THREE.Vector3(0.002, 0.216, -0.014),
+        new THREE.Vector3(0.045, 0.216, 0.055),
+      ],
+    };
+    const anchors: HabitatPropAnchors = {
+      ...makeAnchors(),
+      tunnelSpine,
+      hideoutBox: new THREE.Box3(new THREE.Vector3(0.185, 0.186, -0.195), new THREE.Vector3(0.375, 0.291, -0.025)),
+      wheelBox: new THREE.Box3(new THREE.Vector3(-0.44, 0.175, -0.175), new THREE.Vector3(-0.16, 0.455, -0.085)),
+      wheelTrackY: 0.187,
+    };
+
+    const controller = new HamsterBehaviorController();
+    const labels = new Set<string>();
+    let maxY = -Infinity;
+    let minX = Infinity;
+    let maxX = -Infinity;
+
+    for (let i = 0; i < 3200; i++) {
+      const step = controller.update(0.05, null, null, anchors);
+      labels.add(step.activityLabel);
+      const [x, y] = step.pose.rootPosition;
+      maxY = Math.max(maxY, y);
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+    }
+
+    expect(labels.has("Crawling Through Hollow Log"), `labels: ${[...labels].join(", ")}`).toBe(true);
+    expect(labels.has("Periscoping on Top of Log"), `labels: ${[...labels].join(", ")}`).toBe(true);
+    expect(maxY).toBeGreaterThan(0.21);
+    expect(minX).toBeLessThan(-0.25);
+    expect(maxX).toBeGreaterThan(0.3);
+  });
+
+  it("senses newly dropped physical props with curiosity and never clips through them", () => {
+    const anchors: HabitatPropAnchors = {
+      ...makeAnchors(),
+      dynamicObstacles: [],
+      placedProps: [],
+    };
+    const controller = new HamsterBehaviorController();
+    // Initial tick seeds known props
+    controller.update(0.05, null, null, anchors);
+
+    // Drop a brand-new physical prop into the cage
+    const propPos = new THREE.Vector3(-0.18, 0.165, 0.12);
+    const propRadius = 0.032;
+    anchors.dynamicObstacles = [{ id: "placed_ball_01", pos: propPos, radius: propRadius }];
+    anchors.placedProps = [
+      {
+        objectId: "placed_ball_01",
+        itemId: "prop_small_ball",
+        name: "Woven Willow Play Ball",
+        category: "prop",
+        pos: propPos,
+        radius: propRadius,
+        rotationY: 0,
+      },
+    ];
+
+    const labels = new Set<string>();
+    let minDist = Infinity;
+    for (let i = 0; i < 300; i++) {
+      const step = controller.update(0.05, null, null, anchors);
+      labels.add(step.activityLabel);
+      const [x, , z] = step.pose.rootPosition;
+      minDist = Math.min(minDist, Math.hypot(x - propPos.x, z - propPos.z));
+    }
+
+    const sawCuriosity =
+      labels.has("Approaching New Woven Willow Play Ball") ||
+      labels.has("Sniffing & Nibbling Woven Willow Play Ball");
+    expect(sawCuriosity, `labels: ${[...labels].join(", ")}`).toBe(true);
+    // Respects physical radius (never clips inside prop center)
+    expect(minDist).toBeGreaterThanOrEqual(propRadius + 0.028);
+  });
+
+  it("triggers autonomous bowl & water depletion callbacks and stops eating when bowl is empty", () => {
+    let foodEats = 0;
+    let waterDrinks = 0;
+    const anchors: HabitatPropAnchors = {
+      ...makeAnchors(),
+      foodLevel: 0.8,
+      waterLevel: 0.8,
+      onFoodConsumed: () => {
+        foodEats++;
+      },
+      onWaterConsumed: () => {
+        waterDrinks++;
+      },
+    };
+    const controller = new HamsterBehaviorController();
+    for (let i = 0; i < 1600; i++) {
+      controller.update(0.05, null, null, anchors);
+    }
+    expect(foodEats).toBeGreaterThan(0);
+    expect(waterDrinks).toBeGreaterThan(0);
+
+    // Empty bowl & water -> should not trigger callbacks when visiting empty containers
+    const emptyController = new HamsterBehaviorController();
+    let emptyFoodEats = 0;
+    let emptyWaterDrinks = 0;
+    const emptyAnchors: HabitatPropAnchors = {
+      ...makeAnchors(),
+      foodLevel: 0.0,
+      waterLevel: 0.0,
+      onFoodConsumed: () => {
+        emptyFoodEats++;
+      },
+      onWaterConsumed: () => {
+        emptyWaterDrinks++;
+      },
+    };
+    for (let i = 0; i < 800; i++) {
+      emptyController.update(0.05, null, null, emptyAnchors);
+    }
+    expect(emptyFoodEats).toBe(0);
+    expect(emptyWaterDrinks).toBe(0);
+  });
+
+  it("applies calibrated costume socket transforms and unifies smooth LOD0/LOD1/LOD2 fur shells", () => {
+    const bowHolder = new THREE.Group();
+    const bowMesh = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.01, 0.005), new THREE.MeshStandardMaterial());
+    applyCostumeSocketTransform("costume_bow_tie", bowHolder, bowMesh);
+    expect(bowHolder.position.y).toBeGreaterThan(0.02);
+    expect(bowHolder.scale.x).toBeGreaterThan(1.0);
+    expect(bowMesh.renderOrder).toBe(3);
+
+    const scarfHolder = new THREE.Group();
+    const scarfMesh = new THREE.Mesh(new THREE.TorusGeometry(0.025, 0.005), new THREE.MeshStandardMaterial());
+    applyCostumeSocketTransform("costume_scarf", scarfHolder, scarfMesh);
+    expect(scarfHolder.scale.x).toBeGreaterThan(1.8);
+    expect(scarfMesh.renderOrder).toBe(3);
+
+    const root = makeMockHamsterRoot();
+    const { report, bones, morphMeshes, lodMeshes } = validateHamsterScene(root);
+    const asset: LoadedHamsterAsset = { root, bones, morphMeshes, lodMeshes, validation: report };
+    const visuals = enhanceHamsterVisuals(asset);
+    // LOD1 shares smooth LOD0 geometry to prevent sliver-triangle facets
+    expect(lodMeshes.LOD1!.geometry).toBe(lodMeshes.LOD0!.geometry);
+    // All 3 LODs receive 6 soft fur halo shells each (18 shell meshes total)
+    let shellCount = 0;
+    root.traverse((o) => {
+      if (o.name.includes("_fur_halo_")) shellCount++;
+    });
+    expect(shellCount).toBe(18);
+    visuals.dispose();
   });
 });
 
