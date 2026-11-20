@@ -110,21 +110,26 @@ export class PoseApplicationLayer {
     }
 
     // Pelvis pitch: tilt back when rearing up, curl forward when sleeping
+    const pelvisPitch =
+      -0.36 * rear + 0.22 * crouch + 0.32 * curl + Math.sin(pose.gaitPhase * 2) * 0.04 * speedFactor;
     this.rotateAnatomical(
       "pelvis",
-      -0.36 * rear + 0.22 * crouch + 0.32 * curl + Math.sin(pose.gaitPhase * 2) * 0.04 * speedFactor,
+      pelvisPitch,
       Math.sin(pose.gaitPhase) * 0.05 * speedFactor,
       Math.cos(pose.gaitPhase) * 0.04 * speedFactor
     );
 
     // Spine waddle + pitch arch + rearing / curling
     const spineNames = ["spine_1", "spine_2", "spine_3", "spine_4"];
+    let totalSpinePitch = pelvisPitch;
     for (let i = 0; i < spineNames.length; i++) {
       const wave = Math.sin(pose.gaitPhase - i * 0.5) * 0.075 * speedFactor * (1 - rear * 0.7);
       const arch = Math.cos(pose.gaitPhase * 2 - i * 0.35) * 0.045 * speedFactor;
       const rearPitch = -0.17 * rear; // bends spine upright
       const curlPitch = 0.22 * curl + 0.06 * crouch + 0.08 * dig;
-      this.rotateAnatomical(spineNames[i], arch + rearPitch + curlPitch, wave + yawRate * 0.045, 0);
+      const segPitch = arch + rearPitch + curlPitch;
+      totalSpinePitch += segPitch;
+      this.rotateAnatomical(spineNames[i], segPitch, wave + yawRate * 0.045, 0);
     }
 
     // Neck & head: counter-level when rearing, duck when grooming/digging/curling, plus natural look
@@ -177,110 +182,104 @@ export class PoseApplicationLayer {
     for (const f of frontSpecs) {
       const s = f.phaseOffset;
       const sideX = f.side === "L" ? -1 : 1;
-      const swing = Math.sin(pose.gaitPhase + s) * 0.56 * locoWeight;
-      const lift = (f.contact ? 0 : Math.max(0, Math.cos(pose.gaitPhase + s)) * 0.42) * locoWeight;
+      const phase = pose.gaitPhase + s;
+      const swing = Math.sin(phase) * 0.48 * locoWeight;
+      const liftWave = f.contact ? 0 : Math.max(0, Math.cos(phase));
+      const lift = liftWave * 0.32 * locoWeight;
 
-      // Project shoulders gently forward during eating/grooming/rearing so rosy-pink hands clear the chest fur
-      const shoulderOutX = sideX * (0.003 * locoWeight + 0.005 * eatHold + 0.004 * groom);
-      const shoulderLiftY = 0.005 * eatHold + 0.004 * groom + 0.002 * rear;
-      const shoulderFwdZ = 0.014 * eatHold + 0.011 * groom + 0.007 * rear + 0.006 * dig;
-      if (Math.abs(shoulderOutX) + Math.abs(shoulderLiftY) + Math.abs(shoulderFwdZ) > 1e-5) {
-        this.translateAnatomical(`shoulder_${f.side}`, shoulderOutX, shoulderLiftY, shoulderFwdZ);
-      }
-
-      // Dedicated two-hand food cradling pose: bring both forearms forward & inward to cradle food under snout
+      // Subtle eating & grooming rhythmic hand motion
       const cPhase = (p?.chewPhase ?? 0) + (f.side === "R" ? Math.PI * 0.5 : 0);
-      const nibbleShift = Math.sin(cPhase * 0.5) * 0.08 * eatHold;
-      const biteLift = Math.sin(cPhase) * 0.05 * eatHold;
+      const nibbleShift = Math.sin(cPhase * 0.5) * 0.05 * eatHold;
+      const biteLift = Math.sin(cPhase) * 0.002 * eatHold;
 
-      // Face-washing grooming strokes
       const gPhase = (p?.groomPhase ?? 0) + (f.side === "R" ? 0.85 : 0);
-      const groomScrub = Math.sin(gPhase) * 0.22 * groom;
-      const groomCircle = Math.cos(gPhase) * 0.14 * groom;
+      const groomScrubZ = Math.sin(gPhase) * 0.005 * groom;
+      const groomScrubY = Math.cos(gPhase) * 0.004 * groom;
 
-      // Cleanly blend rearing-tuck, face-washing grooming, and two-hand food-holding (never double-added!)
-      const activeUpperMode = Math.max(rear, groom, eatHold);
-      const eatShare = eatHold;
-      const groomShare = groom * (1 - eatHold);
-      const rearShare = Math.max(0, activeUpperMode - Math.max(eatShare, groomShare));
-      const modeDenom = Math.max(1e-4, eatShare + groomShare + rearShare);
-
-      const blendedShoulderRoll =
-        (f.sign * 0.14 * rearShare + f.sign * 0.24 * groomShare + f.sign * 0.16 * eatShare) /
-        modeDenom *
-        activeUpperMode;
-      const blendedUpper =
-        (-0.46 * rearShare + (-0.78 + groomScrub) * groomShare + (-0.64 + biteLift) * eatShare) /
-        modeDenom *
-        activeUpperMode;
-      const blendedForearm =
-        (-0.68 * rearShare + (-0.90 - groomCircle * 0.45) * groomShare + (-0.54 + nibbleShift) * eatShare) /
-        modeDenom *
-        activeUpperMode;
-      const blendedForearmYaw =
-        (f.sign * 0.14 * rearShare +
-          (f.sign * 0.22 + groomCircle * f.sign * 0.32) * groomShare +
-          (f.sign * 0.34 + nibbleShift * f.sign * 0.3) * eatShare) /
-        modeDenom *
-        activeUpperMode;
-      const blendedPawPitch =
-        (0.28 * rearShare + (0.28 + groomScrub * 0.4) * groomShare + (-0.28 + biteLift * 0.6) * eatShare) /
-        modeDenom *
-        activeUpperMode;
-      // Rotate palms inward toward each other when holding food or washing face
-      const blendedPawRoll =
-        (f.sign * 0.35 * rearShare + f.sign * 0.55 * groomShare + f.sign * 0.82 * eatShare) /
-        modeDenom *
-        activeUpperMode;
-      const blendedPawYaw = (-f.sign * 0.28 * eatShare) / modeDenom * activeUpperMode;
-
-      // Bedding digging: fast alternating front-paw scratching
       const dPhase = (p?.digPhase ?? 0) + (f.side === "R" ? Math.PI : 0);
-      const digSwing = Math.sin(dPhase) * 0.58 * dig;
-      const digFlex = -Math.max(0, Math.cos(dPhase)) * 0.50 * dig;
+      const digReachZ = Math.sin(dPhase) * 0.010 * dig;
+      const digLiftY = Math.max(0, Math.cos(dPhase)) * 0.005 * dig;
 
-      // Curl tuck
-      const curlUpper = -0.32 * curl;
-      const curlForearm = -0.58 * curl;
+      // Active stride stepping + mouth-level two-hand food cupping (never overshooting above snout!)
+      const activeUpper = Math.max(rear, eatHold, groom);
+      const standOrWalk = 1 - activeUpper;
+      const strideZ = Math.sin(phase) * 0.015 * locoWeight;
+      const strideLiftY = liftWave * 0.0085 * locoWeight;
 
-      const finalUpperPitch = THREE.MathUtils.clamp(
-        swing - lift * 0.5 + blendedUpper + digSwing + curlUpper,
-        -0.98,
-        0.72
+      const shoulderDx =
+        sideX * (0.003 * standOrWalk - 0.0065 * eatHold - 0.003 * groom * (1 - eatHold));
+      const shoulderDy =
+        strideLiftY +
+        biteLift +
+        groomScrubY +
+        digLiftY -
+        0.002 * eatHold +
+        0.001 * groom * (1 - eatHold) -
+        0.006 * rear * (1 - Math.max(eatHold, groom));
+      const shoulderDz =
+        0.011 * standOrWalk +
+        strideZ +
+        0.022 * eatHold +
+        (0.019 + groomScrubZ) * groom * (1 - eatHold) +
+        0.012 * rear * (1 - Math.max(eatHold, groom)) +
+        (0.014 + digReachZ) * dig;
+
+      this.translateAnatomical(`shoulder_${f.side}`, shoulderDx, shoulderDy, shoulderDz);
+
+      // Compensate for `totalSpinePitch` on `spine_4` so world-space arm pitch never over-rotates into the cheeks!
+      const desiredWorldArmPitch =
+        (-0.82 + nibbleShift) * eatHold +
+        (-0.86 + Math.sin(gPhase) * 0.16) * groom * (1 - eatHold) +
+        -0.45 * rear * (1 - Math.max(eatHold, groom)) +
+        (swing - lift * 0.7) +
+        Math.sin(dPhase) * 0.52 * dig -
+        0.35 * curl;
+
+      const relArmPitch = THREE.MathUtils.clamp(desiredWorldArmPitch - totalSpinePitch, -1.05, 1.05);
+      const upperPitch = relArmPitch * 0.52;
+      const forearmPitch = relArmPitch * 0.48;
+      const forearmYaw = f.sign * (0.22 * eatHold + 0.18 * groom * (1 - eatHold));
+
+      // Keep paw flat on floor during standing/walking, or pointing forward & cupped inward around food
+      const pawRelPitch = THREE.MathUtils.clamp(
+        -desiredWorldArmPitch -
+          0.26 * eatHold -
+          0.32 * groom * (1 - eatHold) +
+          0.22 * rear * (1 - Math.max(eatHold, groom)) +
+          lift * 0.35,
+        -0.85,
+        0.85
       );
-      const finalForearmPitch = THREE.MathUtils.clamp(
-        -lift * 1.15 + blendedForearm + digFlex + curlForearm,
-        -1.08,
-        0.42
-      );
+      const pawRoll = f.sign * (0.68 * eatHold + 0.48 * groom * (1 - eatHold));
+      const pawYaw = f.sign * (0.28 * eatHold + 0.16 * groom * (1 - eatHold));
 
       this.rotateAnatomical(
         `shoulder_${f.side}`,
         0,
-        f.sign * 0.12 * eatHold,
-        THREE.MathUtils.clamp(blendedShoulderRoll, -0.34, 0.34)
+        f.sign * 0.08 * eatHold,
+        f.sign * (0.14 * eatHold + 0.12 * rear)
       );
       this.rotateAnatomical(
         `upper_arm_${f.side}`,
-        finalUpperPitch,
-        f.sign * 0.16 * eatHold,
-        f.sign * 0.12 * crouch
+        upperPitch,
+        f.sign * 0.14 * eatHold,
+        f.sign * 0.10 * crouch
       );
       this.rotateAnatomical(
         `forearm_${f.side}`,
-        finalForearmPitch,
-        blendedForearmYaw,
+        forearmPitch,
+        forearmYaw,
         0
       );
       this.rotateAnatomical(
         `paw_${f.side === "L" ? "fl" : "fr"}`,
-        THREE.MathUtils.clamp(lift * 0.45 + blendedPawPitch, -0.55, 0.65),
-        blendedPawYaw,
-        blendedPawRoll
+        pawRelPitch,
+        pawYaw,
+        pawRoll
       );
     }
 
-    // Hind limbs: crisp locomotion + visible forward tripod brace when sitting/eating/rearing
+    // Hind limbs: functional stepping stride during walking/running + flat grounded tripod support when sitting/eating/rearing
     const hindSpecs: Array<{
       side: "L" | "R";
       phaseOffset: number;
@@ -293,29 +292,43 @@ export class PoseApplicationLayer {
 
     for (const h of hindSpecs) {
       const s = h.phaseOffset;
-      const swing = Math.sin(pose.gaitPhase + s) * 0.50 * locoWeight;
-      const lift = (h.contact ? 0 : Math.max(0, Math.cos(pose.gaitPhase + s)) * 0.36) * locoWeight;
+      const sideX = h.side === "L" ? -1 : 1;
+      const phase = pose.gaitPhase + s;
+      const swing = Math.sin(phase) * 0.46 * locoWeight;
+      const liftWave = h.contact ? 0 : Math.max(0, Math.cos(phase));
+      const lift = liftWave * 0.28 * locoWeight;
 
-      const sitSupport = Math.max(rear, eatHold);
-      const rearThigh = -0.34 * sitSupport - 0.18 * curl;
-      const rearShin = 0.28 * sitSupport + 0.35 * curl + 0.22 * crouch;
+      const sitSupport = Math.max(rear, eatHold, groom * 0.7);
+      const strideZ = Math.sin(phase) * 0.016 * locoWeight;
+      const strideLiftY = liftWave * 0.008 * locoWeight;
+
+      // Keep hind feet planted flat on the floor (compensating for hip_L/R lifting when pelvis pitches back)
+      // and actively stepping forward/back during walking and wheel running
+      const hipDx = sideX * (0.002 + 0.002 * sitSupport);
+      const hipDy = strideLiftY - 0.0125 * rear - 0.003 * crouch;
+      const hipDz = 0.004 + strideZ + 0.009 * sitSupport;
+      this.translateAnatomical(`hip_${h.side}`, hipDx, hipDy, hipDz);
+
+      // Counter-rotate `pelvisPitch` so hind legs stay upright and hind feet stay level with the ground
+      const desiredWorldLegPitch = swing - lift * 0.6 - 0.15 * curl;
+      const relLegPitch = THREE.MathUtils.clamp(desiredWorldLegPitch - pelvisPitch, -0.95, 0.95);
 
       this.rotateAnatomical(
         `thigh_${h.side}`,
-        swing - lift * 0.4 + rearThigh,
-        h.sign * 0.12 * sitSupport,
-        h.sign * (0.14 * sitSupport + 0.14 * crouch)
+        relLegPitch * 0.55,
+        h.sign * 0.10 * sitSupport,
+        h.sign * (0.10 * sitSupport + 0.12 * crouch)
       );
       this.rotateAnatomical(
         `shin_${h.side}`,
-        -lift * 0.95 + rearShin,
+        relLegPitch * 0.45,
         0,
         0
       );
       this.rotateAnatomical(
         `paw_${h.side === "L" ? "bl" : "br"}`,
-        lift * 0.42 - 0.22 * sitSupport,
-        h.sign * 0.14 * sitSupport,
+        -desiredWorldLegPitch + lift * 0.45,
+        h.sign * 0.12 * sitSupport,
         0
       );
     }
