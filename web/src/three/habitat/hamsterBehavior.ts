@@ -7,6 +7,40 @@ import {
   type ProceduralLayerConfig,
 } from "../rig/types";
 
+export interface TunnelSegment {
+  a: THREE.Vector3;
+  b: THREE.Vector3;
+  radius: number;
+  topY: number;
+}
+
+export interface TunnelSpineConfig {
+  /** Ordered interior centerline points from Mouth A -> Elbow -> Mouth B */
+  centerline: THREE.Vector3[];
+  /** Outside approach waypoint aligned with Mouth A */
+  mouthAApproach: THREE.Vector3;
+  /** Outside approach waypoint aligned with Mouth B */
+  mouthBApproach: THREE.Vector3;
+  /** Cylinder segments for precise 2D capsule obstacle clearance & top-climb surface */
+  segments: TunnelSegment[];
+  /** Ordered ridge points along top surface of the log for climbing & perching */
+  topPath: THREE.Vector3[];
+  /** Approach waypoint at low slope to climb onto the log */
+  climbEntryPos: THREE.Vector3;
+  /** Exit waypoint after climbing down from the log */
+  climbExitPos: THREE.Vector3;
+}
+
+export interface PlacedPropAnchor {
+  objectId: string;
+  itemId: string;
+  name: string;
+  category: "prop" | "decor" | "water";
+  pos: THREE.Vector3;
+  radius: number;
+  rotationY: number;
+}
+
 export interface HabitatPropAnchors {
   beddingY: number;
   bowlPos: THREE.Vector3;
@@ -17,6 +51,7 @@ export interface HabitatPropAnchors {
   chewPos: THREE.Vector3;
   tunnelBox?: THREE.Box3;
   tunnelBoxes?: THREE.Box3[];
+  tunnelSpine?: TunnelSpineConfig;
   hideoutBox?: THREE.Box3;
   wheelBox?: THREE.Box3;
   wheelTrackY?: number;
@@ -27,7 +62,10 @@ export interface HabitatPropAnchors {
   hasHideout?: boolean;
   hasTunnel?: boolean;
   hasChew?: boolean;
+  foodLevel?: number;
+  waterLevel?: number;
   dynamicObstacles?: Array<{ id: string; pos: THREE.Vector3; radius: number }>;
+  placedProps?: PlacedPropAnchor[];
   offeredFoodTarget?: { objectId: string; itemId: string; pos: THREE.Vector3 } | null;
   onFoodConsumed?: (objectId: string, itemId: string) => void;
   onWaterConsumed?: () => void;
@@ -51,9 +89,20 @@ type MicroPhase =
   | "dig"
   | "wheel_run"
   | "wheel_pause"
-  | "rest";
+  | "rest"
+  | "log_perch"
+  | "inspect_prop";
 
-type HabitatGoal = "wander" | "wheel" | "water" | "hideout" | "bowl" | "chew";
+type HabitatGoal =
+  | "wander"
+  | "wheel"
+  | "water"
+  | "hideout"
+  | "bowl"
+  | "chew"
+  | "tunnel_through"
+  | "log_climb"
+  | "inspect_prop";
 
 function shortestAngleDiff(from: number, to: number): number {
   let diff = ((to - from + Math.PI) % (Math.PI * 2)) - Math.PI;
@@ -96,6 +145,19 @@ export class HamsterBehaviorController {
   private waypointQueue: THREE.Vector3[] = [];
   private stuckCheckPos = new THREE.Vector3(-0.08, 0.165, 0.12);
   private stuckTimer = 0;
+
+  // Functional middle-log state (entering/exiting hollow tunnel & climbing on top)
+  private tunnelDirectionForward = true;
+  private logActivePath: THREE.Vector3[] = [];
+  private logPathIndex = 0;
+  private logHasPerched = false;
+
+  // Curious prop-sensing state (detects newly dropped or moved props and inspects them)
+  private hasInitializedProps = false;
+  private knownPropSignatures = new Map<string, string>();
+  private pendingInspectQueue: string[] = [];
+  private activeInspectProp: PlacedPropAnchor | null = null;
+  private activeInspectIsNew = false;
 
   // Saccadic head look targets (hamsters snap their heads quickly between holds)
   private headSaccadeTimer = 0.3;
@@ -192,6 +254,29 @@ export class HamsterBehaviorController {
     }
   }
 
+  private pushOutOfCapsule2D(
+    v: THREE.Vector3,
+    a: THREE.Vector3,
+    b: THREE.Vector3,
+    totalRadius: number
+  ): void {
+    const abx = b.x - a.x;
+    const abz = b.z - a.z;
+    const lenSq = abx * abx + abz * abz;
+    const t = lenSq > 1e-8 ? THREE.MathUtils.clamp(((v.x - a.x) * abx + (v.z - a.z) * abz) / lenSq, 0, 1) : 0;
+    const cx = a.x + abx * t;
+    const cz = a.z + abz * t;
+    const dx = v.x - cx;
+    const dz = v.z - cz;
+    const d = Math.hypot(dx, dz);
+    if (d < totalRadius) {
+      const nx = d > 1e-4 ? dx / d : 0;
+      const nz = d > 1e-4 ? dz / d : 1;
+      v.x = cx + nx * totalRadius;
+      v.z = cz + nz * totalRadius;
+    }
+  }
+
   private pushOutOfProps(
     v: THREE.Vector3,
     anchors: HabitatPropAnchors,
@@ -225,7 +310,17 @@ export class HamsterBehaviorController {
       obstacles.push({ pos: anchors.wheelPos, radius: 0.15 });
     }
 
-    if ((anchors.hasTunnel ?? true) && !petState?.inside_tunnel && !anchors.tunnelBoxes?.length && !anchors.tunnelBox) {
+    const allowTunnelTraversal =
+      Boolean(petState?.inside_tunnel) ||
+      ((this.goal === "tunnel_through" || this.goal === "log_climb") && this.goalStage !== "approach");
+
+    if (
+      (anchors.hasTunnel ?? true) &&
+      !allowTunnelTraversal &&
+      !anchors.tunnelSpine?.segments?.length &&
+      !anchors.tunnelBoxes?.length &&
+      !anchors.tunnelBox
+    ) {
       obstacles.push({ pos: anchors.tunnelPos, radius: 0.115 });
     }
 
@@ -248,8 +343,13 @@ export class HamsterBehaviorController {
       if (!allowWheel && anchors.wheelBox) {
         this.pushOutOfBox2D(v, anchors.wheelBox, 0.032);
       }
-      if (!petState?.inside_tunnel) {
-        if (anchors.tunnelBoxes && anchors.tunnelBoxes.length > 0) {
+      if (!allowTunnelTraversal) {
+        if (anchors.tunnelSpine && anchors.tunnelSpine.segments.length > 0) {
+          // Precise oriented capsule clearance around the curved/angled bark log (no bloated corner traps!)
+          for (const seg of anchors.tunnelSpine.segments) {
+            this.pushOutOfCapsule2D(v, seg.a, seg.b, seg.radius + 0.024);
+          }
+        } else if (anchors.tunnelBoxes && anchors.tunnelBoxes.length > 0) {
           this.pushOutOfTunnelBoxes(v, anchors.tunnelBoxes, bodyRadius);
         } else if (anchors.tunnelBox) {
           this.pushOutOfBox2D(v, anchors.tunnelBox, bodyRadius);
@@ -327,40 +427,74 @@ export class HamsterBehaviorController {
       return;
     }
 
-    // BFS over wide open habitat corridor waypoints around the center log tunnel & props
-    const nodes: Array<{ x: number; z: number }> = [
-      { x: this.pos.x, z: this.pos.z },
-      { x: -0.30, z: 0.14 },   // front-left open area near wheel
-      { x: -0.16, z: 0.18 },   // front-left lane
-      { x: -0.02, z: 0.205 },  // wide front lane in front of log
-      { x: 0.12, z: 0.205 },   // front-right lane
-      { x: 0.20, z: 0.14 },    // near bowl/chew
-      { x: 0.20, z: 0.02 },    // open pocket between hideout, chew, and bowl
-      { x: 0.13, z: -0.06 },   // center-right corridor between log & hideout
-      { x: 0.11, z: -0.175 },  // back-right corridor
-      { x: -0.04, z: -0.185 }, // back-center behind log
-      { x: -0.18, z: -0.175 }, // back-left corridor
-      { x: -0.28, z: 0.02 },   // directly in front of upright wheel
-      { x: 0.36, z: 0.04 },    // east corridor (water spout)
-      { x: dest.x, z: dest.z },
+    // Distance-weighted Dijkstra over a cage-wide open lattice + key corridors so the middle log
+    // or dropped props NEVER block exploration between any two sections of the cage.
+    const candidates: Array<{ x: number; z: number }> = [
+      { x: -0.36, z: 0.16 },
+      { x: -0.26, z: 0.16 },
+      { x: -0.14, z: 0.175 },
+      { x: -0.02, z: 0.195 },
+      { x: 0.12, z: 0.195 },
+      { x: 0.20, z: 0.14 },
+      { x: 0.20, z: 0.02 },
+      { x: 0.14, z: -0.06 },
+      { x: 0.11, z: -0.175 },
+      { x: -0.04, z: -0.185 },
+      { x: -0.18, z: -0.175 },
+      { x: -0.28, z: 0.02 },
+      { x: 0.36, z: 0.04 },
     ];
+    for (let gx = -0.36; gx <= 0.37; gx += 0.12) {
+      for (let gz = -0.17; gz <= 0.19; gz += 0.09) {
+        candidates.push({ x: Number(gx.toFixed(3)), z: Number(gz.toFixed(3)) });
+      }
+    }
+    if (anchors.tunnelSpine) {
+      candidates.push(
+        { x: anchors.tunnelSpine.mouthAApproach.x, z: anchors.tunnelSpine.mouthAApproach.z },
+        { x: anchors.tunnelSpine.mouthBApproach.x, z: anchors.tunnelSpine.mouthBApproach.z },
+        { x: anchors.tunnelSpine.climbEntryPos.x, z: anchors.tunnelSpine.climbEntryPos.z },
+        { x: anchors.tunnelSpine.climbExitPos.x, z: anchors.tunnelSpine.climbExitPos.z }
+      );
+    }
 
+    const nodes: Array<{ x: number; z: number }> = [{ x: this.pos.x, z: this.pos.z }];
+    for (const c of candidates) {
+      if (!this.isInsideAnyObstacle(c.x, c.z, anchors)) {
+        nodes.push(c);
+      }
+    }
+    nodes.push({ x: dest.x, z: dest.z });
+
+    const n = nodes.length;
     const startIdx = 0;
-    const goalIdx = nodes.length - 1;
-    const parent = new Array<number>(nodes.length).fill(-1);
-    const visited = new Array<boolean>(nodes.length).fill(false);
-    const queue: number[] = [startIdx];
-    visited[startIdx] = true;
+    const goalIdx = n - 1;
+    const distArr = new Array<number>(n).fill(Infinity);
+    const parent = new Array<number>(n).fill(-1);
+    const settled = new Array<boolean>(n).fill(false);
+    distArr[startIdx] = 0;
 
-    while (queue.length > 0) {
-      const cur = queue.shift()!;
-      if (cur === goalIdx) break;
-      for (let nxt = 1; nxt < nodes.length; nxt++) {
-        if (visited[nxt]) continue;
-        if (this.segmentIsClear(nodes[cur].x, nodes[cur].z, nodes[nxt].x, nodes[nxt].z, anchors)) {
-          visited[nxt] = true;
-          parent[nxt] = cur;
-          queue.push(nxt);
+    for (let iter = 0; iter < n; iter++) {
+      let u = -1;
+      let bestD = Infinity;
+      for (let i = 0; i < n; i++) {
+        if (!settled[i] && distArr[i] < bestD) {
+          bestD = distArr[i];
+          u = i;
+        }
+      }
+      if (u === -1 || u === goalIdx) break;
+      settled[u] = true;
+
+      for (let v = 1; v < n; v++) {
+        if (settled[v]) continue;
+        const stepLen = Math.hypot(nodes[v].x - nodes[u].x, nodes[v].z - nodes[u].z);
+        // Only test reasonably local hops (or direct to goal) to keep graph fast & smooth
+        if (v !== goalIdx && u !== startIdx && stepLen > 0.34) continue;
+        if (distArr[u] + stepLen >= distArr[v]) continue;
+        if (this.segmentIsClear(nodes[u].x, nodes[u].z, nodes[v].x, nodes[v].z, anchors)) {
+          distArr[v] = distArr[u] + stepLen;
+          parent[v] = u;
         }
       }
     }
@@ -369,8 +503,8 @@ export class HamsterBehaviorController {
       const path: THREE.Vector3[] = [];
       let cur = goalIdx;
       while (cur !== startIdx && cur !== -1) {
-        const n = nodes[cur];
-        path.push(new THREE.Vector3(n.x, this.sampleGroundY(n.x, n.z, anchors), n.z));
+        const pt = nodes[cur];
+        path.push(new THREE.Vector3(pt.x, this.sampleGroundY(pt.x, pt.z, anchors), pt.z));
         cur = parent[cur];
       }
       path.reverse();
