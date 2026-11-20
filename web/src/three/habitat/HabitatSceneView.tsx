@@ -839,8 +839,55 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
 
         const cageRoot = cageGltf.scene;
         cageRoot.updateMatrixWorld(true);
+
+        // Scale the wooden house (1.24x) and curved hollow bark log (1.22x) uniformly as cohesive groups
+        // so Hammy (9.7cm wide x 15.7cm long) fits comfortably inside both with roomy doorway & bore clearances!
+        const HOUSE_SCALE = 1.24;
+        const houseOldPivot = new THREE.Vector3(0.28, 0.1855, -0.11);
+        const houseNewPivot = new THREE.Vector3(0.305, 0.1855, -0.118);
+        const houseGroup = new THREE.Group();
+        houseGroup.name = "scaled_hideout_group";
+        houseGroup.position.copy(houseNewPivot);
+        houseGroup.scale.setScalar(HOUSE_SCALE);
+
+        const LOG_SCALE = 1.22;
+        const logOldPivot = new THREE.Vector3(-0.02, 0.145, 0.035);
+        const logNewPivot = new THREE.Vector3(-0.022, 0.145, 0.032);
+        const logGroup = new THREE.Group();
+        logGroup.name = "scaled_tunnel_log_group";
+        logGroup.position.copy(logNewPivot);
+        logGroup.scale.setScalar(LOG_SCALE);
+
+        const houseMembers: THREE.Object3D[] = [];
+        const logMembers: THREE.Object3D[] = [];
+        cageRoot.traverse((obj) => {
+          if (obj.name === "prop_hideout" || obj.name === "prop_hideout_roof") {
+            houseMembers.push(obj);
+          } else if (
+            obj.name === "prop_tunnel_curve" ||
+            obj.name === "prop_tunnel_straight_1" ||
+            obj.name === "prop_tunnel_straight_2"
+          ) {
+            logMembers.push(obj);
+          } else if (obj.name === "prop_bowl" || obj.name === "prop_food_bowl_fill") {
+            // Nudge ceramic bowl 2.5cm forward so the aisle between the larger house door and bowl stays wide open!
+            obj.position.z += 0.025;
+          }
+        });
+        for (const hm of houseMembers) {
+          hm.position.sub(houseOldPivot);
+          houseGroup.add(hm);
+        }
+        for (const lm of logMembers) {
+          lm.position.sub(logOldPivot);
+          logGroup.add(lm);
+        }
+        if (houseMembers.length > 0) cageRoot.add(houseGroup);
+        if (logMembers.length > 0) cageRoot.add(logGroup);
+        cageRoot.updateMatrixWorld(true);
+
         let beddingY = 0.165;
-        let bowlPos = new THREE.Vector3(0.28, 0.165, 0.11);
+        let bowlPos = new THREE.Vector3(0.28, 0.165, 0.135);
         let spoutPos = new THREE.Vector3(0.433, 0.183, 0.02);
 
         // Keep the core 3D habitat visible by default:
@@ -935,6 +982,11 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
               const box = new THREE.Box3().setFromObject(m);
               box.getCenter(propAnchors.hideoutPos);
               propAnchors.hideoutBox = box.clone();
+              propAnchors.hideoutYaw = m.rotation.y;
+              propAnchors.hideoutHalfExtents = {
+                hx: 0.080 * HOUSE_SCALE,
+                hz: 0.065 * HOUSE_SCALE,
+              };
             }
             if (
               m.name === "prop_tunnel_curve" ||
@@ -990,6 +1042,7 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
               const bBox = new THREE.Box3().setFromObject(m);
               const bCenter = new THREE.Vector3();
               bBox.getCenter(bCenter);
+              propAnchors.bottlePos = new THREE.Vector3(bCenter.x, beddingY, bCenter.z);
               waterLiquidMesh.position.set(bCenter.x, bBox.min.y + 0.006, bCenter.z);
               scene.add(waterLiquidMesh);
             }
@@ -1009,54 +1062,86 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
           propAnchors.wheelTrackY -= hamsterFootOffsetY;
         }
 
-        // Build functional middle-log spine (hollow tunnel enter/exit + top-of-log climb & perch + precise 2D capsules)
+        // Build functional middle-log spine matching the 1.22x scaled bark log (hollow crawl + top climb & capsules)
         const floorAt = (x: number, z: number) =>
           propAnchors.sampleBeddingY ? propAnchors.sampleBeddingY(x, z) : beddingY;
-        const innerFloor1 = Math.max(0.146 - hamsterFootOffsetY, floorAt(0.055, 0.097) - 0.004);
-        const innerFloor2 = Math.max(0.160 - hamsterFootOffsetY, floorAt(-0.118, -0.012) - 0.002);
-        const topY1 = 0.2185 - hamsterFootOffsetY - 0.002;
-        const topYCurve = 0.218 - hamsterFootOffsetY - 0.002;
-        const topY2 = 0.234 - hamsterFootOffsetY - 0.002;
+        const xformLogPt = (x: number, y: number, z: number) =>
+          new THREE.Vector3(
+            logNewPivot.x + (x - logOldPivot.x) * LOG_SCALE,
+            logNewPivot.y + (y - logOldPivot.y) * LOG_SCALE,
+            logNewPivot.z + (z - logOldPivot.z) * LOG_SCALE
+          );
+        const xformLogFloor = (x: number, z: number) => {
+          const tx = logNewPivot.x + (x - logOldPivot.x) * LOG_SCALE;
+          const tz = THREE.MathUtils.clamp(logNewPivot.z + (z - logOldPivot.z) * LOG_SCALE, -0.19, 0.214);
+          return new THREE.Vector3(tx, floorAt(tx, tz), tz);
+        };
+        const innerFloor1 = Math.max(0.146 - hamsterFootOffsetY, floorAt(0.065, 0.105) - 0.004);
+        const innerFloor2 = Math.max(0.165 - hamsterFootOffsetY, floorAt(-0.140, -0.025) - 0.002);
+        const topY1 = logNewPivot.y + (0.2185 - logOldPivot.y) * LOG_SCALE - hamsterFootOffsetY - 0.002;
+        const topYCurve = logNewPivot.y + (0.218 - logOldPivot.y) * LOG_SCALE - hamsterFootOffsetY - 0.002;
+        const topY2 = logNewPivot.y + (0.234 - logOldPivot.y) * LOG_SCALE - hamsterFootOffsetY - 0.002;
+        const clPt = (x: number, y: number, z: number) => {
+          const p = xformLogPt(x, y, z);
+          p.y = y;
+          return p;
+        };
         propAnchors.tunnelSpine = {
-          mouthAApproach: new THREE.Vector3(0.090, floorAt(0.090, 0.200), 0.200),
-          mouthBApproach: new THREE.Vector3(-0.232, floorAt(-0.232, 0.019), 0.019),
+          mouthAApproach: xformLogFloor(0.088, 0.180),
+          mouthBApproach: xformLogFloor(-0.232, 0.018),
           centerline: [
-            new THREE.Vector3(0.072, innerFloor1, 0.160),
-            new THREE.Vector3(0.055, innerFloor1, 0.097),
-            new THREE.Vector3(0.036, innerFloor1, 0.028),
-            new THREE.Vector3(-0.008, (innerFloor1 + innerFloor2) * 0.5, -0.016),
-            new THREE.Vector3(-0.060, innerFloor2, -0.027),
-            new THREE.Vector3(-0.119, innerFloor2, -0.012),
-            new THREE.Vector3(-0.175, innerFloor2, 0.004),
+            clPt(0.0735, innerFloor1, 0.1645),
+            clPt(0.0554, innerFloor1, 0.0969),
+            clPt(0.0373, innerFloor1, 0.0293),
+            clPt(0.0150, (innerFloor1 * 2 + innerFloor2) / 3, -0.0120),
+            clPt(-0.0250, (innerFloor1 + innerFloor2 * 2) / 3, -0.0280),
+            clPt(-0.0607, innerFloor2, -0.0273),
+            clPt(-0.1187, innerFloor2, -0.0117),
+            clPt(-0.1766, innerFloor2, 0.0038),
           ],
           segments: [
-            // Capsule segments stop slightly shy of open mouths so mouth approaches remain freely traversable
             {
-              a: new THREE.Vector3(0.037, 0.179, 0.029),
-              b: new THREE.Vector3(0.066, 0.179, 0.136),
-              radius: 0.04,
+              a: xformLogPt(0.0373, 0.1788, 0.0293),
+              b: xformLogPt(0.0735, 0.1788, 0.1645),
+              radius: 0.040 * LOG_SCALE,
               topY: topY1,
+              isOpenB: true,
             },
             {
-              a: new THREE.Vector3(0.035, 0.178, 0.026),
-              b: new THREE.Vector3(-0.058, 0.186, -0.026),
-              radius: 0.042,
+              a: xformLogPt(0.0373, 0.1788, 0.0293),
+              b: xformLogPt(0.0150, 0.1790, -0.0120),
+              radius: 0.042 * LOG_SCALE,
               topY: topYCurve,
             },
             {
-              a: new THREE.Vector3(-0.061, 0.195, -0.027),
-              b: new THREE.Vector3(-0.155, 0.195, -0.002),
-              radius: 0.04,
+              a: xformLogPt(0.0150, 0.1790, -0.0120),
+              b: xformLogPt(-0.0250, 0.1850, -0.0280),
+              radius: 0.042 * LOG_SCALE,
+              topY: topYCurve,
+            },
+            {
+              a: xformLogPt(-0.0250, 0.1850, -0.0280),
+              b: xformLogPt(-0.0607, 0.1946, -0.0273),
+              radius: 0.042 * LOG_SCALE,
+              topY: topYCurve,
+            },
+            {
+              a: xformLogPt(-0.0607, 0.1946, -0.0273),
+              b: xformLogPt(-0.1766, 0.1946, 0.0038),
+              radius: 0.040 * LOG_SCALE,
               topY: topY2,
+              isOpenB: true,
             },
           ],
-          climbEntryPos: new THREE.Vector3(-0.175, floorAt(-0.175, 0.105), 0.105),
-          climbExitPos: new THREE.Vector3(0.155, floorAt(0.155, -0.025), -0.025),
+          climbEntryPos: xformLogFloor(-0.178, 0.105),
+          climbExitPos: xformLogFloor(0.130, 0.088),
           topPath: [
-            new THREE.Vector3(-0.118, topY2, -0.012),
-            new THREE.Vector3(-0.055, (topY2 + topYCurve) * 0.5, -0.026),
-            new THREE.Vector3(0.002, topYCurve, -0.014),
-            new THREE.Vector3(0.045, topY1, 0.055),
+            clPt(-0.140, topY2, -0.006),
+            clPt(-0.080, topY2, -0.020),
+            clPt(-0.020, topYCurve, -0.022),
+            clPt(0.020, topYCurve, -0.005),
+            clPt(0.050, topY1, 0.060),
+            clPt(0.065, topY1, 0.120),
           ],
         };
 
@@ -1094,10 +1179,15 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
       lastTime = now;
       const tSec = now * 0.001;
 
+      const circadianPhase = petStateRef.current?.drives?.circadian_phase;
       const serverHour =
-        serverTimeRef.current !== undefined
-          ? ((serverTimeRef.current / 3600) % 24 + 24) % 24
-          : ((Date.now() / 1000 / 3600) % 24);
+        serverSimTimeSec !== undefined
+          ? ((serverSimTimeSec / 3600) % 24 + 24) % 24
+          : circadianPhase !== undefined
+            ? (((circadianPhase % 1) + 1) % 1) * 24
+            : serverTimeRef.current !== undefined
+              ? ((serverTimeRef.current / 3600) % 24 + 24) % 24
+              : ((Date.now() / 1000 / 3600) % 24);
       const activeHour = manualHourRef.current !== null ? manualHourRef.current : serverHour;
       const lighting = computeDayNightLighting(activeHour);
 
@@ -1430,11 +1520,10 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
               aria-selected={rightPanelTab === "shelves"}
               onClick={() => setRightPanelTab("shelves")}
               data-testid="tab-panel-shelves"
-              className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
-                rightPanelTab === "shelves"
+              className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${rightPanelTab === "shelves"
                   ? "bg-[#FF6B5B] text-[#14213D] shadow-coral-glow"
                   : "text-[#F4EDE0]/75 hover:text-[#F4EDE0] hover:bg-[#F4EDE0]/10"
-              }`}
+                }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
               Asset Shelves
@@ -1445,11 +1534,10 @@ export const HabitatSceneView: React.FC<HabitatSceneViewProps> = ({
               aria-selected={rightPanelTab === "studio"}
               onClick={() => setRightPanelTab("studio")}
               data-testid="tab-panel-studio"
-              className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
-                rightPanelTab === "studio"
+              className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${rightPanelTab === "studio"
                   ? "bg-[#FF6B5B] text-[#14213D] shadow-coral-glow"
                   : "text-[#F4EDE0]/75 hover:text-[#F4EDE0] hover:bg-[#F4EDE0]/10"
-              }`}
+                }`}
             >
               <Sliders className="w-3.5 h-3.5" />
               Cage &amp; Lighting
