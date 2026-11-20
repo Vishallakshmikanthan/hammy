@@ -162,51 +162,61 @@ export class PoseApplicationLayer {
       const swing = Math.sin(pose.gaitPhase + s) * 0.48 * locoWeight;
       const lift = (f.contact ? 0 : Math.max(0, Math.cos(pose.gaitPhase + s)) * 0.35) * locoWeight;
 
-      // Rearing paw tuck against chest
-      const rearShoulderRoll = f.sign * 0.14 * rear;
-      const rearUpper = -0.52 * rear;
-      const rearForearm = -0.88 * rear;
-      const rearPaw = 0.42 * rear;
-
-      // Face-washing grooming: raise both paws to snout/cheeks and scrub in circles
+      // Rearing paw tuck against chest & face-washing/eating hold (blended cleanly, never double-added!)
       const gPhase = (p?.groomPhase ?? 0) + (f.side === "R" ? 0.85 : 0);
-      const groomScrub = Math.sin(gPhase) * 0.24 * groom;
-      const groomCircle = Math.cos(gPhase) * 0.16 * groom;
-      const groomShoulderRoll = f.sign * 0.28 * groom;
-      const groomUpper = (-0.95 + groomScrub) * groom;
-      const groomForearm = (-1.12 - groomCircle * 0.6) * groom;
-      const groomPaw = (0.35 + groomScrub * 0.5) * groom;
+      const groomScrub = Math.sin(gPhase) * 0.18 * groom;
+      const groomCircle = Math.cos(gPhase) * 0.12 * groom;
+
+      // Blend rearing tuck and groom/food-hold smoothly so combined rear+groom stays within anatomical joint limits
+      const upperPoseWeight = Math.max(rear, groom);
+      const groomShare = upperPoseWeight > 1e-4 ? groom / (rear + groom + 1e-4) : 0;
+
+      const blendedShoulderRoll = f.sign * THREE.MathUtils.lerp(0.14, 0.24, groomShare) * upperPoseWeight;
+      const blendedUpper = THREE.MathUtils.lerp(-0.48, -0.78 + groomScrub, groomShare) * upperPoseWeight;
+      const blendedForearm = THREE.MathUtils.lerp(-0.72, -0.92 - groomCircle * 0.45, groomShare) * upperPoseWeight;
+      const blendedPaw = THREE.MathUtils.lerp(0.36, 0.30 + groomScrub * 0.4, groomShare) * upperPoseWeight;
 
       // Bedding digging: fast alternating front-paw scratching
       const dPhase = (p?.digPhase ?? 0) + (f.side === "R" ? Math.PI : 0);
-      const digSwing = Math.sin(dPhase) * 0.62 * dig;
-      const digFlex = -Math.max(0, Math.cos(dPhase)) * 0.55 * dig;
+      const digSwing = Math.sin(dPhase) * 0.56 * dig;
+      const digFlex = -Math.max(0, Math.cos(dPhase)) * 0.48 * dig;
 
       // Curl tuck
-      const curlUpper = -0.35 * curl;
-      const curlForearm = -0.65 * curl;
+      const curlUpper = -0.32 * curl;
+      const curlForearm = -0.58 * curl;
+
+      const finalUpperPitch = THREE.MathUtils.clamp(
+        swing - lift * 0.5 + blendedUpper + digSwing + curlUpper,
+        -0.98,
+        0.72
+      );
+      const finalForearmPitch = THREE.MathUtils.clamp(
+        -lift * 1.15 + blendedForearm + digFlex + curlForearm,
+        -1.08,
+        0.42
+      );
 
       this.rotateAnatomical(
         `shoulder_${f.side}`,
         0,
         0,
-        rearShoulderRoll + groomShoulderRoll
+        THREE.MathUtils.clamp(blendedShoulderRoll, -0.32, 0.32)
       );
       this.rotateAnatomical(
         `upper_arm_${f.side}`,
-        swing - lift * 0.5 + rearUpper + groomUpper + digSwing + curlUpper,
+        finalUpperPitch,
         0,
         f.sign * 0.12 * crouch
       );
       this.rotateAnatomical(
         `forearm_${f.side}`,
-        -lift * 1.15 + rearForearm + groomForearm + digFlex + curlForearm,
-        groomCircle * f.sign * 0.4,
+        finalForearmPitch,
+        groomCircle * f.sign * 0.35,
         0
       );
       this.rotateAnatomical(
         `paw_${f.side === "L" ? "fl" : "fr"}`,
-        lift * 0.45 + rearPaw + groomPaw,
+        THREE.MathUtils.clamp(lift * 0.45 + blendedPaw, -0.45, 0.65),
         0,
         0
       );
