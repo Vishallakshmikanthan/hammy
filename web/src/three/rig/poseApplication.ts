@@ -132,13 +132,14 @@ export class PoseApplicationLayer {
       this.rotateAnatomical(spineNames[i], segPitch, wave + yawRate * 0.045, 0);
     }
 
-    // Neck & head: counter-level when rearing, duck when grooming/digging/curling, plus natural look
+    // Neck & head: counter-level when rearing, duck when grooming/digging/curling/eating, plus natural look
     const neckPitch =
       0.34 * rear +
       0.38 * curl +
       0.24 * groom +
       0.32 * dig +
       0.16 * crouch +
+      0.26 * eatHold +
       (p?.headPitch ?? 0) * 0.42 -
       Math.sin(pose.gaitPhase * 2) * 0.03 * speedFactor;
     const neckYaw = (p?.headYaw ?? 0) * 0.42 + yawRate * 0.08;
@@ -152,6 +153,7 @@ export class PoseApplicationLayer {
       0.32 * curl +
       0.20 * groom +
       0.15 * dig +
+      0.20 * eatHold +
       headGroomBob +
       headDigBob +
       (p?.headPitch ?? 0) * 0.58;
@@ -200,70 +202,79 @@ export class PoseApplicationLayer {
       const digReachZ = Math.sin(dPhase) * 0.010 * dig;
       const digLiftY = Math.max(0, Math.cos(dPhase)) * 0.005 * dig;
 
-      // Active stride stepping + mouth-level two-hand food cupping (never overshooting above snout!)
+      // Scapular clavicular micro-glides during locomotion / digging (anchored firmly to torso, zero detached dislocations)
       const activeUpper = Math.max(rear, eatHold, groom);
       const standOrWalk = 1 - activeUpper;
       const strideZ = Math.sin(phase) * 0.015 * locoWeight;
       const strideLiftY = liftWave * 0.0085 * locoWeight;
 
-      const shoulderDx =
-        sideX * (0.003 * standOrWalk - 0.0065 * eatHold - 0.003 * groom * (1 - eatHold));
-      const shoulderDy =
-        strideLiftY +
-        biteLift +
-        groomScrubY +
-        digLiftY -
-        0.002 * eatHold +
-        0.001 * groom * (1 - eatHold) -
-        0.006 * rear * (1 - Math.max(eatHold, groom));
-      const shoulderDz =
-        0.011 * standOrWalk +
-        strideZ +
-        0.022 * eatHold +
-        (0.019 + groomScrubZ) * groom * (1 - eatHold) +
-        0.012 * rear * (1 - Math.max(eatHold, groom)) +
-        (0.014 + digReachZ) * dig;
+      const shoulderDx = sideX * (0.0006 * standOrWalk - 0.0008 * eatHold);
+      const shoulderDy = strideLiftY * 0.12 + biteLift * 0.15 + groomScrubY * 0.15 + digLiftY * 0.15;
+      const shoulderDz = strideZ * 0.15 + digReachZ * 0.15 + groomScrubZ * 0.15 + 0.0005 * eatHold;
 
       this.translateAnatomical(`shoulder_${f.side}`, shoulderDx, shoulderDy, shoulderDz);
 
-      // Compensate for `totalSpinePitch` on `spine_4` so world-space arm pitch never over-rotates into the cheeks!
-      const desiredWorldArmPitch =
-        (-0.82 + nibbleShift) * eatHold +
-        (-0.86 + Math.sin(gPhase) * 0.16) * groom * (1 - eatHold) +
-        -0.45 * rear * (1 - Math.max(eatHold, groom)) +
-        (swing - lift * 0.7) +
-        Math.sin(dPhase) * 0.52 * dig -
-        0.35 * curl;
+      // Arm kinematics:
+      // 1. Eating with both paws: elbows tucked against flanks, forearms draw inward, paws cup food under chin
+      // 2. Rearing upright: hands fold cutely against chest sternum (never sticking straight forward into midair)
+      // 3. Grooming: paws scrub over muzzle / face
+      // 4. Locomotion / standing: arms articulate with walking stride, planting flat on bedding
+      let upperPitch = 0;
+      let forearmPitch = 0;
+      let forearmYaw = 0;
+      let pawRelPitch = 0;
+      let pawRoll = 0;
+      let pawYaw = 0;
 
-      const relArmPitch = THREE.MathUtils.clamp(desiredWorldArmPitch - totalSpinePitch, -1.05, 1.05);
-      const upperPitch = relArmPitch * 0.52;
-      const forearmPitch = relArmPitch * 0.48;
-      const forearmYaw = f.sign * (0.22 * eatHold + 0.18 * groom * (1 - eatHold));
-
-      // Keep paw flat on floor during standing/walking, or pointing forward & cupped inward around food
-      const pawRelPitch = THREE.MathUtils.clamp(
-        -desiredWorldArmPitch -
-          0.26 * eatHold -
-          0.32 * groom * (1 - eatHold) +
-          0.22 * rear * (1 - Math.max(eatHold, groom)) +
-          lift * 0.35,
-        -0.85,
-        0.85
-      );
-      const pawRoll = f.sign * (0.68 * eatHold + 0.48 * groom * (1 - eatHold));
-      const pawYaw = f.sign * (0.28 * eatHold + 0.16 * groom * (1 - eatHold));
+      if (eatHold > 0.02) {
+        // Two-paw food holding: hands positioned right at mouth / chin level
+        const relEatingPitch = -0.72 - totalSpinePitch * 0.45 + nibbleShift;
+        upperPitch = relEatingPitch * 0.52 * eatHold;
+        forearmPitch = relEatingPitch * 0.48 * eatHold;
+        forearmYaw = f.sign * 0.38 * eatHold;
+        pawRelPitch = -0.18 * eatHold + Math.sin(cPhase * 0.5) * 0.05 * eatHold;
+        pawRoll = f.sign * 0.62 * eatHold;
+        pawYaw = f.sign * 0.34 * eatHold;
+      } else if (rear > 0.05) {
+        // Adorable real Syrian hamster rearing stance: hands neatly folded against chest
+        upperPitch = 0.24 * rear;
+        forearmPitch = -0.38 * rear;
+        forearmYaw = f.sign * 0.24 * rear;
+        pawRelPitch = 0.06 * rear;
+        pawRoll = f.sign * 0.18 * rear;
+        pawYaw = f.sign * 0.16 * rear;
+      } else if (groom > 0.02) {
+        // Face-washing circular paw motion over whiskers and snout
+        const gRot = Math.sin(gPhase) * 0.18;
+        upperPitch = (-0.78 + gRot) * groom;
+        forearmPitch = (-0.42 + gRot * 0.5) * groom;
+        forearmYaw = f.sign * 0.32 * groom;
+        pawRelPitch = (-0.35 + gRot * 0.6) * groom;
+        pawRoll = f.sign * 0.45 * groom;
+        pawYaw = f.sign * 0.22 * groom;
+      } else {
+        // Locomotion & standing: functional stepping and planting
+        const desiredWorldArmPitch = (swing - lift * 0.65) + Math.sin(dPhase) * 0.48 * dig - 0.35 * curl;
+        const relArmPitch = THREE.MathUtils.clamp(desiredWorldArmPitch - totalSpinePitch, -1.05, 1.05);
+        upperPitch = relArmPitch * 0.52;
+        forearmPitch = relArmPitch * 0.48;
+        forearmYaw = f.sign * 0.04;
+        pawRelPitch = THREE.MathUtils.clamp(-desiredWorldArmPitch + lift * 0.42, -0.85, 0.85);
+        pawRoll = 0;
+        pawYaw = f.sign * 0.06;
+      }
 
       this.rotateAnatomical(
         `shoulder_${f.side}`,
         0,
-        f.sign * 0.08 * eatHold,
-        f.sign * (0.14 * eatHold + 0.12 * rear)
+        f.sign * (0.06 * eatHold + 0.04 * rear),
+        f.sign * (0.08 * eatHold + 0.06 * rear)
       );
       this.rotateAnatomical(
         `upper_arm_${f.side}`,
         upperPitch,
-        f.sign * 0.14 * eatHold,
-        f.sign * 0.10 * crouch
+        f.sign * (0.12 * eatHold + 0.06 * rear),
+        f.sign * 0.08 * crouch
       );
       this.rotateAnatomical(
         `forearm_${f.side}`,
@@ -302,22 +313,24 @@ export class PoseApplicationLayer {
       const strideZ = Math.sin(phase) * 0.016 * locoWeight;
       const strideLiftY = liftWave * 0.008 * locoWeight;
 
-      // Keep hind feet planted flat on the floor (compensating for hip_L/R lifting when pelvis pitches back)
-      // and actively stepping forward/back during walking and wheel running
-      const hipDx = sideX * (0.002 + 0.002 * sitSupport);
-      const hipDy = strideLiftY - 0.0125 * rear - 0.003 * crouch;
-      const hipDz = 0.004 + strideZ + 0.009 * sitSupport;
+      // Ankle extension during push-off phase of stride
+      const pushPhase = Math.sin(phase + 0.25) * 0.22 * locoWeight * (h.contact ? 1 : 0);
+
+      // Micro-glides of hip joint within pelvic socket (zero detached dislocations)
+      const hipDx = sideX * (0.0006 * sitSupport);
+      const hipDy = strideLiftY * 0.12 - 0.0015 * rear - 0.001 * crouch;
+      const hipDz = strideZ * 0.12;
       this.translateAnatomical(`hip_${h.side}`, hipDx, hipDy, hipDz);
 
       // Counter-rotate `pelvisPitch` so hind legs stay upright and hind feet stay level with the ground
-      const desiredWorldLegPitch = swing - lift * 0.6 - 0.15 * curl;
+      const desiredWorldLegPitch = swing - lift * 0.55 - 0.15 * curl;
       const relLegPitch = THREE.MathUtils.clamp(desiredWorldLegPitch - pelvisPitch, -0.95, 0.95);
 
       this.rotateAnatomical(
         `thigh_${h.side}`,
         relLegPitch * 0.55,
-        h.sign * 0.10 * sitSupport,
-        h.sign * (0.10 * sitSupport + 0.12 * crouch)
+        h.sign * 0.18 * sitSupport,
+        h.sign * (0.12 * sitSupport + 0.10 * crouch)
       );
       this.rotateAnatomical(
         `shin_${h.side}`,
@@ -327,9 +340,9 @@ export class PoseApplicationLayer {
       );
       this.rotateAnatomical(
         `paw_${h.side === "L" ? "bl" : "br"}`,
-        -desiredWorldLegPitch + lift * 0.45,
-        h.sign * 0.12 * sitSupport,
-        0
+        -desiredWorldLegPitch + lift * 0.42 - pushPhase,
+        h.sign * (0.22 * sitSupport + 0.06),
+        h.sign * (0.05 * sitSupport)
       );
     }
   }
