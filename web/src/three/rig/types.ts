@@ -68,6 +68,8 @@ export interface HamsterPostureState {
   chewAmount: number;
   /** Continuous phase (radians) for rapid jaw/chew cycles */
   chewPhase: number;
+  /** 0..1 two-hand food cradling & nibbling hold (distinct from face-washing groom) */
+  eatHoldAmount?: number;
 }
 
 export interface PhysicsPoseInput {
